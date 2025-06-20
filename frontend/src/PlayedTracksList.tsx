@@ -1,4 +1,5 @@
 import type { PlayedTrack } from '../../common/types';
+import { getMusicService } from './utils/musicServices';
 
 interface PlayedTracksListProps {
     playedTracks: PlayedTrack[];
@@ -6,20 +7,34 @@ interface PlayedTracksListProps {
 
 export function PlayedTracksList({ playedTracks }: PlayedTracksListProps) {
     if (!playedTracks || playedTracks.length === 0) {
-        return null;
+        return (
+            <div className="text-center text-secondary">
+                <p>No tracks played yet</p>
+            </div>
+        );
     }
 
     return (
-        <div className="played-tracks-list">
-            <h3>Previously Played</h3>
-            <ul>
-                {playedTracks.map(({ track, ownerUsername }) => (
-                    <li key={track.id}>
-                        <span className="track-title">{track.title || track.url}</span>
-                        <span className="track-owner"> by {ownerUsername}</span>
+        <ul className="tracks-list">
+            {playedTracks.map(({ track, ownerUsername, likes }) => {
+                const service = getMusicService(track.url);
+                return (
+                    <li key={track.id} className="track-item">
+                        {service && (
+                            <img src={service.logo} alt={service.name} className="track-service-logo" />
+                        )}
+                        <div className="track-info">
+                            <div className="track-title">{track.url}</div>
+                            <div className="track-owner">by {ownerUsername}</div>
+                        </div>
+                        {likes && likes.length > 0 && (
+                            <div className="track-likes">
+                                ❤️ {likes.length}
+                            </div>
+                        )}
                     </li>
-                ))}
-            </ul>
-        </div>
+                );
+            })}
+        </ul>
     );
 } 

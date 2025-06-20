@@ -1,4 +1,4 @@
-# Music Guessing Game: Rules & Restrictions
+# Guess the DJ: Rules & Restrictions
 
 ## Game Overview
 - The game is a real-time, multiplayer music guessing competition.

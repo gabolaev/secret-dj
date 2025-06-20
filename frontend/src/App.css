@@ -1,128 +1,940 @@
-#root {
-  max-width: 1280px;
+/* Main Layout */
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-primary);
+}
+
+/* Header */
+.game-header {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: var(--space-md) var(--space-xl);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  backdrop-filter: blur(10px);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.game-header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+}
+
+.game-title {
+  font-family: var(--font-primary);
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.game-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.game-id {
+  background: var(--bg-tertiary);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-secondary);
+  font-weight: 500;
+}
+
+.player-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.player-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--bg-primary);
+}
+
+.game-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+/* Main Content Area */
+.game-content {
+  flex: 1;
+  display: grid;
+  grid-template-columns: var(--sidebar-width) 1fr var(--sidebar-width);
+  gap: var(--space-lg);
+  padding: var(--space-xl);
+  max-width: var(--max-content-width);
   margin: 0 auto;
-  padding: 2rem;
+  width: 100%;
+}
+
+/* Sidebar Panels */
+.sidebar-panel {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  box-shadow: var(--shadow-md);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  height: fit-content;
+  max-height: calc(100vh - var(--header-height) - var(--space-xl) * 2);
+  overflow-y: auto;
+}
+
+.sidebar-panel h3 {
+  font-family: var(--font-primary);
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 var(--space-md) 0;
+  padding-bottom: var(--space-sm);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Center Panel */
+.center-panel {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  box-shadow: var(--shadow-md);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  min-height: calc(100vh - var(--header-height) - var(--space-xl) * 2);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Lobby Styles */
+.lobby {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: var(--space-2xl);
   text-align: center;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
+.lobby h1 {
+  margin-bottom: var(--space-xl);
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
+.lobby-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  margin-bottom: var(--space-xl);
 }
 
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
-}
-
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
-}
-
-.card {
-  padding: 2em;
-}
-
-.read-the-docs {
-  color: #888;
-}
-
-/* Played Tracks List styles */
-.played-tracks-list {
-  border-top: 2px solid #eee;
-  padding-top: 1em;
-  margin-top: 2em;
-}
-
-.played-tracks-list h3 {
-  margin-top: 0;
-}
-
-.played-tracks-list ul {
-  list-style-type: none;
-  padding: 0;
+.lobby-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
   text-align: left;
 }
 
-.played-tracks-list li {
-  margin-bottom: 0.5em;
-  font-size: 0.9em;
+.lobby-input-group label {
+  font-weight: 500;
+  color: var(--text-primary);
+  font-size: 0.875rem;
 }
 
-.track-owner {
-  font-style: italic;
-  color: #555;
+.lobby-actions {
+  display: flex;
+  gap: var(--space-md);
+  justify-content: center;
 }
 
-/* My Tracks List styles */
-.my-tracks-list {
-  margin-top: 1.5em;
-  padding: 1em;
-  border: 1px solid #eee;
-  background-color: #fafafa;
-  text-align: left;
+.lobby-actions button {
+  min-width: 140px;
 }
 
-.my-tracks-list h4 {
-  margin-top: 0;
-  margin-bottom: 0.5em;
+/* Game Phase Styles */
+.game-phase {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
 }
 
-.my-tracks-list ul {
-  list-style-type: none;
+.phase-header {
+  text-align: center;
+  margin-bottom: var(--space-lg);
+}
+
+.phase-title {
+  font-family: var(--font-primary);
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-sm);
+}
+
+.phase-description {
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+/* Track Player Styles */
+.track-player-section {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  margin-bottom: var(--space-lg);
+  text-align: center;
+}
+
+.track-player-title {
+  font-family: var(--font-primary);
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-md);
+}
+
+.track-player-container {
+  margin-bottom: var(--space-lg);
+}
+
+/* Like Section */
+.like-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+
+.like-button {
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  color: var(--bg-primary);
+  border: none;
+  border-radius: var(--radius-lg);
+  padding: var(--space-md) var(--space-xl);
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  min-width: 120px;
+}
+
+.like-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.like-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.like-button.liked {
+  background: linear-gradient(135deg, var(--accent-success), #6baa5a);
+}
+
+.like-count {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.likers-list {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  margin-left: var(--space-sm);
+}
+
+/* Voting Section */
+.voting-section {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  margin-bottom: var(--space-lg);
+}
+
+.voting-title {
+  font-family: var(--font-primary);
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-md);
+}
+
+.voting-form {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.voting-select {
+  flex: 1;
+  min-width: 200px;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm) var(--space-md);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+}
+
+.vote-counter {
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm) var(--space-md);
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  margin-top: var(--space-md);
+  text-align: center;
+}
+
+/* Results Section */
+.results-section {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  margin-bottom: var(--space-lg);
+}
+
+.results-title {
+  font-family: var(--font-primary);
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-md);
+  text-align: center;
+}
+
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--space-lg);
+  margin-bottom: var(--space-lg);
+}
+
+.results-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.results-card h4 {
+  font-family: var(--font-primary);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-sm);
+}
+
+.results-list {
+  list-style: none;
   padding: 0;
   margin: 0;
 }
 
-.my-tracks-list li {
-  display: flex;
-  align-items: center;
-  margin-bottom: 0.5em;
-}
-
-.my-tracks-list li.played .track-title {
-  text-decoration: line-through;
-  color: #888;
-}
-
-.my-tracks-list .checkbox {
-  margin-right: 0.5em;
-}
-
-.game-container {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-}
-
-.game-header-bar {
+.results-list li {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.5em 1em;
-  background-color: #eee;
-  border-bottom: 1px solid #ccc;
+  padding: var(--space-xs) 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.875rem;
 }
 
-.game-phase-content {
-  flex-grow: 1;
-  overflow-y: auto;
-  padding: 1em;
+.results-list li:last-child {
+  border-bottom: none;
+}
+
+.correct-guess {
+  color: var(--accent-success);
+  font-weight: 600;
+}
+
+.incorrect-guess {
+  color: var(--accent-error);
+}
+
+/* Players List Styles */
+.players-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.player-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.player-item:last-child {
+  border-bottom: none;
+}
+
+.player-info-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.player-name {
+  font-weight: 500;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+}
+
+.player-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: 0.75rem;
+}
+
+.player-status.connected {
+  color: var(--accent-success);
+}
+
+.player-status.disconnected {
+  color: var(--accent-error);
+}
+
+.player-status.admin {
+  color: var(--accent-primary);
+}
+
+.player-tracks {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.player-ready {
+  color: var(--accent-success);
+  font-weight: 600;
+}
+
+/* Track Submission */
+.track-submission {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  margin-bottom: var(--space-lg);
+}
+
+.track-submission h3 {
+  margin-bottom: var(--space-md);
+}
+
+.track-input-group {
+  display: flex;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+}
+
+.track-input {
+  flex: 1;
+}
+
+.track-submit-btn {
+  white-space: nowrap;
+}
+
+.track-status {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.track-status.success {
+  background: rgba(127, 176, 105, 0.1);
+  color: var(--accent-success);
+  border: 1px solid rgba(127, 176, 105, 0.2);
+}
+
+.track-status.error {
+  background: rgba(231, 76, 60, 0.1);
+  color: var(--accent-error);
+  border: 1px solid rgba(231, 76, 60, 0.2);
+}
+
+/* Game Settings */
+.game-settings {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  margin-bottom: var(--space-lg);
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+.settings-label {
+  font-weight: 500;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+}
+
+.settings-input {
+  width: 80px;
+  text-align: center;
+}
+
+/* Track Lists */
+.tracks-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.track-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.track-item:last-child {
+  border-bottom: none;
+}
+
+.track-item.played {
+  opacity: 0.6;
+}
+
+.track-item.played .track-title {
+  text-decoration: line-through;
+}
+
+.track-checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent-primary);
+}
+
+.track-title {
+  flex: 1;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+}
+
+.track-owner {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  font-style: italic;
+}
+
+/* Loading State */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  color: var(--text-secondary);
+  font-size: 1.125rem;
+}
+
+.loading-spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--bg-tertiary);
+  border-top: 2px solid var(--accent-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-right: var(--space-sm);
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Error States */
+.error-message {
+  background: rgba(231, 76, 60, 0.1);
+  color: var(--accent-error);
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(231, 76, 60, 0.2);
+  margin-bottom: var(--space-lg);
+  font-size: 0.875rem;
+}
+
+/* Success States */
+.success-message {
+  background: rgba(127, 176, 105, 0.1);
+  color: var(--accent-success);
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(127, 176, 105, 0.2);
+  margin-bottom: var(--space-lg);
+  font-size: 0.875rem;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .game-content {
+    grid-template-columns: 240px 1fr 240px;
+    gap: var(--space-md);
+    padding: var(--space-lg);
+  }
+}
+
+@media (max-width: 768px) {
+  .game-content {
+    grid-template-columns: 1fr;
+    gap: var(--space-md);
+    padding: var(--space-md);
+  }
+
+  .sidebar-panel {
+    order: 3;
+  }
+
+  .center-panel {
+    order: 1;
+  }
+
+  .game-header {
+    padding: var(--space-sm) var(--space-md);
+  }
+
+  .game-header-left {
+    gap: var(--space-md);
+  }
+
+  .game-title {
+    font-size: 1.25rem;
+  }
+
+  .game-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-xs);
+  }
+
+  .lobby {
+    padding: var(--space-lg);
+  }
+
+  .lobby-actions {
+    flex-direction: column;
+  }
+
+  .voting-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .settings-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-sm);
+  }
+}
+
+@media (max-width: 480px) {
+  .game-content {
+    padding: var(--space-sm);
+  }
+
+  .center-panel {
+    padding: var(--space-lg);
+  }
+
+  .sidebar-panel {
+    padding: var(--space-md);
+  }
+
+  .track-player-section {
+    padding: var(--space-lg);
+  }
+
+  .like-section {
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+}
+
+/* URL Preview Component */
+.url-preview-container {
+  width: 100%;
+}
+
+.url-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.url-input {
+  width: 100%;
+  padding-right: 120px;
+  transition: all var(--transition-normal);
+}
+
+.url-input.has-service {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px rgba(232, 180, 160, 0.1);
+}
+
+.url-input.valid {
+  border-color: var(--accent-success);
+}
+
+.url-input.invalid {
+  border-color: var(--accent-error);
+}
+
+.service-indicator {
+  position: absolute;
+  right: var(--space-sm);
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: white;
+  backdrop-filter: blur(10px);
+}
+
+.service-logo {
+  width: 16px;
+  height: 16px;
+  filter: brightness(0) invert(1);
+}
+
+.service-name {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.url-error {
+  color: var(--accent-error);
+  font-size: 0.75rem;
+  margin-top: var(--space-xs);
+  padding-left: var(--space-sm);
+}
+
+.url-preview {
+  margin-top: var(--space-md);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.preview-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.preview-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+}
+
+.preview-info {
+  flex: 1;
+}
+
+.preview-info .service-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  margin-bottom: var(--space-xs);
+}
+
+.track-url {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  word-break: break-all;
+}
+
+/* Number Input Component */
+.number-input-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.number-input-label {
+  font-weight: 500;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+}
+
+.number-input-wrapper {
+  display: flex;
+  align-items: center;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: all var(--transition-normal);
+}
+
+.number-input-wrapper.focused {
+  border-color: var(--input-focus);
+  box-shadow: 0 0 0 3px rgba(232, 180, 160, 0.1);
+}
+
+.number-input-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-tertiary);
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  min-width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+}
+
+.number-input-btn:hover:not(.disabled) {
+  background: var(--accent-primary);
+  color: var(--bg-primary);
+}
+
+.number-input-btn.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.number-input-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.number-input-field {
+  flex: 1;
+  border: none;
+  background: transparent;
+  text-align: center;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  padding: var(--space-md);
+  min-width: 0;
+}
+
+.number-input-field:focus {
+  outline: none;
+}
+
+.number-input-field::-webkit-outer-spin-button,
+.number-input-field::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.number-input-field[type=number] {
+  -moz-appearance: textfield;
+}
+
+/* Number Input Sizes */
+.number-input-container.small .number-input-btn {
+  min-width: 40px;
+  height: 40px;
+}
+
+.number-input-container.small .number-input-field {
+  font-size: 1rem;
+  padding: var(--space-sm);
+}
+
+.number-input-container.large .number-input-btn {
+  min-width: 56px;
+  height: 56px;
+}
+
+.number-input-container.large .number-input-field {
+  font-size: 1.25rem;
+  padding: var(--space-lg);
+}
+
+/* Track Components */
+.track-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.track-title {
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  font-weight: 500;
+  margin-bottom: var(--space-xs);
+  word-break: break-word;
+}
+
+.track-owner {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  font-style: italic;
+}
+
+.track-status {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.track-likes {
+  font-size: 0.75rem;
+  color: var(--accent-primary);
+  font-weight: 600;
+  margin-left: var(--space-sm);
+  flex-shrink: 0;
+}
+
+.track-item.played .track-title {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+.track-item.played .track-status {
+  color: var(--accent-success);
+}
+
+.track-service-logo {
+  width: 20px;
+  height: 20px;
+  margin-right: var(--space-sm);
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
 }

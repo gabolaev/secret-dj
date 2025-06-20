@@ -4,98 +4,117 @@ interface TrackPlayerProps {
   url: string;
 }
 
-// Function to resolve redirecting URLs, e.g. from link.deezer.com
+// This function is a placeholder. In a real-world scenario, to avoid CORS issues
+// and reliably resolve redirecting URLs (like link.deezer.com or spotify.link),
+// you would implement a backend endpoint that handles the URL fetching.
 async function resolveUrl(url: string): Promise<string> {
-    // In a real app, this might be an API call to a backend to avoid CORS issues
-    // For this component, we'll assume a simple fetch can resolve it if needed.
-    // This is a simplified placeholder.
-    if (url.includes('link.deezer.com') || url.includes('spotify.link')) {
-        try {
-            // This will likely fail in the browser due to CORS.
-            // A backend endpoint is the proper solution.
-            const response = await fetch(`/resolve-url?url=${encodeURIComponent(url)}`);
-            if (!response.ok) throw new Error('Network response was not ok');
-            const data = await response.json();
-            return data.resolvedUrl;
-        } catch (error) {
-            console.error("Could not resolve URL:", error);
-            // Fallback to original URL if resolution fails
-            return url;
-        }
-    }
+    console.log(`Resolving URL: ${url}`);
+    // For now, we'll just return the original URL, as client-side fetching is unreliable.
     return url;
 }
 
 export const TrackPlayer: React.FC<TrackPlayerProps> = ({ url }) => {
-  const [embedUrl, setEmbedUrl] = useState<string | null>(null);
+  const [embedConfig, setEmbedConfig] = useState<{ src: string; height: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const generateEmbedUrl = async (trackUrl: string) => {
+    const generateEmbed = async (trackUrl: string) => {
       try {
         const resolvedUrl = await resolveUrl(trackUrl);
-        let finalEmbedUrl: string | null = null;
+        let config: { src: string; height: string } | null = null;
 
-        if (resolvedUrl.includes('youtube.com') || resolvedUrl.includes('youtu.be')) {
-          const videoId = new URL(resolvedUrl).searchParams.get('v') || resolvedUrl.split('/').pop();
-          finalEmbedUrl = `https://www.youtube.com/embed/${videoId}`;
+        const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/]{11})/;
+        const youtubeMatch = resolvedUrl.match(youtubeRegex);
+
+        if (youtubeMatch && youtubeMatch[1]) {
+          const videoId = youtubeMatch[1];
+          config = {
+            src: `https://www.youtube-nocookie.com/embed/${videoId}`,
+            height: '315'
+          };
         } else if (resolvedUrl.includes('spotify.com')) {
           const spotifyUri = new URL(resolvedUrl).pathname.split('/').pop();
-          finalEmbedUrl = `https://open.spotify.com/embed/track/${spotifyUri}`;
+          config = {
+            src: `https://open.spotify.com/embed/track/${spotifyUri}`,
+            height: '152'
+          };
         } else if (resolvedUrl.includes('deezer.com')) {
           const deezerId = new URL(resolvedUrl).pathname.split('/').pop();
-          finalEmbedUrl = `https://widget.deezer.com/widget/dark/track/${deezerId}`;
+          config = {
+            src: `https://widget.deezer.com/widget/dark/track/${deezerId}`,
+            height: '152'
+          };
+        } else if (resolvedUrl.includes('soundcloud.com')) {
+          config = {
+            src: `https://w.soundcloud.com/player/?url=${encodeURIComponent(resolvedUrl)}&color=%23e8b4a0&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=true`,
+            height: '166'
+          };
         } else if (resolvedUrl.includes('apple.com')) {
-          // Apple Music links are often complex. This is a simplified pattern.
-          // e.g. https://music.apple.com/us/album/bohemian-rhapsody/1440841428?i=1440841433
           const urlObject = new URL(resolvedUrl);
-          const pathParts = urlObject.pathname.split('/');
-          const country = pathParts[1];
+          const country = urlObject.pathname.split('/')[1] || 'us';
           const i = urlObject.searchParams.get('i');
-          if (country && i) {
-            finalEmbedUrl = `https://embed.music.apple.com/${country}/album/a/0?i=${i}`;
+          if (i) {
+            // Simplified embed URL for Apple Music
+            config = {
+              src: `https://embed.music.apple.com/${country}/album/_?i=${i}`,
+              height: '170'
+            };
           }
         } else if (resolvedUrl.includes('music.yandex.ru')) {
           const pathParts = resolvedUrl.split('/');
           const albumId = pathParts[pathParts.indexOf('album') + 1];
           const trackId = pathParts[pathParts.indexOf('track') + 1];
-          finalEmbedUrl = `https://music.yandex.ru/iframe/#track/${trackId}/${albumId}/`;
+          config = {
+            src: `https://music.yandex.ru/iframe/#track/${trackId}/${albumId}/`,
+            height: '152'
+          };
         }
 
-        if (finalEmbedUrl) {
-          setEmbedUrl(finalEmbedUrl);
+        if (config) {
+          setEmbedConfig(config);
           setError(null);
         } else {
           setError('Unsupported music service or invalid URL.');
-          setEmbedUrl(null);
+          setEmbedConfig(null);
         }
-      } catch {
+      } catch (e) {
+        console.error("Error parsing URL: ", e);
         setError('Could not parse or load the provided URL.');
-        setEmbedUrl(null);
+        setEmbedConfig(null);
       }
     };
 
-    generateEmbedUrl(url);
+    generateEmbed(url);
   }, [url]);
 
   if (error) {
-    return <div style={{ color: 'red' }}>Error: {error}</div>;
+    return <div className="error-message">{error}</div>;
   }
 
-  if (!embedUrl) {
-    return <div>Loading player...</div>;
+  if (!embedConfig) {
+    return (
+        <div className="loading">
+            <div className="loading-spinner"></div>
+            Loading player...
+        </div>
+    );
   }
 
   return (
     <iframe
       title="Track Player"
-      src={embedUrl}
+      src={embedConfig.src}
       width="100%"
-      height="380"
+      height={embedConfig.height}
       frameBorder="0"
       allow="encrypted-media; clipboard-write; fullscreen; picture-in-picture"
+      sandbox="allow-scripts allow-same-origin allow-presentation"
       allowFullScreen
-      style={{ minHeight: '120px' }}
+      style={{ 
+        minHeight: '150px', 
+        borderRadius: 'var(--radius-lg)',
+        boxShadow: 'var(--shadow-lg)'
+      }}
     ></iframe>
   );
 }; 
