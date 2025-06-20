@@ -3,7 +3,7 @@ name: Build and push to Docker Hub
 on:
   push:
     branches:
-      - master
+      - main
   workflow_dispatch:
 
 jobs:
@@ -24,7 +24,9 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}
+          images: ${{ vars.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}
+          tags: |
+            type=raw,value=latest
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
