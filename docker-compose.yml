@@ -1,0 +1,12 @@
+services:
+  game_app:
+    # This tells Docker Compose to build the image from the Dockerfile
+    # in the current directory, instead of pulling it from a registry.
+    build: .
+    container_name: music_guesser_app_local
+    ports:
+      - "4000:4000"
+    environment:
+      # We run in production mode to test the final build, but you could
+      # change this to 'development' if you had a separate dev setup.
+      - NODE_ENV=production 

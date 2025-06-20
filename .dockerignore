@@ -1,0 +1,18 @@
+# Git
+.git
+.gitignore
+
+# GitHub
+.github
+
+# Node
+node_modules
+npm-debug.log
+
+# Build artifacts
+dist
+build
+.env
+.DS_Store
+*.pem
+*.key
