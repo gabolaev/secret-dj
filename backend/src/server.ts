@@ -5,6 +5,7 @@ import cors from 'cors';
 import path from 'path';
 import { GameManager } from './gameManager.js';
 import { GameState, GameSettings } from '../../common/types.js';
+import fetch from 'node-fetch';
 
 const app = express();
 const server = http.createServer(app);
@@ -30,6 +31,22 @@ if (process.env.NODE_ENV === 'production') {
 
     // Serve static files from the React app
     app.use(express.static(frontendDistPath));
+
+    app.get('/resolve-url', async (req, res) => {
+        const urlToResolve = req.query.url;
+
+        if (typeof urlToResolve !== 'string') {
+            return res.status(400).json({ error: 'URL parameter is missing or invalid.' });
+        }
+
+        try {
+            const response = await fetch(urlToResolve, { redirect: 'follow' });
+            res.json({ resolvedUrl: response.url });
+        } catch (error) {
+            console.error('Error resolving URL:', error);
+            res.status(500).json({ error: 'Failed to resolve URL.' });
+        }
+    });
 
     // The "catchall" handler: for any request that doesn't
     // match one above, send back React's index.html file.

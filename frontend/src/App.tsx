@@ -5,6 +5,7 @@ import { io, Socket } from 'socket.io-client'
 import type { GameState } from '../../common/types'
 import { PlayedTracksList } from './PlayedTracksList'
 import { MyTracksList } from './MyTracksList'
+import { TrackPlayer } from './TrackPlayer'
 // Define a type for socket responses
 type SocketResponse = { success: boolean; [key: string]: unknown }
 import './App.css'
@@ -303,16 +304,13 @@ function App() {
         <div className="game-round-in-progress">
           <h2>Round in Progress</h2>
           <p>Listen to the track and guess who submitted it!</p>
-          {gameState.currentRoundData?.track.url && (
-            <audio controls autoPlay src={gameState.currentRoundData.track.url} />
-          )}
-          {/* LIKE BUTTON */}
-          <div style={{ marginTop: 16, marginBottom: 8 }}>
-            <button
-              onClick={handleLikeTrack}
-              disabled={isMyTrack || hasLiked || likeLoading}
-              style={{ marginRight: 8 }}
-            >
+          <h3>Currently Playing</h3>
+          {gameState.currentRoundData?.track?.url ? (
+            <TrackPlayer url={gameState.currentRoundData.track.url} />
+          ) : <p>Track is loading...</p>}
+
+          <div className="like-section">
+            <button onClick={handleLikeTrack} disabled={likeLoading || hasLiked}>
               {hasLiked ? 'Liked!' : 'Like'}
             </button>
             <span>{likeCount} {likeCount === 1 ? 'like' : 'likes'}</span>
