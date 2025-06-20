@@ -49,6 +49,8 @@ export interface RoundData {
     };
 }
 
+export type RoundResults = NonNullable<RoundData['results']>;
+
 // Game entity
 export interface Game {
     id: string;
@@ -78,7 +80,14 @@ export interface GameState {
     players: PublicPlayer[];
     gameSettings: GameSettings;
     gamePhase: GamePhase;
-    currentRoundData?: Omit<RoundData, 'ownerUsername'> & { ownerUsername?: string }; // ownerUsername only revealed in results
+    currentRoundData?: {
+        track: Track;
+        ownerUsername?: string; // Hidden until results are shown
+        results?: RoundResults;
+        likes?: Record<string, boolean>;
+        votesCast?: number;
+        totalVoters?: number;
+    };
     playedTrackIds: string[];
     playedTracks: PlayedTrack[];
     leaderboard: Array<{ username: string; points: number }>;

@@ -64,19 +64,16 @@ function log(...args: any[]) {
 }
 
 function emitGameState(gameId: string) {
-    const game = gameManager.getGame(gameId);
-    if (!game) return;
+    const roomSockets = io.sockets.adapter.rooms.get(gameId);
+    if (!roomSockets) return;
 
-    // Emit a personalized state to each player
-    for (const player of Object.values(game.players)) {
-        if (player.isConnected) {
-            const state = gameManager.getGameState(gameId, player.username);
-            // Find the socket for this player
-            for (const [socketId, info] of gameManager.socketToUsername.entries()) {
-                if (info.gameId === gameId && info.username === player.username) {
-                    io.to(socketId).emit('gameState', state);
-                    log(`Emitted personalized gameState to ${player.username} (${socketId})`);
-                }
+    for (const socketId of roomSockets) {
+        const socket = io.sockets.sockets.get(socketId);
+        if (socket && socket.data.username) {
+            const personalizedGameState = gameManager.getGameState(gameId, socket.data.username);
+            if (personalizedGameState) {
+                socket.emit('gameState', personalizedGameState);
+                console.log(`[Server] Emitted personalized gameState to ${socket.data.username} (${socket.id})`);
             }
         }
     }
@@ -94,6 +91,7 @@ io.on('connection', (socket: Socket) => {
         try {
             const game = gameManager.createGame(username, settings);
             socket.join(game.id);
+            socket.data.username = username;
             gameManager.socketToUsername.set(socket.id, { gameId: game.id, username });
             emitGameState(game.id);
             cb({ success: true, gameId: game.id });
@@ -117,6 +115,7 @@ io.on('connection', (socket: Socket) => {
                 return;
             }
             socket.join(gameId);
+            socket.data.username = username;
             gameManager.socketToUsername.set(socket.id, { gameId, username });
             emitGameState(gameId);
             cb({ success: true });
@@ -136,6 +135,7 @@ io.on('connection', (socket: Socket) => {
         try {
             gameManager.reconnectPlayer(gameId, username);
             socket.join(gameId);
+            socket.data.username = username;
             gameManager.socketToUsername.set(socket.id, { gameId, username });
             emitGameState(gameId);
             cb({ success: true });

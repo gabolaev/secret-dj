@@ -157,6 +157,21 @@ function App() {
     })
   }
 
+  const handleReturnToLobby = () => {
+    const s = getSocket();
+    s.emit('leaveGame', { gameId, username }, (res: SocketResponse) => {
+      if (!res.success) {
+        console.error('Failed to leave game on backend, but leaving on client anyway');
+      }
+    });
+    localStorage.removeItem('gameId');
+    localStorage.removeItem('username');
+    setGameId('');
+    setUsername('');
+    setGameState(null);
+    setMode('lobby');
+  };
+
   // Auto-reconnect on mount if gameId and username are in localStorage
   useEffect(() => {
     const savedGameId = localStorage.getItem('gameId')
@@ -178,13 +193,16 @@ function App() {
 
   // Sync local vote state with game state
   useEffect(() => {
-    if (gameState?.gamePhase === 'RoundInProgress' && gameState.currentRoundData?.votes) {
-      const myVote = gameState.currentRoundData.votes[username];
-      if (myVote) {
-        setVote(myVote);
+    if (gameState?.gamePhase === 'RoundInProgress') {
+      // Since we don't get the votes object anymore, we can't sync the vote.
+      // The server will remember the vote. We can clear our local state
+      // when a new round starts.
+      if (gameState.currentRoundData?.track.id !== localStorage.getItem('lastVotedTrackId')) {
+          setVote('');
+          localStorage.setItem('lastVotedTrackId', gameState.currentRoundData?.track.id || '');
       }
     }
-  }, [gameState, username]);
+  }, [gameState]);
 
   if (mode === 'loading') {
     return <div>Loading...</div>
@@ -232,244 +250,258 @@ function App() {
         return null;
     };
 
-    // LOBBY PHASE
-    if (gameState.gamePhase === 'Lobby') {
-      return (
-        <div className="game-lobby">
-          <h2>Lobby: Game ID {gameState.id}</h2>
-          <h3>Players</h3>
-          <ul>
-            {gameState.players.map((p) => (
-              <li key={p.username}>
-                {p.username} {p.isAdmin && '(Admin)'} {p.isConnected ? '' : '(Disconnected)'}
-                {' - '}
-                Tracks: {p.trackCount}/{gameState.gameSettings.tracksPerPlayer}
-                {p.ready ? ' ✅' : ''}
-              </li>
-            ))}
-          </ul>
-          <h3>Submit Your Tracks</h3>
-          <input
-            type="text"
-            placeholder="Track URL"
-            value={trackUrl}
-            onChange={e => setTrackUrl(e.target.value)}
-            disabled={me && me.tracks && me.tracks.length >= gameState.gameSettings.tracksPerPlayer}
-          />
-          <button
-            onClick={handleSubmitTrack}
-            disabled={!trackUrl || !trackUrl.startsWith('http') || (me && me.tracks && me.tracks.length >= gameState.gameSettings.tracksPerPlayer)}
-          >
-            Submit Track
-          </button>
-          {renderMyTracks()}
-          {me && me.tracks && me.tracks.length >= gameState.gameSettings.tracksPerPlayer && (
-            <div style={{ color: 'green', marginTop: 10 }}>All your tracks submitted! Waiting for others...</div>
-          )}
-          {me && (!me.tracks || me.tracks.length < gameState.gameSettings.tracksPerPlayer) && error && (
-            <div style={{ color: 'red' }}>{error}</div>
-          )}
-          <div style={{ marginTop: 20 }}>
-            <strong>Game Settings:</strong> Tracks per player:
+    const renderCurrentPhase = () => {
+      // LOBBY PHASE
+      if (gameState.gamePhase === 'Lobby') {
+        return (
+          <div className="game-lobby">
+            <h2>Lobby: Game ID {gameState.id}</h2>
+            <h3>Players</h3>
+            <ul>
+              {gameState.players.map((p) => (
+                <li key={p.username}>
+                  {p.username} {p.isAdmin && '(Admin)'} {p.isConnected ? '' : '(Disconnected)'}
+                  {' - '}
+                  Tracks: {p.trackCount}/{gameState.gameSettings.tracksPerPlayer}
+                  {p.ready ? ' ✅' : ''}
+                </li>
+              ))}
+            </ul>
+            <h3>Submit Your Tracks</h3>
             <input
-              type="number"
-              min={1}
-              value={gameState.gameSettings.tracksPerPlayer}
-              onChange={e => isAdmin && handleChangeTracksPerPlayer(Number(e.target.value))}
-              style={{ marginLeft: 8, width: 40 }}
-              disabled={!isAdmin}
+              type="text"
+              placeholder="Track URL"
+              value={trackUrl}
+              onChange={e => setTrackUrl(e.target.value)}
+              disabled={me && me.tracks && me.tracks.length >= gameState.gameSettings.tracksPerPlayer}
             />
-            {isAdmin && (
-              <button
-                onClick={handleStartGame}
-                disabled={!allReady}
-                style={{ marginLeft: 8 }}
-              >
-                Start Game
-              </button>
-            )}
-          </div>
-        </div>
-      )
-    }
-    // ROUND IN PROGRESS
-    if (gameState.gamePhase === 'RoundInProgress' && gameState.currentRoundData) {
-      const hasVoted = !!(gameState.currentRoundData.votes && gameState.currentRoundData.votes[username]);
-      const isMyTrack = me && me.tracks && me.tracks.some(t => t.id === gameState.currentRoundData?.track.id);
-      const hasLiked = !!gameState.currentRoundData.likes?.[username];
-      const likeCount = Object.keys(gameState.currentRoundData.likes || {}).length;
-      const likers = Object.keys(gameState.currentRoundData.likes || {});
-
-      return (
-        <div className="game-round-in-progress">
-          <h2>Round in Progress</h2>
-          <p>Listen to the track and guess who submitted it!</p>
-          <h3>Currently Playing</h3>
-          {gameState.currentRoundData?.track?.url ? (
-            <TrackPlayer url={gameState.currentRoundData.track.url} />
-          ) : <p>Track is loading...</p>}
-
-          <div className="like-section">
-            <button onClick={handleLikeTrack} disabled={likeLoading || hasLiked}>
-              {hasLiked ? 'Liked!' : 'Like'}
+            <button
+              onClick={handleSubmitTrack}
+              disabled={!trackUrl || !trackUrl.startsWith('http') || (me && me.tracks && me.tracks.length >= gameState.gameSettings.tracksPerPlayer)}
+            >
+              Submit Track
             </button>
-            <span>{likeCount} {likeCount === 1 ? 'like' : 'likes'}</span>
-            {likers.length > 0 && (
-              <span style={{ marginLeft: 8, color: '#888', fontSize: '0.9em' }}>
-                ({likers.join(', ')})
-              </span>
+            {renderMyTracks()}
+            {me && me.tracks && me.tracks.length >= gameState.gameSettings.tracksPerPlayer && (
+              <div style={{ color: 'green', marginTop: 10 }}>All your tracks submitted! Waiting for others...</div>
             )}
-          </div>
-          {/* VOTE */}
-          <div style={{ marginTop: 20 }}>
-            <strong>Vote for a player:</strong>
-            {isMyTrack ? (
-                <div style={{ color: 'blue' }}>This is your track, just enjoy it!</div>
-            ) : (
-              <>
-                <select value={vote} onChange={e => setVote(e.target.value)}>
-                  <option value="">-- Select a player --</option>
-                  {gameState.players
-                    .filter(p => p.username !== username)
-                    .map(p => (
-                      <option key={p.username} value={p.username}>
-                        {p.username}
-                      </option>
-                    ))}
-                </select>
-                <button onClick={handleVote} disabled={!vote}>
-                  {hasVoted ? 'Change Vote' : 'Submit Vote'}
+            {me && (!me.tracks || me.tracks.length < gameState.gameSettings.tracksPerPlayer) && error && (
+              <div style={{ color: 'red' }}>{error}</div>
+            )}
+            <div style={{ marginTop: 20 }}>
+              <strong>Game Settings:</strong> Tracks per player:
+              <input
+                type="number"
+                min={1}
+                value={gameState.gameSettings.tracksPerPlayer}
+                onChange={e => isAdmin && handleChangeTracksPerPlayer(Number(e.target.value))}
+                style={{ marginLeft: 8, width: 40 }}
+                disabled={!isAdmin}
+              />
+              {isAdmin && (
+                <button
+                  onClick={handleStartGame}
+                  disabled={!allReady}
+                  style={{ marginLeft: 8 }}
+                >
+                  Start Game
                 </button>
-                {hasVoted && (
-                    <div style={{ color: 'green', marginTop: '0.5em' }}>
-                        Your vote is for: <strong>{vote}</strong>
-                    </div>
-                )}
-              </>
-            )}
+              )}
+            </div>
           </div>
-          {renderMyTracks()}
-        </div>
-      )
-    }
-    // VOTES TALLIED
-    if (gameState.gamePhase === 'VotesTallied') {
-      return (
-        <div className="game-votes-tallied">
-          <h2>Votes are in!</h2>
-          <p>All eligible players have voted.</p>
-          {isAdmin && (
-            <button onClick={handleRevealResults}>Reveal Results</button>
-          )}
-          {!isAdmin && <p>Waiting for admin to reveal results...</p>}
-          {renderMyTracks()}
-        </div>
-      )
-    }
-    // ROUND RESULTS
-    if (gameState.gamePhase === 'RoundResults' && gameState.currentRoundData && gameState.currentRoundData.results) {
-      const { results } = gameState.currentRoundData
-      const isLastRound = gameState.playedTrackIds.length === gameState.players.reduce((acc, p) => acc + p.trackCount, 0);
-      return (
-        <div className="game-round-results">
-          <h2>Round Results</h2>
-          <p>
-            The song was submitted by <strong>{results.correctOwner}</strong>
-          </p>
-          <h3>Votes</h3>
-          <ul>
-            {results.votes.map(v => (
-              <li key={v.voter}>
-                {v.voter} guessed {v.guessed} - {v.correct ? '✅' : '❌'}
-              </li>
-            ))}
-          </ul>
-          <h3>Likes</h3>
-          <div>
-            {results.likeCount || 0} {results.likeCount === 1 ? 'like' : 'likes'}
-            {results.likers && results.likers.length > 0 && (
-              <span style={{ marginLeft: 8, color: '#888', fontSize: '0.9em' }}>
-                ({results.likers.join(', ')})
-              </span>
-            )}
-          </div>
-          <h3>Points Awarded</h3>
-          <ul>
-            {Object.entries(results.pointsAwarded).map(([user, points]) => (
-              <li key={user}>
-                {user}: +{points}
-              </li>
-            ))}
-          </ul>
-          {isAdmin && (
-            <button onClick={handleNextRound}>{isLastRound ? 'Finish Game' : 'Next Round'}</button>
-          )}
-          {!isAdmin && <p>Waiting for admin to start the next round...</p>}
-          <PlayedTracksList playedTracks={gameState.playedTracks} />
-          {renderMyTracks()}
-        </div>
-      )
-    }
-    // AWAITING NEXT ROUND
-    if (gameState.gamePhase === 'AwaitingNextRound') {
-      return (
-        <div className="awaiting-next-round">
-          <h2>Awaiting Next Round</h2>
-          {isAdmin ? (
-            <button onClick={handleNextRound}>Next Round</button>
-          ) : (
-            <div>Waiting for admin to start the next round...</div>
-          )}
-        </div>
-      )
-    }
-    // GAME FINISHED
-    if (gameState.gamePhase === 'GameFinished') {
-      // Most Liked Leaderboard
-      const likeLeaderboard = Object.values(gameState.players).map(p => ({
-        username: p.username,
-        likeCount: gameState.playedTracks.filter(pt => pt.ownerUsername === p.username).reduce((acc, pt) => acc + (pt.likes?.length || 0), 0)
-      })).sort((a, b) => b.likeCount - a.likeCount)
+        )
+      }
+      // ROUND IN PROGRESS
+      if (gameState.gamePhase === 'RoundInProgress' && gameState.currentRoundData) {
+        const isMyTrack = !!me?.tracks?.some(t => t.id === gameState.currentRoundData?.track.id);
+        const hasLiked = !!gameState.currentRoundData.likes?.[username];
+        const likeCount = Object.keys(gameState.currentRoundData.likes || {}).length;
+        const likers = Object.keys(gameState.currentRoundData.likes || {});
 
+        return (
+          <div className="game-round-in-progress">
+            <h2>Round in Progress</h2>
+            <p>Listen to the track and guess who submitted it!</p>
+            <h3>Currently Playing</h3>
+            {gameState.currentRoundData?.track?.url ? (
+              <TrackPlayer url={gameState.currentRoundData.track.url} />
+            ) : <p>Track is loading...</p>}
+
+            <div className="like-section">
+              <button onClick={handleLikeTrack} disabled={likeLoading || hasLiked || isMyTrack}>
+                {hasLiked ? 'Liked!' : 'Like'}
+              </button>
+              {gameState.currentRoundData.likes && (
+                <>
+                  <span>{likeCount} {likeCount === 1 ? 'like' : 'likes'}</span>
+                  {likers.length > 0 && (
+                    <span style={{ marginLeft: 8, color: '#888', fontSize: '0.9em' }}>
+                      ({likers.join(', ')})
+                    </span>
+                  )}
+                </>
+              )}
+            </div>
+            {/* VOTE */}
+            <div style={{ marginTop: 20 }}>
+              <strong>Vote for a player:</strong>
+              {isMyTrack ? (
+                  <div style={{ color: 'blue' }}>This is your track, just enjoy it!</div>
+              ) : (
+                <>
+                  <select value={vote} onChange={e => setVote(e.target.value)}>
+                    <option value="">-- Select a player --</option>
+                    {gameState.players
+                      .filter(p => p.username !== username)
+                      .map(p => (
+                        <option key={p.username} value={p.username}>
+                          {p.username}
+                        </option>
+                      ))}
+                  </select>
+                  <button onClick={handleVote} disabled={!vote}>
+                    Submit Vote
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* VOTE COUNTER */}
+            {gameState.currentRoundData && typeof gameState.currentRoundData.votesCast === 'number' && typeof gameState.currentRoundData.totalVoters === 'number' && (
+              <div className="vote-counter" style={{ marginTop: '1em', fontWeight: 'bold' }}>
+                Votes: {gameState.currentRoundData.votesCast} / {gameState.currentRoundData.totalVoters}
+              </div>
+            )}
+
+            {renderMyTracks()}
+          </div>
+        )
+      }
+      // VOTES TALLIED
+      if (gameState.gamePhase === 'VotesTallied') {
+        return (
+          <div className="game-votes-tallied">
+            <h2>Votes are in!</h2>
+            <p>All eligible players have voted.</p>
+            {isAdmin && (
+              <button onClick={handleRevealResults}>Reveal Results</button>
+            )}
+            {!isAdmin && <p>Waiting for admin to reveal results...</p>}
+            {renderMyTracks()}
+          </div>
+        )
+      }
+      // ROUND RESULTS
+      if (gameState.gamePhase === 'RoundResults' && gameState.currentRoundData && gameState.currentRoundData.results) {
+        const { results } = gameState.currentRoundData
+        const isLastRound = gameState.playedTrackIds.length === gameState.players.reduce((acc, p) => acc + p.trackCount, 0);
+        return (
+          <div className="game-round-results">
+            <h2>Round Results</h2>
+            <p>
+              The song was submitted by <strong>{results.correctOwner}</strong>
+            </p>
+            <h3>Votes</h3>
+            <ul>
+              {results.votes.map(v => (
+                <li key={v.voter}>
+                  {v.voter} guessed {v.guessed} - {v.correct ? '✅' : '❌'}
+                </li>
+              ))}
+            </ul>
+            <h3>Likes</h3>
+            <div>
+              {results.likeCount || 0} {results.likeCount === 1 ? 'like' : 'likes'}
+              {results.likers && results.likers.length > 0 && (
+                <span style={{ marginLeft: 8, color: '#888', fontSize: '0.9em' }}>
+                  ({results.likers.join(', ')})
+                </span>
+              )}
+            </div>
+            <h3>Points Awarded</h3>
+            <ul>
+              {Object.entries(results.pointsAwarded).map(([user, points]) => (
+                <li key={user}>
+                  {user}: +{points}
+                </li>
+              ))}
+            </ul>
+            {isAdmin && (
+              <button onClick={handleNextRound}>{isLastRound ? 'Finish Game' : 'Next Round'}</button>
+            )}
+            {!isAdmin && <p>Waiting for admin to start the next round...</p>}
+            <PlayedTracksList playedTracks={gameState.playedTracks} />
+            {renderMyTracks()}
+          </div>
+        )
+      }
+      // AWAITING NEXT ROUND
+      if (gameState.gamePhase === 'AwaitingNextRound') {
+        return (
+          <div className="awaiting-next-round">
+            <h2>Awaiting Next Round</h2>
+            {isAdmin ? (
+              <button onClick={handleNextRound}>Next Round</button>
+            ) : (
+              <div>Waiting for admin to start the next round...</div>
+            )}
+          </div>
+        )
+      }
+      // GAME FINISHED
+      if (gameState.gamePhase === 'GameFinished') {
+        // Most Liked Leaderboard
+        const likeLeaderboard = Object.values(gameState.players).map(p => ({
+          username: p.username,
+          likeCount: gameState.playedTracks.filter(pt => pt.ownerUsername === p.username).reduce((acc, pt) => acc + (pt.likes?.length || 0), 0)
+        })).sort((a, b) => b.likeCount - a.likeCount)
+
+        return (
+          <div className="game-finished">
+            <h2>Game Over!</h2>
+            <h3>Final Leaderboard</h3>
+            <ul>
+              {gameState.leaderboard.sort((a, b) => b.points - a.points).map(p => (
+                <li key={p.username}>
+                  {p.username}: {p.points} points
+                </li>
+              ))}
+            </ul>
+            <h3>Most Liked Songs Leaderboard</h3>
+            <ul>
+              {likeLeaderboard.map(entry => (
+                <li key={entry.username}>
+                  {entry.username}: {entry.likeCount} {entry.likeCount === 1 ? 'like' : 'likes'}
+                </li>
+              ))}
+            </ul>
+            <PlayedTracksList playedTracks={gameState.playedTracks} />
+            {renderMyTracks()}
+          </div>
+        )
+      }
+      // Fallback
       return (
-        <div className="game-finished">
-          <h2>Game Over!</h2>
-          <h3>Final Leaderboard</h3>
-          <ul>
-            {gameState.leaderboard.sort((a, b) => b.points - a.points).map(p => (
-              <li key={p.username}>
-                {p.username}: {p.points} points
-              </li>
-            ))}
-          </ul>
-          <h3>Most Liked Songs Leaderboard</h3>
-          <ul>
-            {likeLeaderboard.map(entry => (
-              <li key={entry.username}>
-                {entry.username}: {entry.likeCount} {entry.likeCount === 1 ? 'like' : 'likes'}
-              </li>
-            ))}
-          </ul>
-          <PlayedTracksList playedTracks={gameState.playedTracks} />
-          {renderMyTracks()}
-          <button onClick={() => {
-            localStorage.removeItem('gameId');
-            localStorage.removeItem('username');
-            setGameId('');
-            setUsername('');
-            setGameState(null);
-            setMode('lobby');
-          }}>Return to Lobby</button>
+        <div>
+          Game UI goes here
+          <pre>{JSON.stringify({ mode, gameState }, null, 2)}</pre>
         </div>
       )
     }
-    // Fallback
+
     return (
-      <div>
-        Game UI goes here
-        <pre>{JSON.stringify({ mode, gameState }, null, 2)}</pre>
+      <div className="game-container">
+        <header className="game-header-bar">
+          <div>
+            <strong>Game:</strong> {gameState.id} | <strong>Player:</strong> {username}
+          </div>
+          <button onClick={handleReturnToLobby}>Exit to Lobby</button>
+        </header>
+        <div className="game-phase-content">
+          {renderCurrentPhase()}
+        </div>
       </div>
-    )
+    );
   }
 
   // Fallback: If in game mode but no gameState, show the lobby screen

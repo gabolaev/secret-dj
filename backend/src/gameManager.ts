@@ -112,41 +112,63 @@ export class GameManager {
     }
 
     // Convert internal Game to public GameState
-    getGameState(gameId: string, forUsername?: string): GameState | null {
+    getGameState(gameId: string, perspectiveOf?: string): GameState | null {
         const game = this.games.get(gameId);
         if (!game) return null;
 
-        // Build a safe-to-share player list
-        const publicPlayers: PublicPlayer[] = Object.values(game.players).map(p => {
-            const publicPlayer: PublicPlayer = {
-                username: p.username,
-                isAdmin: p.isAdmin,
-                isConnected: p.isConnected,
-                ready: p.tracks.length >= game.gameSettings.tracksPerPlayer,
-                trackCount: p.tracks.length,
-            };
-            // Only include the full track list for the player requesting the state
-            if (p.username === forUsername) {
-                publicPlayer.tracks = p.tracks;
-            }
-            return publicPlayer;
-        });
+        const players = Object.values(game.players).map(p => this.getPublicPlayer(p, game, perspectiveOf));
 
-        // Build leaderboard array from points
-        const leaderboard: Array<{ username: string; points: number }> = Object.keys(game.players).map(username => ({
-            username,
-            points: game.leaderboard ? game.leaderboard[username] || 0 : 0,
-        }));
+        let currentRoundDataForPlayer: GameState['currentRoundData'] | undefined = undefined;
+
+        if (game.currentRoundData) {
+            const { ownerUsername, likes, votes, ...restOfRoundData } = game.currentRoundData;
+            currentRoundDataForPlayer = { ...restOfRoundData };
+
+            // Add voting progress
+            if (game.gamePhase === 'RoundInProgress') {
+                currentRoundDataForPlayer.votesCast = Object.keys(votes).length;
+                currentRoundDataForPlayer.totalVoters = Object.keys(game.players).length - 1;
+            }
+
+            const isOwner = perspectiveOf === ownerUsername;
+            const resultsAreOut = game.gamePhase === 'RoundResults';
+
+            if (isOwner || resultsAreOut) {
+                currentRoundDataForPlayer.ownerUsername = ownerUsername;
+                currentRoundDataForPlayer.likes = likes;
+            }
+        }
+
         return {
             id: game.id,
-            players: publicPlayers,
+            players: players,
             gameSettings: game.gameSettings,
             gamePhase: game.gamePhase,
-            currentRoundData: game.currentRoundData ? { ...game.currentRoundData, ownerUsername: undefined } : undefined,
+            currentRoundData: currentRoundDataForPlayer,
             playedTrackIds: Array.from(game.playedTrackIds),
             playedTracks: game.playedTracks,
-            leaderboard,
+            leaderboard: this.getLeaderboard(game)
         };
+    }
+
+    private getPublicPlayer(player: Player, game: Game, perspectiveOf?: string): PublicPlayer {
+        const isSelf = player.username === perspectiveOf;
+        return {
+            username: player.username,
+            isAdmin: player.isAdmin,
+            isConnected: player.isConnected,
+            ready: player.tracks.length >= game.gameSettings.tracksPerPlayer,
+            trackCount: player.tracks.length,
+            ...(isSelf && { tracks: player.tracks }),
+        };
+    }
+
+    private getLeaderboard(game: Game): Array<{ username: string, points: number }> {
+        const leaderboard = game.leaderboard || {};
+        return Object.keys(game.players).map(username => ({
+            username,
+            points: leaderboard[username] || 0,
+        }));
     }
 
     // Player submits a track
