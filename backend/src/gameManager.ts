@@ -134,9 +134,10 @@ export class GameManager {
             const isOwner = perspectiveOf === ownerUsername;
             const resultsAreOut = game.gamePhase === 'RoundResults';
 
+            currentRoundDataForPlayer.likes = likes; // Always send likes
+
             if (isOwner || resultsAreOut) {
                 currentRoundDataForPlayer.ownerUsername = ownerUsername;
-                currentRoundDataForPlayer.likes = likes;
             }
         }
 
@@ -331,7 +332,14 @@ export class GameManager {
         if (username === game.currentRoundData.ownerUsername) return false;
         // Only allow liking if in RoundInProgress
         if (game.gamePhase !== 'RoundInProgress') return false;
-        game.currentRoundData.likes[username] = true;
+
+        if (game.currentRoundData.likes[username]) {
+            delete game.currentRoundData.likes[username];
+            log(`Player ${username} unliked a track in game ${gameId}`);
+        } else {
+            game.currentRoundData.likes[username] = true;
+            log(`Player ${username} liked a track in game ${gameId}`);
+        }
         return true;
     }
 

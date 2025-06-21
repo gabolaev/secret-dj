@@ -25,7 +25,7 @@ export function MyTracksList({ myTracks, playedTrackIds, showRemoveButtons = fal
 
     return (
         <ul className="tracks-list">
-            {myTracks.map((track) => {
+            {[...myTracks].reverse().map((track) => {
                 const isPlayed = playedTrackIds.includes(track.id);
                 const service = getMusicService(track.url);
 

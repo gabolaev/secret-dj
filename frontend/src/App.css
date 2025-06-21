@@ -234,9 +234,9 @@
 }
 
 .like-button {
-  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-  color: var(--bg-primary);
-  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--input-border);
   border-radius: var(--radius-lg);
   padding: var(--space-md) var(--space-xl);
   font-weight: 600;
@@ -244,20 +244,61 @@
   cursor: pointer;
   transition: all var(--transition-normal);
   min-width: 120px;
+  position: relative;
 }
 
-.like-button:hover:not(:disabled) {
+.like-button:hover:not(.liked):not(:disabled) {
   transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+@keyframes like-pulse {
+  0% {
+    transform: translateY(-2px) scale(1);
+  }
+
+  50% {
+    transform: translateY(-2px) scale(1.05);
+  }
+
+  100% {
+    transform: translateY(-2px) scale(1);
+  }
+}
+
+.like-button.liked {
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  color: var(--bg-primary);
+  border-color: transparent;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  animation: like-pulse 0.3s ease-out;
+}
+
+.like-button.liked::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  border-radius: var(--radius-lg);
+  z-index: -1;
+  opacity: 0.3;
+}
+
+.like-button.liked:hover:not(:disabled) {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: var(--shadow-xl);
 }
 
 .like-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
-}
-
-.like-button.liked {
-  background: linear-gradient(135deg, var(--accent-success), #6baa5a);
 }
 
 .like-count {
@@ -505,13 +546,21 @@
 
 .settings-row {
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-md);
 }
 
 .settings-label {
-  font-weight: 500;
   color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.settings-value {
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: var(--text-primary);
+  padding: 0 var(--space-md);
 }
 
 .number-input-group {
@@ -572,7 +621,7 @@
   padding: 0;
   margin: 0;
   display: flex;
-  flex-direction: column-reverse;
+  flex-direction: column;
   gap: var(--space-sm);
   min-width: 0;
 }
@@ -682,6 +731,15 @@
   }
 }
 
+.loading-spinner-small {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid #fff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
 /* Error States */
 .error-message,
 .success-message {
@@ -729,11 +787,14 @@
 /* Responsive Design */
 @media (max-width: 1200px) {
   .game-content {
-    grid-template-columns: 240px 1fr 240px;
+    grid-template-columns: 240px 1fr;
     gap: var(--space-md);
     padding: var(--space-lg);
     align-items: stretch;
-    gap: var(--space-sm);
+  }
+
+  .game-content:has(.sidebar-panel:last-child) {
+    grid-template-columns: 240px 1fr 240px;
   }
 
   .desktop-only {
@@ -768,7 +829,6 @@
     gap: var(--space-md);
     padding: var(--space-md);
     align-items: stretch;
-    gap: var(--space-sm);
   }
 
   .sidebar-panel {
@@ -831,11 +891,13 @@
 
 @media (max-width: 480px) {
   .game-content {
+    grid-template-columns: 1fr;
+    gap: var(--space-sm);
     padding: var(--space-sm);
   }
 
   .center-panel {
-    padding: var(--space-lg);
+    padding: var(--space-md);
   }
 
   .sidebar-panel {
@@ -1143,134 +1205,40 @@
   font-weight: 400;
 }
 
-.mobile-only {
+.game-content:has(.sidebar-panel:last-child) {
+  grid-template-columns: 240px 1fr 240px;
+}
+
+.desktop-only {
   display: none;
 }
 
-@media (max-width: 1200px) {
-  .game-content {
-    grid-template-columns: 240px 1fr 240px;
-    gap: var(--space-md);
-    padding: var(--space-lg);
-    align-items: stretch;
-    gap: var(--space-sm);
-  }
-
-  .desktop-only {
-    display: none;
-  }
-
-  .mobile-only {
-    display: inline;
-    font-size: 1.5rem;
-  }
-
-  .game-header-actions .btn-secondary {
-    min-width: 44px;
-    padding: var(--space-sm);
-  }
-
-  .settings-row .number-input-group {
-    width: 100%;
-    justify-content: space-between;
-  }
-
-  .settings-row .number-display {
-    flex-grow: 1;
-    text-align: center;
-    justify-content: center;
-  }
+.mobile-only {
+  display: inline;
+  font-size: 1.5rem;
 }
 
-@media (max-width: 768px) {
-  .game-content {
-    grid-template-columns: 1fr;
-    gap: var(--space-md);
-    padding: var(--space-md);
-    align-items: stretch;
-    gap: var(--space-sm);
-  }
-
-  .sidebar-panel {
-    order: 3;
-  }
-
-  .center-panel {
-    order: 1;
-    min-height: auto;
-  }
-
-  .game-header {
-    padding: var(--space-sm) var(--space-md);
-  }
-
-  .game-header-left {
-    gap: var(--space-md);
-  }
-
-  .game-title {
-    font-size: 1.25rem;
-  }
-
-  .game-info {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--space-xs);
-  }
-
-  .lobby {
-    padding: var(--space-lg);
-  }
-
-  .lobby-actions {
-    flex-direction: column;
-  }
-
-  .voting-form {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .settings-row {
-    flex-direction: column;
-    align-items: stretch;
-    gap: var(--space-sm);
-  }
-
-  .settings-row .number-input-group {
-    width: 100%;
-    justify-content: space-between;
-  }
-
-  .settings-row .number-display {
-    flex-grow: 1;
-    text-align: center;
-    justify-content: center;
-  }
+.game-header-actions .btn-secondary {
+  min-width: 44px;
+  padding: var(--space-sm);
 }
 
-@media (max-width: 480px) {
-  .game-content {
-    grid-template-columns: 1fr;
-    gap: var(--space-sm);
-    padding: var(--space-sm);
-  }
+.settings-row .number-input-group {
+  width: 100%;
+  justify-content: space-between;
+}
 
-  .center-panel {
-    padding: var(--space-md);
-  }
+.settings-row .number-display {
+  flex-grow: 1;
+  text-align: center;
+  justify-content: center;
+}
 
-  .sidebar-panel {
-    padding: var(--space-md);
-  }
-
-  .track-player-section {
-    padding: var(--space-md);
-  }
-
-  .like-section {
-    flex-direction: column;
-    align-items: stretch;
-    gap: var(--space-sm);
-  }
+.waiting-for-admin-message {
+  display: inline-block;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  padding: var(--space-md) var(--space-lg);
+  border-radius: var(--radius-md);
+  margin-top: var(--space-lg);
 }

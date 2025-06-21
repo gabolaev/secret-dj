@@ -40,7 +40,6 @@ function App() {
         console.error('Socket connection error:', err)
       })
       socket.on('gameState', (state: GameState) => {
-        console.log('Received gameState:', state)
         setGameState(state)
       })
     }
@@ -175,8 +174,12 @@ function App() {
     if (!gameState) return
     setLikeLoading(true)
     const s = getSocket()
-    s.emit('likeTrack', { gameId, username }, () => {
+    s.emit('likeTrack', { gameId, username }, (res: SocketResponse) => {
       setLikeLoading(false)
+      if (!res.success) {
+        setError(typeof res.error === 'string' ? res.error : 'Failed to like track')
+        setTimeout(() => setError(null), 3000)
+      }
     })
   }
 
@@ -360,25 +363,31 @@ function App() {
             <h3>Game Settings</h3>
             <div className="settings-row">
               <span className="settings-label">Tracks per player</span>
-              <div className="number-input-group">
-                <button
-                  className="number-input-btn"
-                  onClick={handleDecrementTracks}
-                  disabled={(gameState.gameSettings.tracksPerPlayer || 2) <= 1}
-                >
-                  &lt;
-                </button>
-                <div className="number-display">
+              {isAdmin ? (
+                <div className="number-input-group">
+                  <button
+                    className="number-input-btn"
+                    onClick={handleDecrementTracks}
+                    disabled={(gameState.gameSettings.tracksPerPlayer || 2) <= 1}
+                  >
+                    &lt;
+                  </button>
+                  <div className="number-display">
+                    {gameState.gameSettings.tracksPerPlayer || 2}
+                  </div>
+                  <button
+                    className="number-input-btn"
+                    onClick={handleIncrementTracks}
+                    disabled={(gameState.gameSettings.tracksPerPlayer || 2) >= 5}
+                  >
+                    &gt;
+                  </button>
+                </div>
+              ) : (
+                <div className="settings-value">
                   {gameState.gameSettings.tracksPerPlayer || 2}
                 </div>
-                <button
-                  className="number-input-btn"
-                  onClick={handleIncrementTracks}
-                  disabled={(gameState.gameSettings.tracksPerPlayer || 2) >= 5}
-                >
-                  &gt;
-                </button>
-              </div>
+              )}
             </div>
           </div>
         )}
@@ -528,14 +537,6 @@ function App() {
                 onRemoveTrack={handleRemoveTrack} 
               />
             </div>
-
-            {!isAdmin && (
-              <div className="text-center">
-                <button className="btn-primary btn-large" disabled>
-                  Waiting for players...
-                </button>
-              </div>
-            )}
           </div>
         )
       }
@@ -567,18 +568,26 @@ function App() {
               )}
 
               <div className="like-section">
-                <button 
-                  className={`like-button ${hasLiked ? 'liked' : ''}`}
-                  onClick={handleLikeTrack} 
-                  disabled={likeLoading || hasLiked || isMyTrack}
-                >
-                  {hasLiked ? '❤️ Liked!' : '🤍 Like'}
-                </button>
+                {!isMyTrack && (
+                  <button 
+                    className={`like-button ${hasLiked ? 'liked' : ''}`}
+                    onClick={handleLikeTrack} 
+                    disabled={likeLoading}
+                  >
+                    {likeLoading ? (
+                      <div className="loading-spinner-small"></div>
+                    ) : hasLiked ? (
+                      '❤️ LIKED!'
+                    ) : (
+                      '🤍 LIKE'
+                    )}
+                  </button>
+                )}
                 
-                {gameState.currentRoundData.likes && (
+                {gameState.currentRoundData.likes && likeCount > 0 && (
                   <div className="like-count">
                     {likeCount} {likeCount === 1 ? 'like' : 'likes'}
-                    {likers.length > 0 && (
+                    {isMyTrack && likers.length > 0 && (
                       <span className="likers-list">
                         ({likers.join(', ')})
                       </span>
@@ -589,10 +598,10 @@ function App() {
             </div>
 
             <div className="voting-section">
-              <h3 className="voting-title">Vote for a player</h3>
+              <h3 className="voting-title">Whose track is this?</h3>
               {isMyTrack ? (
                 <div className="success-message">
-                  This is your track! Just enjoy the music and see how others vote.
+                  This is your track! Just enjoy it and see how others vote.
                 </div>
               ) : (
                 <div className="voting-form">
@@ -704,30 +713,6 @@ function App() {
                 </div>
               </div>
             </div>
-
-            {!isAdmin && (
-              <div className="success-message text-center">
-                Waiting for admin to start the next round...
-              </div>
-            )}
-          </div>
-        )
-      }
-
-      // AWAITING NEXT ROUND
-      if (gameState.gamePhase === 'AwaitingNextRound') {
-        return (
-          <div className="game-phase">
-            <div className="phase-header">
-              <h2 className="phase-title">Awaiting Next Round</h2>
-              <p className="phase-description">Get ready for the next track!</p>
-            </div>
-            
-            {!isAdmin && (
-              <div className="success-message text-center">
-                Waiting for admin to start the next round...
-              </div>
-            )}
           </div>
         )
       }
