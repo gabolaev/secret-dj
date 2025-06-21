@@ -1,41 +1,42 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
 
 :root {
-  /* Color Palette - Cozy Studio Theme */
-  --bg-primary: #18181b;
-  /* Zinc 900 */
-  --bg-secondary: #27272a;
-  /* Zinc 800 */
-  --bg-tertiary: #3f3f46;
-  /* Zinc 700 */
-  --bg-card: #27272a;
-  /* Zinc 800 */
-  --bg-overlay: rgba(24, 24, 27, 0.8);
+  /* Color Palette - New Theme */
+  --bg-primary: #0F0A0A;
+  /* Midnight */
+  --bg-secondary: #0F2021;
+  /* Twilight */
+  --bg-tertiary: #0F3538;
+  /* Dusk */
+  --bg-card: #0F2021;
+  /* Twilight */
+  --bg-overlay: rgba(15, 10, 10, 0.8);
 
   /* Text Colors */
-  --text-primary: #f4f4f5;
-  /* Zinc 100 */
-  --text-secondary: #a1a1aa;
-  /* Zinc 400 */
-  --text-tertiary: #71717a;
-  /* Zinc 500 */
-  --text-muted: #52525b;
-  /* Zinc 600 */
+  --text-primary: #FAFAF0;
+  /* Bright */
+  --text-secondary: #87A19E;
+  /* Fog */
+  --text-tertiary: #496767;
+  /* Cloud */
+  --text-muted: #496767;
+  /* Cloud */
 
-  /* Accent Colors - Warm Amber/Wood Tones */
-  --accent-primary: #f59e0b;
-  /* Amber 500 */
-  --accent-primary-rgb: 245, 158, 11;
-  --accent-secondary: #d97706;
-  /* Amber 600 */
-  --accent-secondary-rgb: 217, 119, 6;
-  --accent-tertiary: #b45309;
-  /* Amber 700 */
+  /* Accent Colors - New Theme */
+  --accent-primary: #FFBE00;
+  /* Shine */
+  --accent-primary-rgb: 255, 190, 0;
+  --accent-secondary: #FF9200;
+  /* Warmth */
+  --accent-secondary-rgb: 255, 146, 0;
+  --accent-tertiary: #FF6600;
+  /* Radiance */
   --accent-success: #22c55e;
   /* Green 500 */
   --accent-success-rgb: 34, 197, 94;
   --accent-warning: #facc15;
   /* Yellow 400 */
+  --accent-warning-rgb: 250, 204, 21;
   --accent-error: #ef4444;
   /* Red 500 */
   --accent-error-rgb: 239, 68, 68;
@@ -43,14 +44,14 @@
   /* Interactive Colors */
   --button-primary: var(--accent-primary);
   --button-primary-hover: var(--accent-secondary);
-  --button-secondary: #3f3f46;
-  /* Zinc 700 */
-  --button-secondary-hover: #52525b;
-  /* Zinc 600 */
-  --input-bg: #18181b;
-  /* Zinc 900 */
-  --input-border: #3f3f46;
-  /* Zinc 700 */
+  --button-secondary: #0F3538;
+  /* Dusk */
+  --button-secondary-hover: #496767;
+  /* Cloud */
+  --input-bg: #0F0A0A;
+  /* Midnight */
+  --input-border: #0F3538;
+  /* Dusk */
   --input-focus: var(--accent-primary);
 
   /* Shadows and Depth */
@@ -106,8 +107,9 @@ body {
   color: var(--text-primary);
   background-color: var(--bg-primary);
   background-image:
-    radial-gradient(circle at 15% 85%, rgba(var(--accent-secondary-rgb), 0.07) 0%, transparent 40%),
-    radial-gradient(circle at 85% 20%, rgba(var(--accent-primary-rgb), 0.05) 0%, transparent 40%);
+    url(./assets/noise.svg),
+    radial-gradient(circle at 15% 85%, rgba(var(--accent-secondary-rgb), 0.15) 50%, transparent 40%),
+    radial-gradient(circle at 85% 20%, rgba(var(--accent-primary-rgb), 0.1) 50%, transparent 40%);
   background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -213,6 +215,11 @@ button:focus {
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
   background: linear-gradient(135deg, var(--button-primary-hover), var(--accent-tertiary));
+}
+
+.btn-primary:not(:disabled) {
+  animation: shimmer 3s infinite;
+  background-size: 200% 100%;
 }
 
 .btn-secondary {
@@ -543,12 +550,23 @@ li {
 }
 
 .animate-pulse {
-  animation: pulse 2s infinite;
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 /* Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 12px;
+  height: 12px;
 }
 
 ::-webkit-scrollbar-track {

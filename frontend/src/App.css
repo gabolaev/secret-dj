@@ -185,11 +185,10 @@
 .lobby-actions {
   display: flex;
   gap: var(--space-md);
-  justify-content: center;
 }
 
 .lobby-actions button {
-  min-width: 140px;
+  flex: 1;
 }
 
 /* Game Phase Styles */
@@ -219,19 +218,7 @@
 
 /* Track Player Styles */
 .track-player-section {
-  background: var(--bg-secondary);
-  border-radius: var(--radius-lg);
-  padding: var(--space-xl);
-  margin-bottom: var(--space-lg);
   text-align: center;
-}
-
-.track-player-title {
-  font-family: var(--font-primary);
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: var(--space-md);
 }
 
 .track-player-container {
@@ -244,7 +231,6 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-md);
-  margin-bottom: var(--space-lg);
 }
 
 .like-button {
@@ -290,7 +276,6 @@
   background: var(--bg-secondary);
   border-radius: var(--radius-lg);
   padding: var(--space-lg);
-  margin-bottom: var(--space-lg);
 }
 
 .voting-title {
@@ -443,13 +428,16 @@
   color: var(--accent-error);
 }
 
-.player-status.admin {
+.player-name .admin-icon {
+  margin-left: var(--space-xs);
   color: var(--accent-primary);
 }
 
 .player-tracks {
-  font-size: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
   color: var(--text-secondary);
+  transition: all var(--transition-normal);
 }
 
 .player-ready {
@@ -601,12 +589,12 @@
   border-radius: var(--radius-md);
 }
 
-.track-item:last-child {
-  /* No longer needed with individual borders */
-}
-
 .track-item.played {
   opacity: 0.6;
+}
+
+.track-item:last-child {
+  /* No longer needed with individual borders */
 }
 
 .track-title {
@@ -617,6 +605,10 @@
   overflow: hidden;
   text-overflow: ellipsis;
   min-width: 0;
+}
+
+.track-item.played .track-title {
+  text-decoration: line-through;
 }
 
 .track-owner {
@@ -713,6 +705,33 @@
     grid-template-columns: 240px 1fr 240px;
     gap: var(--space-md);
     padding: var(--space-lg);
+    align-items: stretch;
+    gap: var(--space-sm);
+  }
+
+  .desktop-only {
+    display: none;
+  }
+
+  .mobile-only {
+    display: inline;
+    font-size: 1.5rem;
+  }
+
+  .game-header-actions .btn-secondary {
+    min-width: 44px;
+    padding: var(--space-sm);
+  }
+
+  .settings-row .number-input-group {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .settings-row .number-display {
+    flex-grow: 1;
+    text-align: center;
+    justify-content: center;
   }
 }
 
@@ -721,6 +740,8 @@
     grid-template-columns: 1fr;
     gap: var(--space-md);
     padding: var(--space-md);
+    align-items: stretch;
+    gap: var(--space-sm);
   }
 
   .sidebar-panel {
@@ -767,6 +788,17 @@
     flex-direction: column;
     align-items: stretch;
     gap: var(--space-sm);
+  }
+
+  .settings-row .number-input-group {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .settings-row .number-display {
+    flex-grow: 1;
+    text-align: center;
+    justify-content: center;
   }
 }
 
@@ -912,7 +944,6 @@
 
 .track-item.played .track-title {
   text-decoration: line-through;
-  opacity: 0.6;
 }
 
 .track-item.played .track-status {
@@ -932,8 +963,466 @@
   flex-grow: 1;
   text-decoration: none;
   color: inherit;
+  min-width: 0;
 }
 
 .track-link:hover .track-title {
   text-decoration: underline;
+}
+
+.number-input-group {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.number-input-group .number-input-btn {
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  height: 44px;
+  width: 44px;
+  padding: 0;
+  transition: all 0.15s ease-in-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  border: none;
+  border-radius: 0;
+}
+
+.number-input-group .number-input-btn:hover:not(:disabled) {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.number-input-group .number-input-btn:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.number-input-group .number-display {
+  background: var(--bg-primary);
+  height: 44px;
+  padding: 0 var(--space-md);
+  display: flex;
+  align-items: center;
+  color: var(--text-primary);
+  font-weight: 600;
+  border-left: 1px solid var(--input-border);
+  border-right: 1px solid var(--input-border);
+}
+
+.number-input-group .number-input-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--bg-tertiary);
+}
+
+.game-settings-container .settings-input-btn {}
+
+.game-settings-container .settings-input-btn:hover:not(:disabled) {}
+
+@keyframes pulse-yellow {
+
+  0%,
+  100% {
+    background-color: var(--bg-card);
+    border-color: var(--input-border);
+  }
+
+  50% {
+    background-color: rgba(var(--accent-warning-rgb), 0.05);
+    border-color: rgba(var(--accent-warning-rgb), 0.5);
+  }
+}
+
+.players-list.in-lobby .player-item {
+  transition: all var(--transition-normal);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm);
+  margin-bottom: var(--space-xs);
+  border: 1px solid var(--input-border);
+}
+
+.players-list.in-lobby .player-item:not(.is-ready) {
+  animation: pulse-yellow 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.players-list.in-lobby .player-item.is-ready {
+  background-color: rgba(var(--accent-success-rgb), 0.1);
+  border-color: var(--accent-success);
+}
+
+.players-list.in-lobby .player-item.is-ready .player-tracks {
+  color: var(--accent-success);
+  font-weight: 700;
+}
+
+.mobile-only {
+  display: none;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .game-content {
+    grid-template-columns: 240px 1fr 240px;
+    gap: var(--space-md);
+    padding: var(--space-lg);
+    align-items: stretch;
+    gap: var(--space-sm);
+  }
+
+  .desktop-only {
+    display: none;
+  }
+
+  .mobile-only {
+    display: inline;
+    font-size: 1.5rem;
+  }
+
+  .game-header-actions .btn-secondary {
+    min-width: 44px;
+    padding: var(--space-sm);
+  }
+
+  .settings-row .number-input-group {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .settings-row .number-display {
+    flex-grow: 1;
+    text-align: center;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .game-content {
+    grid-template-columns: 1fr;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    align-items: stretch;
+    gap: var(--space-sm);
+  }
+
+  .sidebar-panel {
+    order: 3;
+  }
+
+  .center-panel {
+    order: 1;
+    min-height: auto;
+  }
+
+  .game-header {
+    padding: var(--space-sm) var(--space-md);
+  }
+
+  .game-header-left {
+    gap: var(--space-md);
+  }
+
+  .game-title {
+    font-size: 1.25rem;
+  }
+
+  .game-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-xs);
+  }
+
+  .lobby {
+    padding: var(--space-lg);
+  }
+
+  .lobby-actions {
+    flex-direction: column;
+  }
+
+  .voting-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .settings-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-sm);
+  }
+
+  .settings-row .number-input-group {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .settings-row .number-display {
+    flex-grow: 1;
+    text-align: center;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .game-content {
+    padding: var(--space-sm);
+  }
+
+  .center-panel {
+    padding: var(--space-lg);
+  }
+
+  .sidebar-panel {
+    padding: var(--space-md);
+  }
+
+  .track-player-section {
+    padding: var(--space-lg);
+  }
+
+  .like-section {
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+}
+
+/* URL Preview Component */
+.url-preview-container {
+  width: 100%;
+}
+
+.url-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.url-input {
+  width: 100%;
+  padding-right: 120px;
+  transition: all var(--transition-normal);
+}
+
+.url-input.has-service {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px rgba(232, 180, 160, 0.1);
+}
+
+.url-input.valid {
+  border-color: var(--accent-success);
+}
+
+.url-input.invalid {
+  border-color: var(--accent-error);
+}
+
+.service-indicator {
+  position: absolute;
+  right: var(--space-sm);
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: white;
+  backdrop-filter: blur(10px);
+}
+
+.service-logo {
+  width: 16px;
+  height: 16px;
+  filter: brightness(0) invert(1);
+}
+
+.service-name {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.url-error {
+  color: var(--accent-error);
+  font-size: 0.75rem;
+  margin-top: var(--space-xs);
+  padding-left: var(--space-sm);
+}
+
+.url-preview {
+  margin-top: var(--space-md);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.preview-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.preview-logo {
+  width: 20px;
+  height: 20px;
+  margin-right: var(--space-sm);
+}
+
+.preview-info {
+  flex: 1;
+}
+
+.preview-info .service-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  margin-bottom: var(--space-xs);
+}
+
+.track-url {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  word-break: break-all;
+}
+
+/* Track Components */
+.track-info {
+  display: flex;
+  justify-content: space-between;
+  flex: 1;
+  min-width: 0;
+}
+
+.track-likes {
+  font-size: 0.75rem;
+  color: var(--accent-primary);
+  font-weight: 600;
+  margin-left: var(--space-sm);
+  flex-shrink: 0;
+}
+
+.track-item.played .track-title {
+  text-decoration: line-through;
+}
+
+.track-item.played .track-status {
+  color: var(--accent-success);
+}
+
+.track-service-logo {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.track-link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-grow: 1;
+  text-decoration: none;
+  color: inherit;
+  min-width: 0;
+}
+
+.track-link:hover .track-title {
+  text-decoration: underline;
+}
+
+.number-input-group {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.number-input-group .number-input-btn {
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  height: 44px;
+  width: 44px;
+  padding: 0;
+  transition: all 0.15s ease-in-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  border: none;
+  border-radius: 0;
+}
+
+.number-input-group .number-input-btn:hover:not(:disabled) {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.number-input-group .number-input-btn:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.number-input-group .number-display {
+  background: var(--bg-primary);
+  height: 44px;
+  padding: 0 var(--space-md);
+  display: flex;
+  align-items: center;
+  color: var(--text-primary);
+  font-weight: 600;
+  border-left: 1px solid var(--input-border);
+  border-right: 1px solid var(--input-border);
+}
+
+.number-input-group .number-input-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--bg-tertiary);
+}
+
+.game-settings-container .settings-input-btn {}
+
+.game-settings-container .settings-input-btn:hover:not(:disabled) {}
+
+@keyframes pulse-yellow {
+
+  0%,
+  100% {
+    background-color: var(--bg-card);
+    border-color: var(--input-border);
+  }
+
+  50% {
+    background-color: rgba(var(--accent-warning-rgb), 0.05);
+    border-color: rgba(var(--accent-warning-rgb), 0.5);
+  }
+}
+
+.players-list.in-lobby .player-item {
+  transition: all var(--transition-normal);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm);
+  margin-bottom: var(--space-xs);
+  border: 1px solid var(--input-border);
+}
+
+.players-list.in-lobby .player-item:not(.is-ready) {
+  animation: pulse-yellow 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.players-list.in-lobby .player-item.is-ready {
+  background-color: rgba(var(--accent-success-rgb), 0.1);
+  border-color: var(--accent-success);
+}
+
+.players-list.in-lobby .player-item.is-ready .player-tracks {
+  color: var(--accent-success);
+  font-weight: 700;
 }

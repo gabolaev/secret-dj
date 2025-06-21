@@ -249,19 +249,16 @@ function App() {
           
           <form className="lobby-form" onSubmit={(e) => e.preventDefault()}>
             <div className="lobby-input-group">
-              <label htmlFor="username">Your Name</label>
               <input
                 id="username"
                 type="text"
                 placeholder="Enter your username"
                 value={username}
                 onChange={e => setUsername(e.target.value)}
-                className="btn-large"
               />
             </div>
             
             <div className="lobby-input-group">
-              <label htmlFor="gameId">Game ID (to join existing game)</label>
               <input
                 id="gameId"
                 type="text"
@@ -274,7 +271,7 @@ function App() {
             <div className="lobby-actions">
               {!gameId && (
                 <button 
-                  className="btn-primary btn-large" 
+                  className="btn-primary" 
                   onClick={handleCreateGame} 
                   disabled={!username}
                 >
@@ -282,7 +279,7 @@ function App() {
                 </button>
               )}
               <button 
-                className="btn-secondary btn-large" 
+                className="btn-secondary" 
                 onClick={handleJoinGame} 
                 disabled={!username || !gameId}
               >
@@ -354,36 +351,35 @@ function App() {
             <h3>Game Settings</h3>
             <div className="settings-row">
               <span className="settings-label">Tracks per player</span>
-              {isAdmin ? (
-                <div className="settings-input-wrapper">
-                  <button className="settings-input-btn" onClick={handleDecrementTracks} disabled={(gameState.gameSettings.tracksPerPlayer || 2) <= 1}>
-                    &lt;
-                  </button>
-                  <input
-                    type="number"
-                    min="1"
-                    max="5"
-                    value={gameState.gameSettings.tracksPerPlayer || 2}
-                    onChange={e => handleChangeTracksPerPlayer(parseInt(e.target.value, 10))}
-                    disabled={!isAdmin}
-                  />
-                  <button className="settings-input-btn" onClick={handleIncrementTracks} disabled={(gameState.gameSettings.tracksPerPlayer || 2) >= 5}>
-                    &gt;
-                  </button>
+              <div className="number-input-group">
+                <button
+                  className="number-input-btn"
+                  onClick={handleDecrementTracks}
+                  disabled={(gameState.gameSettings.tracksPerPlayer || 2) <= 1}
+                >
+                  &lt;
+                </button>
+                <div className="number-display">
+                  {gameState.gameSettings.tracksPerPlayer || 2}
                 </div>
-              ) : (
-                <span className="settings-value">{gameState.gameSettings.tracksPerPlayer || 2}</span>
-              )}
+                <button
+                  className="number-input-btn"
+                  onClick={handleIncrementTracks}
+                  disabled={(gameState.gameSettings.tracksPerPlayer || 2) >= 5}
+                >
+                  &gt;
+                </button>
+              </div>
             </div>
           </div>
         )}
         <h3>Players</h3>
-        <ul className="players-list">
+        <ul className={`players-list ${gameState.gamePhase === 'Lobby' ? 'in-lobby' : ''}`}>
           {gameState.players.map((player) => {
             const tracksSubmitted = player.trackCount;
             const ready = tracksSubmitted >= (gameState.gameSettings.tracksPerPlayer || 2)
             return (
-              <li key={player.username} className="player-item">
+              <li key={player.username} className={`player-item ${ready ? 'is-ready' : ''}`}>
                 <div className="player-info-left">
                   <div className="player-avatar">
                     {player.username.charAt(0).toUpperCase()}
@@ -391,7 +387,7 @@ function App() {
                   <div>
                     <div className="player-name">
                       {player.username}
-                      {player.isAdmin && <span className="player-status admin"> Admin</span>}
+                      {player.isAdmin && <span className="admin-icon"> 👑</span>}
                     </div>
                     <div className="player-status">
                       {player.isConnected ? (
@@ -410,17 +406,6 @@ function App() {
             )
           })}
         </ul>
-        
-        {gameState.gamePhase !== 'Lobby' && me && (
-          <div className="mt-lg">
-            <h3>My Tracks</h3>
-            <MyTracksList 
-              myTracks={me.tracks || []} 
-              playedTrackIds={gameState.playedTrackIds}
-              showStatus={true}
-            />
-          </div>
-        )}
         
         {gameState.leaderboard && gameState.leaderboard.length > 0 && gameState.gamePhase !== 'Lobby' && gameState.gamePhase !== 'GameFinished' && (
           <div className="mt-lg">
@@ -449,16 +434,31 @@ function App() {
       </div>
     )
 
-    const renderRightPanel = () => (
-      <div className="sidebar-panel">
-        {gameState.gamePhase !== 'Lobby' && (
-          <>
-            <h3>Track History</h3>
-            <PlayedTracksList playedTracks={gameState.playedTracks} />
-          </>
-        )}
-      </div>
-    )
+    const renderRightPanel = () => {
+      const showMyTracks = gameState.gamePhase !== 'Lobby' && me && (me.tracks || []).length > 0;
+      const showTrackHistory = gameState.playedTracks.length > 0;
+
+      if (!showMyTracks && !showTrackHistory) {
+        return null;
+      }
+
+      return (
+        <div className="sidebar-panel">
+          {showMyTracks && (
+            <div className={showTrackHistory ? 'mb-lg' : ''}>
+              <h3>My Tracks</h3>
+              <MyTracksList myTracks={me.tracks || []} playedTrackIds={gameState.playedTrackIds} />
+            </div>
+          )}
+          {showTrackHistory && (
+            <>
+              <h3>Track History</h3>
+              <PlayedTracksList playedTracks={gameState.playedTracks} />
+            </>
+          )}
+        </div>
+      )
+    }
 
     const renderCenterPanel = () => {
       // LOBBY PHASE
@@ -500,7 +500,7 @@ function App() {
                   You have submitted all your tracks. Waiting for others...
                 </div>
               )}
-              <MyTracksList myTracks={myTracks} playedTrackIds={gameState.playedTrackIds} showStatus={false} />
+              <MyTracksList myTracks={myTracks} playedTrackIds={gameState.playedTrackIds} />
             </div>
 
             {!isAdmin && (
@@ -529,7 +529,6 @@ function App() {
             </div>
 
             <div className="track-player-section">
-              <h3 className="track-player-title">Currently Playing</h3>
               {gameState.currentRoundData?.track?.url ? (
                 <div className="track-player-container">
                   <TrackPlayer url={gameState.currentRoundData.track.url} />
@@ -756,7 +755,7 @@ function App() {
 
             <div className="text-center">
               <button className="btn-secondary btn-large" onClick={handleReturnToLobby}>
-                Exit Game
+                Exit
               </button>
             </div>
           </div>
@@ -792,7 +791,8 @@ function App() {
           
           <div className="game-header-actions">
             <button className="btn-secondary" onClick={handleReturnToLobby}>
-              Exit to Lobby
+              <span className="desktop-only">Exit</span>
+              <span className="mobile-only">🚪</span>
             </button>
           </div>
         </header>
@@ -802,7 +802,7 @@ function App() {
           <div className="center-panel">
             {renderCenterPanel()}
           </div>
-          {gameState.gamePhase !== 'Lobby' && renderRightPanel()}
+          {renderRightPanel()}
         </main>
       </div>
     );
@@ -818,7 +818,6 @@ function App() {
           
           <form className="lobby-form" onSubmit={(e) => e.preventDefault()}>
             <div className="lobby-input-group">
-              <label htmlFor="username">Your Name</label>
               <input
                 id="username"
                 type="text"
@@ -829,7 +828,6 @@ function App() {
             </div>
             
             <div className="lobby-input-group">
-              <label htmlFor="gameId">Game ID (to join existing game)</label>
               <input
                 id="gameId"
                 type="text"
@@ -842,7 +840,7 @@ function App() {
             <div className="lobby-actions">
               {!gameId && (
                 <button 
-                  className="btn-primary btn-large" 
+                  className="btn-primary" 
                   onClick={handleCreateGame} 
                   disabled={!username}
                 >
@@ -850,7 +848,7 @@ function App() {
                 </button>
               )}
               <button 
-                className="btn-secondary btn-large" 
+                className="btn-secondary" 
                 onClick={handleJoinGame} 
                 disabled={!username || !gameId}
               >

@@ -1,5 +1,6 @@
 import type { PlayedTrack } from '../../common/types';
 import { getMusicService } from './utils/musicServices';
+import { shortenUrl } from './utils/string';
 
 interface PlayedTracksListProps {
     playedTracks: PlayedTrack[];
@@ -24,7 +25,7 @@ export function PlayedTracksList({ playedTracks }: PlayedTracksListProps) {
                             {service && (
                                 <img src={service.logo} alt={service.name} className="track-service-logo" />
                             )}
-                            <span className="track-title">{track.url}</span>
+                            <span className="track-title">{shortenUrl(track.url, 40)}</span>
                             {likes && likes.length > 0 && (
                                 <span className="track-likes">
                                     ❤️ {likes.length}
