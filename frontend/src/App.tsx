@@ -104,6 +104,15 @@ function App() {
     })
   }
 
+  const handleRemoveTrack = (trackId: string) => {
+    const s = getSocket()
+    s.emit('removeTrack', { gameId, username, trackId }, (res: SocketResponse) => {
+      if (!res.success) {
+        setError(typeof res.error === 'string' ? res.error : 'Failed to remove track')
+      }
+    })
+  }
+
   const handleChangeTracksPerPlayer = (tracksPerPlayer: number) => {
     const s = getSocket()
     s.emit('changeGameSetting', { gameId, username, newSettings: { tracksPerPlayer } }, (res: SocketResponse) => {
@@ -447,7 +456,11 @@ function App() {
           {showMyTracks && (
             <div className={showTrackHistory ? 'mb-lg' : ''}>
               <h3>My Tracks</h3>
-              <MyTracksList myTracks={me.tracks || []} playedTrackIds={gameState.playedTrackIds} />
+              <MyTracksList 
+                myTracks={me.tracks || []} 
+                playedTrackIds={gameState.playedTrackIds} 
+                onRemoveTrack={handleRemoveTrack} 
+              />
             </div>
           )}
           {showTrackHistory && (
@@ -508,7 +521,12 @@ function App() {
                   You have submitted all your tracks. Waiting for others...
                 </div>
               )}
-              <MyTracksList myTracks={myTracks} playedTrackIds={gameState.playedTrackIds} />
+              <MyTracksList 
+                myTracks={myTracks} 
+                playedTrackIds={gameState.playedTrackIds} 
+                showRemoveButtons={true}
+                onRemoveTrack={handleRemoveTrack} 
+              />
             </div>
 
             {!isAdmin && (

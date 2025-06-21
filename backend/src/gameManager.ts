@@ -197,6 +197,32 @@ export class GameManager {
         return true;
     }
 
+    // Player removes a track
+    removeTrack(gameId: string, username: string, trackId: string): boolean {
+        log('removeTrack called with:', { gameId, username, trackId });
+        const game = this.games.get(gameId);
+        if (!game) return false;
+        const player = game.players[username];
+        if (!player) return false;
+
+        // Only allow track removal in Lobby phase
+        if (game.gamePhase !== 'Lobby') {
+            log(`Track removal not allowed outside Lobby phase in game ${gameId}`);
+            return false;
+        }
+
+        // Find and remove the track
+        const trackIndex = player.tracks.findIndex((t: Track) => t.id === trackId);
+        if (trackIndex === -1) {
+            log(`Track ${trackId} not found for player ${username} in game ${gameId}`);
+            return false;
+        }
+
+        player.tracks.splice(trackIndex, 1);
+        log(`Player ${username} removed track ${trackId} from game ${gameId}`);
+        return true;
+    }
+
     // Fetch metadata for a track
     private async fetchTrackMetadata(gameId: string, username: string, trackId: string): Promise<void> {
         const game = this.games.get(gameId);

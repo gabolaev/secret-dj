@@ -220,6 +220,24 @@ io.on('connection', (socket: Socket) => {
         }
     });
 
+    // Remove track
+    socket.on('removeTrack', ({ gameId, username, trackId }, cb) => {
+        try {
+            const ok = gameManager.removeTrack(gameId, username, trackId);
+            if (ok) {
+                emitGameState(gameId);
+                cb({ success: true });
+                log(`Track removed by ${username} in game ${gameId}`);
+            } else {
+                cb({ success: false, error: 'Failed to remove track' });
+                log(`Track removal failed for ${username} in game ${gameId}`);
+            }
+        } catch (err) {
+            log('Error removing track:', err);
+            cb({ success: false, error: 'Failed to remove track' });
+        }
+    });
+
     // Admin starts the game
     socket.on('startGame', (
         data: { gameId: string; username: string },
