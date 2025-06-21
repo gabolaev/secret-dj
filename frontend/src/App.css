@@ -924,3 +924,16 @@
   height: 16px;
   flex-shrink: 0;
 }
+
+.track-link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-grow: 1;
+  text-decoration: none;
+  color: inherit;
+}
+
+.track-link:hover .track-title {
+  text-decoration: underline;
+}

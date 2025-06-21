@@ -16,22 +16,21 @@ export function PlayedTracksList({ playedTracks }: PlayedTracksListProps) {
 
     return (
         <ul className="tracks-list">
-            {playedTracks.map(({ track, ownerUsername, likes }) => {
+            {playedTracks.map(({ track, likes }) => {
                 const service = getMusicService(track.url);
                 return (
                     <li key={track.id} className="track-item">
-                        {service && (
-                            <img src={service.logo} alt={service.name} className="track-service-logo" />
-                        )}
-                        <div className="track-info">
-                            <div className="track-title">{track.url}</div>
-                            <div className="track-owner">by {ownerUsername}</div>
-                        </div>
-                        {likes && likes.length > 0 && (
-                            <div className="track-likes">
-                                ❤️ {likes.length}
-                            </div>
-                        )}
+                        <a href={track.url} target="_blank" rel="noopener noreferrer" className="track-link">
+                            {service && (
+                                <img src={service.logo} alt={service.name} className="track-service-logo" />
+                            )}
+                            <span className="track-title">{track.url}</span>
+                            {likes && likes.length > 0 && (
+                                <span className="track-likes">
+                                    ❤️ {likes.length}
+                                </span>
+                            )}
+                        </a>
                     </li>
                 );
             })}

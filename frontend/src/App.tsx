@@ -377,7 +377,7 @@ function App() {
             </div>
           </div>
         )}
-        <h3>Players & Scores</h3>
+        <h3>Players</h3>
         <ul className="players-list">
           {gameState.players.map((player) => {
             const tracksSubmitted = player.trackCount;
@@ -756,7 +756,7 @@ function App() {
 
             <div className="text-center">
               <button className="btn-secondary btn-large" onClick={handleReturnToLobby}>
-                Back to Lobby
+                Exit Game
               </button>
             </div>
           </div>
