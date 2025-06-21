@@ -639,16 +639,21 @@
 }
 
 .track-item:not(.played):hover {
-  background: var(--bg-tertiary);
+  background-color: var(--button-secondary);
 }
 
 .track-item.played {
   opacity: 0.6;
-  background: var(--bg-tertiary);
 }
 
-.track-item:last-child {
-  margin-bottom: 0;
+.track-item.played .track-title {
+  text-decoration: line-through;
+}
+
+.track-item.playing {
+  opacity: 1;
+  animation: pulse-red 2s infinite;
+  border-color: var(--accent-error);
 }
 
 .track-remove-btn {
@@ -1241,4 +1246,32 @@
   padding: var(--space-md) var(--space-lg);
   border-radius: var(--radius-md);
   margin-top: var(--space-lg);
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(var(--accent-primary-rgb), 0.4);
+  }
+
+  50% {
+    box-shadow: 0 0 0 10px rgba(var(--accent-primary-rgb), 0);
+  }
+}
+
+@keyframes pulse-red {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(var(--accent-error-rgb), 0.7);
+  }
+
+  70% {
+    box-shadow: 0 0 0 10px rgba(var(--accent-error-rgb), 0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
 }

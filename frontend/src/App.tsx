@@ -461,22 +461,18 @@ function App() {
       }
 
       return (
-        <div className="sidebar-panel">
-          {showMyTracks && (
-            <div className={showTrackHistory ? 'mb-lg' : ''}>
-              <h3>My Tracks</h3>
-              <MyTracksList 
-                myTracks={me.tracks || []} 
-                playedTrackIds={gameState.playedTrackIds} 
-                onRemoveTrack={handleRemoveTrack} 
-              />
-            </div>
-          )}
-          {showTrackHistory && (
-            <>
+        <div className="sidebar-panel animate-fade-in">
+          <h3>My Tracks</h3>
+          <MyTracksList
+            myTracks={myTracks}
+            playedTrackIds={gameState.playedTrackIds}
+            currentTrackId={gameState.gamePhase === 'RoundInProgress' ? gameState.currentRoundData?.track?.id : undefined}
+          />
+          {gameState.playedTracks.length > 0 && (
+            <div className="mt-lg">
               <h3>Track History</h3>
               <PlayedTracksList playedTracks={gameState.playedTracks} />
-            </>
+            </div>
           )}
         </div>
       )
