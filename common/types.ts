@@ -4,6 +4,7 @@ export interface Player {
     isAdmin: boolean;
     isConnected: boolean;
     tracks: Track[];
+    trackCount?: number;
 }
 
 // Track entity
@@ -71,7 +72,7 @@ export interface PublicPlayer {
     isConnected: boolean;
     ready: boolean;
     trackCount: number;
-    tracks?: Track[]; // Only sent to the player who submitted them
+    tracks?: Track[]; // Only sent to the player themselves
 }
 
 // Public GameState (client-safe)

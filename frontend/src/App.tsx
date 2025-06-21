@@ -7,7 +7,6 @@ import { PlayedTracksList } from './PlayedTracksList'
 import { MyTracksList } from './MyTracksList'
 import { TrackPlayer } from './TrackPlayer'
 import { UrlPreview } from './UrlPreview'
-import { NumberInput } from './NumberInput'
 // Define a type for socket responses
 type SocketResponse = { success: boolean; [key: string]: unknown }
 import './App.css'
@@ -24,6 +23,7 @@ function App() {
   const [trackUrl, setTrackUrl] = useState('')
   const [vote, setVote] = useState('')
   const [likeLoading, setLikeLoading] = useState(false)
+  const [isGameIdCopied, setIsGameIdCopied] = useState(false)
 
   // Connect to backend if not already connected
   function getSocket() {
@@ -149,6 +149,19 @@ function App() {
     })
   }
 
+  const handleCopyGameId = () => {
+    if (!gameState) return
+    navigator.clipboard.writeText(gameState.id).then(() => {
+      setIsGameIdCopied(true)
+      setTimeout(() => setIsGameIdCopied(false), 2000)
+    }).catch(err => {
+      console.error('Failed to copy Game ID:', err)
+      // You could show an error message to the user here
+      setError('Failed to copy Game ID')
+      setTimeout(() => setError(null), 2000)
+    })
+  }
+
   const handleLikeTrack = () => {
     if (!gameState) return
     setLikeLoading(true)
@@ -172,6 +185,20 @@ function App() {
     setGameState(null);
     setMode('lobby');
   };
+
+  const handleIncrementTracks = () => {
+    const currentValue = gameState?.gameSettings.tracksPerPlayer || 2;
+    if (currentValue < 5) {
+        handleChangeTracksPerPlayer(currentValue + 1);
+    }
+  }
+
+  const handleDecrementTracks = () => {
+    const currentValue = gameState?.gameSettings.tracksPerPlayer || 2;
+    if (currentValue > 1) {
+        handleChangeTracksPerPlayer(currentValue - 1);
+    }
+  }
 
   // Auto-reconnect on mount if gameId and username are in localStorage
   useEffect(() => {
@@ -245,13 +272,15 @@ function App() {
             </div>
             
             <div className="lobby-actions">
-              <button 
-                className="btn-primary btn-large" 
-                onClick={handleCreateGame} 
-                disabled={!username}
-              >
-                Create New Game
-              </button>
+              {!gameId && (
+                <button 
+                  className="btn-primary btn-large" 
+                  onClick={handleCreateGame} 
+                  disabled={!username}
+                >
+                  Create New Game
+                </button>
+              )}
               <button 
                 className="btn-secondary btn-large" 
                 onClick={handleJoinGame} 
@@ -271,40 +300,127 @@ function App() {
   // Main game UI for all phases
   if (mode === 'game' && gameState) {
     const me = gameState.players.find(p => p.username === username)
-    const isAdmin = me?.isAdmin
-    const allReady = gameState.players.every(p => p.ready)
+    const isAdmin = me?.isAdmin || false
+    const myTracks = me?.tracks || []
+    const allPlayersReady = gameState.players.every(p => (p.trackCount || 0) >= (gameState.gameSettings.tracksPerPlayer || 2))
+
+    const renderAdminControls = () => {
+      if (!isAdmin) return null;
+
+      const buttonMap = {
+        Lobby: (
+          <button 
+            className="btn-primary btn-large w-full" 
+            onClick={handleStartGame} 
+            disabled={!allPlayersReady}
+            title={!allPlayersReady ? 'Waiting for all players to submit their tracks' : 'Start the game'}
+          >
+            Start Game
+          </button>
+        ),
+        VotesTallied: (
+          <button className="btn-primary btn-large w-full" onClick={handleRevealResults}>
+            Reveal Results
+          </button>
+        ),
+        RoundResults: (
+          <button className="btn-primary btn-large w-full" onClick={handleNextRound}>
+            {gameState.playedTrackIds.length === gameState.players.reduce((acc, p) => acc + (p.trackCount || 0), 0) ? 'Finish Game' : 'Next Round'}
+          </button>
+        ),
+        AwaitingNextRound: (
+          <button className="btn-primary btn-large w-full" onClick={handleNextRound}>
+            Next Round
+          </button>
+        ),
+      };
+
+      const button = buttonMap[gameState.gamePhase as keyof typeof buttonMap];
+
+      if (!button) return null;
+
+      return (
+        <div className="mb-xl">
+          {button}
+        </div>
+      );
+    }
 
     const renderLeftPanel = () => (
       <div className="sidebar-panel">
+        {renderAdminControls()}
+        {gameState.gamePhase === 'Lobby' && (
+          <div className="game-settings-container">
+            <h3>Game Settings</h3>
+            <div className="settings-row">
+              <span className="settings-label">Tracks per player</span>
+              {isAdmin ? (
+                <div className="settings-input-wrapper">
+                  <button className="settings-input-btn" onClick={handleDecrementTracks} disabled={(gameState.gameSettings.tracksPerPlayer || 2) <= 1}>
+                    &lt;
+                  </button>
+                  <input
+                    type="number"
+                    min="1"
+                    max="5"
+                    value={gameState.gameSettings.tracksPerPlayer || 2}
+                    onChange={e => handleChangeTracksPerPlayer(parseInt(e.target.value, 10))}
+                    disabled={!isAdmin}
+                  />
+                  <button className="settings-input-btn" onClick={handleIncrementTracks} disabled={(gameState.gameSettings.tracksPerPlayer || 2) >= 5}>
+                    &gt;
+                  </button>
+                </div>
+              ) : (
+                <span className="settings-value">{gameState.gameSettings.tracksPerPlayer || 2}</span>
+              )}
+            </div>
+          </div>
+        )}
         <h3>Players & Scores</h3>
         <ul className="players-list">
-          {gameState.players.map((player) => (
-            <li key={player.username} className="player-item">
-              <div className="player-info-left">
-                <div className="player-avatar">
-                  {player.username.charAt(0).toUpperCase()}
-                </div>
-                <div>
-                  <div className="player-name">
-                    {player.username}
-                    {player.isAdmin && <span className="player-status admin"> Admin</span>}
+          {gameState.players.map((player) => {
+            const tracksSubmitted = player.trackCount;
+            const ready = tracksSubmitted >= (gameState.gameSettings.tracksPerPlayer || 2)
+            return (
+              <li key={player.username} className="player-item">
+                <div className="player-info-left">
+                  <div className="player-avatar">
+                    {player.username.charAt(0).toUpperCase()}
                   </div>
-                  <div className="player-status">
-                    {player.isConnected ? (
-                      <span className="connected">● Connected</span>
-                    ) : (
-                      <span className="disconnected">● Disconnected</span>
-                    )}
+                  <div>
+                    <div className="player-name">
+                      {player.username}
+                      {player.isAdmin && <span className="player-status admin"> Admin</span>}
+                    </div>
+                    <div className="player-status">
+                      {player.isConnected ? (
+                        <span className="connected">● Connected</span>
+                      ) : (
+                        <span className="disconnected">● Disconnected</span>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="player-tracks">
-                {player.trackCount}/{gameState.gameSettings.tracksPerPlayer}
-                {player.ready && <span className="player-ready"> ✓</span>}
-              </div>
-            </li>
-          ))}
+                <div className="player-tracks">
+                  {tracksSubmitted}/{gameState.gameSettings.tracksPerPlayer || 2}
+                  {ready && <span className="player-ready"> ✓</span>}
+                </div>
+              </li>
+            )
+          })}
         </ul>
+        
+        {gameState.gamePhase !== 'Lobby' && me && (
+          <div className="mt-lg">
+            <h3>My Tracks</h3>
+            <MyTracksList 
+              myTracks={me.tracks || []} 
+              playedTrackIds={gameState.playedTrackIds}
+              showStatus={true}
+            />
+          </div>
+        )}
         
         {gameState.leaderboard && gameState.leaderboard.length > 0 && gameState.gamePhase !== 'Lobby' && gameState.gamePhase !== 'GameFinished' && (
           <div className="mt-lg">
@@ -335,14 +451,11 @@ function App() {
 
     const renderRightPanel = () => (
       <div className="sidebar-panel">
-        <h3>Track History</h3>
-        <PlayedTracksList playedTracks={gameState.playedTracks} />
-        
-        {me && (
-          <div className="mt-lg">
-            <h4>My Tracks</h4>
-            <MyTracksList myTracks={me.tracks || []} playedTrackIds={gameState.playedTrackIds} />
-          </div>
+        {gameState.gamePhase !== 'Lobby' && (
+          <>
+            <h3>Track History</h3>
+            <PlayedTracksList playedTracks={gameState.playedTracks} />
+          </>
         )}
       </div>
     )
@@ -350,68 +463,53 @@ function App() {
     const renderCenterPanel = () => {
       // LOBBY PHASE
       if (gameState.gamePhase === 'Lobby') {
+        const allTracksSubmitted = myTracks.length >= (gameState.gameSettings.tracksPerPlayer || 2);
         return (
           <div className="game-phase">
             <div className="phase-header">
               <h2 className="phase-title">Game Lobby</h2>
-              <p className="phase-description">Submit your tracks and wait for everyone to be ready</p>
+              <p className="phase-description">
+                {allTracksSubmitted
+                  ? 'You are all set! Waiting for other players to submit their tracks.'
+                  : 'Submit your tracks and wait for everyone to be ready'}
+              </p>
             </div>
 
-            <div className="track-submission">
-              <h3>Submit Your Tracks</h3>
-              <div className="track-input-group">
-                <UrlPreview
-                  url={trackUrl}
-                  onUrlChange={setTrackUrl}
-                  placeholder="Paste a music track URL..."
-                  disabled={me && me.tracks && me.tracks.length >= gameState.gameSettings.tracksPerPlayer}
-                />
-                <button
-                  className="btn-primary track-submit-btn"
-                  onClick={handleSubmitTrack}
-                  disabled={!trackUrl || !trackUrl.startsWith('http') || (me && me.tracks && me.tracks.length >= gameState.gameSettings.tracksPerPlayer)}
-                >
-                  Submit
+            <div className="track-submission-container">
+              {!allTracksSubmitted && (
+                <div className="track-submission">
+                  <h3>My Tracks</h3>
+                  <div className="track-input-wrapper">
+                    <UrlPreview
+                      url={trackUrl}
+                      onUrlChange={setTrackUrl}
+                      disabled={allTracksSubmitted}
+                    />
+                    <button
+                      className="btn-primary track-submit-btn"
+                      onClick={handleSubmitTrack}
+                      disabled={!trackUrl || !trackUrl.startsWith('http') || allTracksSubmitted}
+                    >
+                      Submit
+                    </button>
+                  </div>
+                </div>
+              )}
+              {allTracksSubmitted && (
+                <div className="success-message">
+                  You have submitted all your tracks. Waiting for others...
+                </div>
+              )}
+              <MyTracksList myTracks={myTracks} playedTrackIds={gameState.playedTrackIds} showStatus={false} />
+            </div>
+
+            {!isAdmin && (
+              <div className="text-center">
+                <button className="btn-primary btn-large" disabled>
+                  Waiting for players...
                 </button>
               </div>
-              
-              {me && me.tracks && me.tracks.length >= gameState.gameSettings.tracksPerPlayer && (
-                <div className="track-status success">
-                  All your tracks submitted! Waiting for others...
-                </div>
-              )}
-              
-              {me && (!me.tracks || me.tracks.length < gameState.gameSettings.tracksPerPlayer) && error && (
-                <div className="track-status error">{error}</div>
-              )}
-            </div>
-
-            <div className="game-settings">
-              <h3>Game Settings</h3>
-              <div className="settings-row">
-                <span className="settings-label">Tracks per player:</span>
-                <NumberInput
-                  value={gameState.gameSettings.tracksPerPlayer}
-                  onChange={handleChangeTracksPerPlayer}
-                  min={1}
-                  max={5}
-                  disabled={!isAdmin}
-                  size="small"
-                />
-              </div>
-              
-              {isAdmin && (
-                <div className="mt-md">
-                  <button
-                    className="btn-primary btn-large w-full"
-                    onClick={handleStartGame}
-                    disabled={!allReady}
-                  >
-                    {allReady ? 'Start Game' : 'Waiting for players...'}
-                  </button>
-                </div>
-              )}
-            </div>
+            )}
           </div>
         )
       }
@@ -516,14 +614,6 @@ function App() {
               <p className="phase-description">All eligible players have voted.</p>
             </div>
             
-            {isAdmin && (
-              <div className="text-center">
-                <button className="btn-primary btn-large" onClick={handleRevealResults}>
-                  Reveal Results
-                </button>
-              </div>
-            )}
-            
             {!isAdmin && (
               <div className="success-message text-center">
                 Waiting for admin to reveal results...
@@ -536,7 +626,6 @@ function App() {
       // ROUND RESULTS
       if (gameState.gamePhase === 'RoundResults' && gameState.currentRoundData && gameState.currentRoundData.results) {
         const { results } = gameState.currentRoundData
-        const isLastRound = gameState.playedTrackIds.length === gameState.players.reduce((acc, p) => acc + p.trackCount, 0);
         
         return (
           <div className="game-phase">
@@ -591,14 +680,6 @@ function App() {
               </div>
             </div>
 
-            {isAdmin && (
-              <div className="text-center">
-                <button className="btn-primary btn-large" onClick={handleNextRound}>
-                  {isLastRound ? 'Finish Game' : 'Next Round'}
-                </button>
-              </div>
-            )}
-            
             {!isAdmin && (
               <div className="success-message text-center">
                 Waiting for admin to start the next round...
@@ -617,13 +698,7 @@ function App() {
               <p className="phase-description">Get ready for the next track!</p>
             </div>
             
-            {isAdmin ? (
-              <div className="text-center">
-                <button className="btn-primary btn-large" onClick={handleNextRound}>
-                  Next Round
-                </button>
-              </div>
-            ) : (
+            {!isAdmin && (
               <div className="success-message text-center">
                 Waiting for admin to start the next round...
               </div>
@@ -705,7 +780,7 @@ function App() {
           <div className="game-header-left">
             <h1 className="game-title">Guess the DJ</h1>
             <div className="game-info">
-              <span>Game: <span className="game-id">{gameState.id}</span></span>
+              <span>Game: <span className="game-id" onClick={handleCopyGameId} title="Click to copy">{isGameIdCopied ? 'Copied!' : gameState.id}</span></span>
               <div className="player-info">
                 <div className="player-avatar">
                   {username.charAt(0).toUpperCase()}
@@ -727,7 +802,7 @@ function App() {
           <div className="center-panel">
             {renderCenterPanel()}
           </div>
-          {renderRightPanel()}
+          {gameState.gamePhase !== 'Lobby' && renderRightPanel()}
         </main>
       </div>
     );
@@ -765,13 +840,15 @@ function App() {
             </div>
             
             <div className="lobby-actions">
-              <button 
-                className="btn-primary btn-large" 
-                onClick={handleCreateGame} 
-                disabled={!username}
-              >
-                Create New Game
-              </button>
+              {!gameId && (
+                <button 
+                  className="btn-primary btn-large" 
+                  onClick={handleCreateGame} 
+                  disabled={!username}
+                >
+                  Create New Game
+                </button>
+              )}
               <button 
                 className="btn-secondary btn-large" 
                 onClick={handleJoinGame} 
