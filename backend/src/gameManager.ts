@@ -8,6 +8,7 @@ import {
     RoundData,
     PublicPlayer,
 } from '../../common/types.js';
+import { TrackMetadataService } from './trackMetadataService.js';
 
 // Helper for logging
 function log(...args: any[]) {
@@ -73,7 +74,7 @@ export class GameManager {
         if (wasAdmin) {
             const remaining = Object.values(game.players);
             if (remaining.length > 0) {
-                const newAdmin = remaining[Math.floor(Math.random() * remaining.length)];
+                const newAdmin = remaining[Math.floor(Math.random() * remaining.length)] as Player;
                 newAdmin.isAdmin = true;
                 log(`Admin left. New admin is ${newAdmin.username}`);
             }
@@ -172,20 +173,55 @@ export class GameManager {
     }
 
     // Player submits a track
-    submitTrack(gameId: string, username: string, track: Track): boolean {
+    async submitTrack(gameId: string, username: string, track: Track): Promise<boolean> {
         log('submitTrack called with:', { gameId, username, track });
         const game = this.games.get(gameId);
         if (!game) return false;
         const player = game.players[username];
         if (!player) return false;
         // Prevent duplicate tracks by id
-        if (player.tracks.some(t => t.id === track.id)) {
+        if (player.tracks.some((t: Track) => t.id === track.id)) {
             log(`Duplicate track submission by ${username} in game ${gameId}`);
             return false;
         }
+
+        // Add track immediately
         player.tracks.push(track);
         log(`Player ${username} submitted a track to game ${gameId}`);
+
+        // Fetch metadata asynchronously
+        this.fetchTrackMetadata(gameId, username, track.id).catch(error => {
+            log(`Error fetching metadata for track ${track.id}:`, error);
+        });
+
         return true;
+    }
+
+    // Fetch metadata for a track
+    private async fetchTrackMetadata(gameId: string, username: string, trackId: string): Promise<void> {
+        const game = this.games.get(gameId);
+        if (!game) return;
+
+        const player = game.players[username];
+        if (!player) return;
+
+        const track = player.tracks.find((t: Track) => t.id === trackId);
+        if (!track || track.metadataFetched) return;
+
+        try {
+            const metadataService = TrackMetadataService.getInstance();
+            const metadata = await metadataService.getTrackMetadata(track.url);
+
+            if (metadata) {
+                track.title = metadata.title;
+                track.artist = metadata.artist;
+                track.thumbnail = metadata.thumbnail;
+                track.metadataFetched = true;
+                log(`Metadata fetched for track ${trackId}: ${metadata.title}`);
+            }
+        } catch (error) {
+            log(`Failed to fetch metadata for track ${trackId}:`, error);
+        }
     }
 
     // Admin changes a game setting
@@ -218,7 +254,7 @@ export class GameManager {
         }
         // All players must be ready
         const allReady = Object.values(game.players).every(
-            p => p.tracks.length >= game.gameSettings.tracksPerPlayer
+            (p: Player) => p.tracks.length >= game.gameSettings.tracksPerPlayer
         );
         if (!allReady) {
             log(`Not all players are ready in game ${gameId}`);
@@ -310,7 +346,7 @@ export class GameManager {
         };
         for (const [voter, guessed] of Object.entries(votes)) {
             const correct = guessed === ownerUsername;
-            results.votes.push({ voter, guessed, correct });
+            results.votes.push({ voter, guessed: guessed as string, correct });
             // Award 1 point for correct guess
             if (correct) {
                 if (!game.leaderboard) game.leaderboard = {};
@@ -350,13 +386,14 @@ export class GameManager {
                 }
             }
         }
-        if (allTracks.length === 0) {
+        if (allTracks.length > 0) {
+            this.beginRound(gameId);
+            return true;
+        } else {
             game.gamePhase = 'GameFinished';
+            log(`Game finished in game ${gameId}`);
             return true;
         }
-        // Otherwise, start next round
-        this.beginRound(gameId);
-        return true;
     }
 
     // Add more methods for game flow, track submission, voting, etc.

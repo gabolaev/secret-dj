@@ -12,6 +12,9 @@ export interface Track {
     id: string; // unique identifier for the track
     url: string; // resource location (e.g., URL)
     title?: string; // optional, for display
+    artist?: string; // optional artist name
+    thumbnail?: string; // optional thumbnail URL
+    metadataFetched?: boolean; // flag to indicate if metadata has been fetched
 }
 
 // A track that has been played

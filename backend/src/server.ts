@@ -5,6 +5,7 @@ import cors from 'cors';
 import path from 'path';
 import { GameManager } from './gameManager.js';
 import { GameState, GameSettings } from '../../common/types.js';
+import { TrackMetadataService } from './trackMetadataService.js';
 import fetch from 'node-fetch';
 
 const app = express();
@@ -22,6 +23,29 @@ app.use(express.json());
 // --- API Routes ---
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok' });
+});
+
+// Track metadata endpoint
+app.get('/api/track-metadata', async (req, res) => {
+    const url = req.query.url;
+
+    if (typeof url !== 'string') {
+        return res.status(400).json({ error: 'URL parameter is required' });
+    }
+
+    try {
+        const metadataService = TrackMetadataService.getInstance();
+        const metadata = await metadataService.getTrackMetadata(url);
+
+        if (metadata) {
+            res.json(metadata);
+        } else {
+            res.status(404).json({ error: 'Could not fetch metadata for this URL' });
+        }
+    } catch (error) {
+        console.error('Error fetching track metadata:', error);
+        res.status(500).json({ error: 'Failed to fetch track metadata' });
+    }
 });
 
 // --- Production-only: Serve static frontend ---
@@ -179,9 +203,9 @@ io.on('connection', (socket: Socket) => {
     });
 
     // Submit track
-    socket.on('submitTrack', ({ gameId, username, track }, cb) => {
+    socket.on('submitTrack', async ({ gameId, username, track }, cb) => {
         try {
-            const ok = gameManager.submitTrack(gameId, username, track);
+            const ok = await gameManager.submitTrack(gameId, username, track);
             if (ok) {
                 emitGameState(gameId);
                 cb({ success: true });

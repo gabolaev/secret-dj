@@ -244,7 +244,7 @@ function App() {
     return (
       <div className="app-container">
         <div className="lobby">
-          <h1>Guess the DJ</h1>
+          <h1>Secret DJ</h1>
           <p className="text-secondary">Share your favorite tracks and guess who submitted what!</p>
           
           <form className="lobby-form" onSubmit={(e) => e.preventDefault()}>
@@ -479,16 +479,24 @@ function App() {
               {!allTracksSubmitted && (
                 <div className="track-submission">
                   <h3>My Tracks</h3>
-                  <div className="track-input-wrapper">
+                  <div 
+                    className="track-input-wrapper"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleSubmitTrack();
+                      }
+                    }}
+                  >
                     <UrlPreview
                       url={trackUrl}
                       onUrlChange={setTrackUrl}
                       disabled={allTracksSubmitted}
+                      placeholder={allTracksSubmitted ? "You have submitted all your tracks" : "Paste a music track URL..."}
                     />
-                    <button
+                    <button 
+                      onClick={handleSubmitTrack} 
                       className="btn-primary track-submit-btn"
-                      onClick={handleSubmitTrack}
-                      disabled={!trackUrl || !trackUrl.startsWith('http') || allTracksSubmitted}
+                      disabled={!trackUrl || allTracksSubmitted}
                     >
                       Submit
                     </button>
@@ -777,7 +785,7 @@ function App() {
       <div className="app-container">
         <header className="game-header">
           <div className="game-header-left">
-            <h1 className="game-title">Guess the DJ</h1>
+            <h1 className="game-title">Secret DJ</h1>
             <div className="game-info">
               <span>Game: <span className="game-id" onClick={handleCopyGameId} title="Click to copy">{isGameIdCopied ? 'Copied!' : gameState.id}</span></span>
               <div className="player-info">
@@ -813,7 +821,7 @@ function App() {
     return (
       <div className="app-container">
         <div className="lobby">
-          <h1>Guess the DJ</h1>
+          <h1>Secret DJ</h1>
           <p className="text-secondary">Share your favorite tracks and guess who submitted what!</p>
           
           <form className="lobby-form" onSubmit={(e) => e.preventDefault()}>

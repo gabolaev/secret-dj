@@ -2,6 +2,13 @@ import { useState, useEffect } from 'react'
 import type { MusicService } from './utils/musicServices'
 import { getMusicService } from './utils/musicServices'
 
+interface TrackMetadata {
+    title: string;
+    artist?: string;
+    thumbnail?: string;
+    service: string;
+}
+
 interface UrlPreviewProps {
   url: string
   onUrlChange: (url: string) => void
@@ -12,11 +19,14 @@ interface UrlPreviewProps {
 export function UrlPreview({ url, onUrlChange, placeholder = "Paste a music track URL...", disabled = false }: UrlPreviewProps) {
   const [detectedService, setDetectedService] = useState<MusicService | null>(null)
   const [isValid, setIsValid] = useState(false)
+  const [metadata, setMetadata] = useState<TrackMetadata | null>(null)
+  const [isLoadingMetadata, setIsLoadingMetadata] = useState(false)
 
   useEffect(() => {
     if (!url) {
       setDetectedService(null)
       setIsValid(false)
+      setMetadata(null)
       return
     }
 
@@ -26,12 +36,35 @@ export function UrlPreview({ url, onUrlChange, placeholder = "Paste a music trac
     } catch {
       setIsValid(false)
       setDetectedService(null)
+      setMetadata(null)
       return
     }
 
     const service = getMusicService(url)
     setDetectedService(service)
+
+    // Fetch metadata if we have a valid URL
+    if (service) {
+      fetchMetadata(url)
+    }
   }, [url])
+
+  const fetchMetadata = async (url: string) => {
+    setIsLoadingMetadata(true)
+    try {
+      // For now, we'll fetch metadata from the backend
+      // In a real implementation, you might want to add an endpoint for this
+      const response = await fetch(`/api/track-metadata?url=${encodeURIComponent(url)}`)
+      if (response.ok) {
+        const data = await response.json()
+        setMetadata(data)
+      }
+    } catch (error) {
+      console.error('Error fetching metadata:', error)
+    } finally {
+      setIsLoadingMetadata(false)
+    }
+  }
 
   const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onUrlChange(e.target.value)
@@ -84,8 +117,20 @@ export function UrlPreview({ url, onUrlChange, placeholder = "Paste a music trac
               className="preview-logo"
             />
             <div className="preview-info">
-              <div className="service-name">{detectedService.name}</div>
-              <div className="track-url">{url}</div>
+              {isLoadingMetadata ? (
+                <div className="track-info">
+                  <div className="track-title">Loading track info...</div>
+                </div>
+              ) : metadata ? (
+                <div className="track-info">
+                  <div className="track-title">{metadata.title}</div>
+                  {metadata.artist && (
+                    <div className="track-artist">{metadata.artist}</div>
+                  )}
+                </div>
+              ) : (
+                <div className="track-url">{url}</div>
+              )}
             </div>
           </div>
         </div>

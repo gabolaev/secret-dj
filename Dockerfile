@@ -18,6 +18,7 @@ COPY --from=builder /app/frontend/package.json ./frontend/
 
 RUN npm install --production
 
+COPY --from=builder /app/common/dist ./common/dist
 COPY --from=builder /app/backend/dist ./backend/dist
 COPY --from=builder /app/frontend/dist ./frontend/dist
 

@@ -7,6 +7,13 @@ interface PlayedTracksListProps {
 }
 
 export function PlayedTracksList({ playedTracks }: PlayedTracksListProps) {
+    const getTrackDisplayText = (track: PlayedTrack['track']) => {
+        if (track.title) {
+            return track.artist ? `${track.title} - ${track.artist}` : track.title;
+        }
+        return shortenUrl(track.url, 40);
+    };
+
     if (!playedTracks || playedTracks.length === 0) {
         return (
             <div className="text-center text-secondary">
@@ -25,7 +32,7 @@ export function PlayedTracksList({ playedTracks }: PlayedTracksListProps) {
                             {service && (
                                 <img src={service.logo} alt={service.name} className="track-service-logo" />
                             )}
-                            <span className="track-title">{shortenUrl(track.url, 40)}</span>
+                            <span className="track-title">{getTrackDisplayText(track)}</span>
                             {likes && likes.length > 0 && (
                                 <span className="track-likes">
                                     ❤️ {likes.length}
