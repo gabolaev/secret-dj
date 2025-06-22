@@ -149,13 +149,14 @@ function App() {
 
   const handleCopyGameId = () => {
     if (!gameState) return
-    navigator.clipboard.writeText(gameState.id).then(() => {
+    const fullUrl = `${window.location.origin}${window.location.pathname}#${gameState.id}`
+    navigator.clipboard.writeText(fullUrl).then(() => {
       setIsGameIdCopied(true)
       setTimeout(() => setIsGameIdCopied(false), 2000)
     }).catch(err => {
-      console.error('Failed to copy Game ID:', err)
+      console.error('Failed to copy Game URL:', err)
       // You could show an error message to the user here
-      setError('Failed to copy Game ID')
+      setError('Failed to copy Game URL')
       setTimeout(() => setError(null), 2000)
     })
   }
@@ -216,8 +217,25 @@ function App() {
           setMode('game')
         } else {
           setMode('lobby')
+          // Check for URL hash only if reconnection failed
+          const hash = window.location.hash
+          if (hash && hash.startsWith('#')) {
+            const gameIdFromHash = hash.substring(1)
+            if (gameIdFromHash) {
+              setGameId(gameIdFromHash)
+            }
+          }
         }
       })
+    } else {
+      // No saved credentials, check for URL hash
+      const hash = window.location.hash
+      if (hash && hash.startsWith('#')) {
+        const gameIdFromHash = hash.substring(1)
+        if (gameIdFromHash) {
+          setGameId(gameIdFromHash)
+        }
+      }
     }
   }, [])
 
