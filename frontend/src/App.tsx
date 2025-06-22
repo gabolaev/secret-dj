@@ -367,93 +367,94 @@ function App() {
       );
     }
 
-    const renderLeftPanel = () => (
-      <div className="sidebar-panel">
-        {renderAdminControls()}
-        {gameState.gamePhase === 'Lobby' && (
-          <div className="game-settings-container">
-            <h3>Game Settings</h3>
-            <div className="settings-row">
-              <span className="settings-label">Tracks per player</span>
-              {isAdmin ? (
-                <div className="number-input-group">
-                  <button
-                    className="number-input-btn"
-                    onClick={handleDecrementTracks}
-                    disabled={(gameState.gameSettings.tracksPerPlayer || 2) <= 1}
-                  >
-                    -
-                  </button>
-                  <span className="number-input-value">{gameState.gameSettings.tracksPerPlayer}</span>
-                  <button
-                    className="number-input-btn"
-                    onClick={handleIncrementTracks}
-                    disabled={(gameState.gameSettings.tracksPerPlayer || 2) >= 5}
-                  >
-                    +
-                  </button>
-                </div>
-              ) : (
-                <span className="settings-value">{gameState.gameSettings.tracksPerPlayer}</span>
-              )}
-            </div>
-          </div>
-        )}
-        <h3>Players</h3>
-        <ul className={`players-list ${gameState.gamePhase === 'Lobby' ? 'in-lobby' : ''}`}>
-          {gameState.players.map((player) => {
-            const tracksSubmitted = player.trackCount;
-            const ready = tracksSubmitted >= (gameState.gameSettings.tracksPerPlayer || 2)
-            return (
-              <li key={player.username} className={`player-item ${ready ? 'is-ready' : ''}`}>
-                <div className="player-info-left">
-                  <div className="player-avatar">
-                    {player.username.charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <div className="player-name">
-                      {player.username}
-                      {player.isAdmin && <span className="admin-icon"> 👑</span>}
-                    </div>
-                    <div className="player-status">
-                      {player.isConnected ? (
-                        <span className="connected">● Connected</span>
-                      ) : (
-                        <span className="disconnected">● Disconnected</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <div className="player-tracks">
-                  {tracksSubmitted}/{gameState.gameSettings.tracksPerPlayer || 2}
-                  {ready && <span className="player-ready"> ✓</span>}
-                </div>
-              </li>
-            )
-          })}
-        </ul>
-      </div>
-    )
-
-    const renderRightPanel = () => {
+    const renderLeftPanel = () => {
       const showMyTracks = gameState.gamePhase !== 'Lobby' && me && (me.tracks || []).length > 0;
       const showTrackHistory = gameState.playedTracks.length > 0;
 
-      if (!showMyTracks && !showTrackHistory) {
-        return null;
-      }
-
       return (
-        <div className="sidebar-panel animate-fade-in">
-          <h3>My Tracks</h3>
-          <MyTracksList
-            myTracks={myTracks}
-            playedTrackIds={gameState.playedTrackIds}
-            currentTrackId={gameState.gamePhase === 'RoundInProgress' ? gameState.currentRoundData?.track?.id : undefined}
-          />
-          {gameState.playedTracks.length > 0 && (
-            <div className="mt-lg">
-              <PlayedTracksList playedTracks={gameState.playedTracks} />
+        <div className="sidebar-panel">
+          {renderAdminControls()}
+          {gameState.gamePhase === 'Lobby' && (
+            <div className="game-settings-container">
+              <h3>Game Settings</h3>
+              <div className="settings-row">
+                <span className="settings-label">Tracks per player</span>
+                {isAdmin ? (
+                  <div className="number-input-group">
+                    <button
+                      className="number-input-btn"
+                      onClick={handleDecrementTracks}
+                      disabled={(gameState.gameSettings.tracksPerPlayer || 2) <= 1}
+                    >
+                      -
+                    </button>
+                    <span className="number-input-value">{gameState.gameSettings.tracksPerPlayer}</span>
+                    <button
+                      className="number-input-btn"
+                      onClick={handleIncrementTracks}
+                      disabled={(gameState.gameSettings.tracksPerPlayer || 2) >= 5}
+                    >
+                      +
+                    </button>
+                  </div>
+                ) : (
+                  <span className="settings-value">{gameState.gameSettings.tracksPerPlayer}</span>
+                )}
+              </div>
+            </div>
+          )}
+          <h3>Players</h3>
+          <ul className={`players-list ${gameState.gamePhase === 'Lobby' ? 'in-lobby' : ''}`}>
+            {gameState.players.map((player) => {
+              const tracksSubmitted = player.trackCount;
+              const ready = tracksSubmitted >= (gameState.gameSettings.tracksPerPlayer || 2)
+              return (
+                <li key={player.username} className={`player-item ${ready ? 'is-ready' : ''}`}>
+                  <div className="player-info-left">
+                    <div className="player-avatar">
+                      {player.username.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <div className="player-name">
+                        {player.username}
+                        {player.isAdmin && <span className="admin-icon"> 👑</span>}
+                      </div>
+                      <div className="player-status">
+                        {player.isConnected ? (
+                          <span className="connected">● Connected</span>
+                        ) : (
+                          <span className="disconnected">● Disconnected</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="player-tracks">
+                    {tracksSubmitted}/{gameState.gameSettings.tracksPerPlayer || 2}
+                    {ready && <span className="player-ready"> ✓</span>}
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
+
+          {(showMyTracks || showTrackHistory) && (
+            <div className="animate-fade-in">
+              {showMyTracks && (
+                <div className="mt-lg">
+                  <h3>My Tracks</h3>
+                  <MyTracksList
+                    myTracks={myTracks}
+                    playedTrackIds={gameState.playedTrackIds}
+                    currentTrackId={gameState.gamePhase === 'RoundInProgress' ? gameState.currentRoundData?.track?.id : undefined}
+                  />
+                </div>
+              )}
+              {showTrackHistory && (
+                <div className="mt-lg">
+                  <h3>Played Tracks</h3>
+                  <PlayedTracksList playedTracks={gameState.playedTracks} />
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -677,18 +678,6 @@ function App() {
                     )}
                   </div>
                 </div>
-
-                <div className="results-card">
-                  <h4>Points Awarded</h4>
-                  <ul className="results-list">
-                    {Object.entries(results.pointsAwarded).map(([user, points]) => (
-                      <li key={user}>
-                        <span>{user}</span>
-                        <span className="text-accent">+{points}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
               </div>
             </div>
           </div>
@@ -835,7 +824,6 @@ function App() {
           <div className="center-panel">
             {renderCenterPanel()}
           </div>
-          {renderRightPanel()}
         </main>
       </div>
     );

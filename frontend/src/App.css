@@ -377,7 +377,68 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: var(--space-lg);
-  margin-bottom: var(--space-lg);
+}
+
+.nominations-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-lg);
+}
+
+.nomination-card {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  border: 1px solid var(--input-border);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-normal);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.nomination-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--accent-primary-hover);
+}
+
+.nomination-emoji {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.nomination-title {
+  font-family: var(--font-primary);
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.nomination-description {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  margin: 0;
+  flex-grow: 1;
+}
+
+.nomination-winner {
+  margin-top: var(--space-md);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--input-border);
+  font-size: 1rem;
+}
+
+.winner-name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.winner-score {
+  color: var(--text-secondary);
+  margin-left: var(--space-sm);
+  font-size: 0.875rem;
 }
 
 .results-card {
@@ -1111,7 +1172,7 @@
 }
 
 .number-input-group .number-input-btn {
-  background: var(--bg-primary);
+  background: var(--bg-secondary);
   color: var(--text-secondary);
   height: 44px;
   width: 44px;

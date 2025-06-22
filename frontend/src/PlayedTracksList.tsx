@@ -19,7 +19,6 @@ export const PlayedTracksList: React.FC<PlayedTracksListProps> = ({ playedTracks
     if (!playedTracks || playedTracks.length === 0) {
         return (
             <div className="played-tracks-list">
-                <h3>Played Tracks</h3>
                 <p className="text-secondary">No tracks played yet.</p>
             </div>
         );
@@ -27,7 +26,6 @@ export const PlayedTracksList: React.FC<PlayedTracksListProps> = ({ playedTracks
 
     return (
         <div className="played-tracks-list">
-            <h3>Played Tracks</h3>
             <ul className="tracks-list">
                 {playedTracks.map(({ track, discoveries }) => {
                     const service = getMusicService(track.url);
