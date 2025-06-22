@@ -25,6 +25,7 @@ function App() {
   const [isGameIdCopied, setIsGameIdCopied] = useState(false)
   const [discoveryLoading, setDiscoveryLoading] = useState(false)
   const [nominations, setNominations] = useState<GameNominations | null>(null)
+  const [showRules, setShowRules] = useState(false)
 
   const getSocket = useCallback(() => {
     let s = socket
@@ -270,6 +271,27 @@ function App() {
         <div className="lobby">
           <h1>Secret DJ</h1>
           <p className="text-secondary">Share your favorite tracks and guess who submitted what!</p>
+          
+          <div className="rules-section">
+            <button 
+              className="rules-toggle" 
+              onClick={() => setShowRules(!showRules)}
+            >
+              {showRules ? '📖 Hide Rules' : '📖 How to Play'}
+            </button>
+            
+            {showRules && (
+              <div className="rules-content">
+                <h3>How to Play</h3>
+                <p><strong>🎵 Main Goal:</strong> Share your favorite music and discover amazing new tracks with your friends!</p>
+                <p><strong>1. Share Music:</strong> Submit your favorite tracks in the lobby to share your musical taste.</p>
+                <p><strong>2. Discover & Enjoy:</strong> Listen to tracks and click "Discover New Music!" when you find something you love.</p>
+                <p><strong>3. Guess:</strong> Try to guess who submitted each track!</p>
+                <p><strong>4. Celebrate:</strong> At the end, see the final results and celebrate your music discoveries!</p>
+                <p><em>💡 Remember: Don't try to game the stats! The goal is to have fun and share music with friends. It's not much of a competition.</em></p>
+              </div>
+            )}
+          </div>
           
           <form className="lobby-form" onSubmit={(e) => e.preventDefault()}>
             <div className="lobby-input-group">
@@ -836,6 +858,27 @@ function App() {
         <div className="lobby">
           <h1>Secret DJ</h1>
           <p className="text-secondary">Share your favorite tracks and guess who submitted what!</p>
+          
+          <div className="rules-section">
+            <button 
+              className="rules-toggle" 
+              onClick={() => setShowRules(!showRules)}
+            >
+              {showRules ? '📖 Hide Rules' : '📖 How to Play'}
+            </button>
+            
+            {showRules && (
+              <div className="rules-content">
+                <h3>How to Play</h3>
+                <p><strong>🎵 Main Goal:</strong> Share your favorite music and discover amazing new tracks with your friends!</p>
+                <p><strong>1. Share Music:</strong> Submit your favorite tracks in the lobby to share your musical taste.</p>
+                <p><strong>2. Discover & Enjoy:</strong> Listen to tracks and click "Discover New Music!" when you find something you love.</p>
+                <p><strong>3. Guess:</strong> Try to guess who submitted each track!</p>
+                <p><strong>4. Celebrate:</strong> At the end, see the final results and celebrate your music discoveries!</p>
+                <p><em>💡 Remember: Don't try to game the stats! The goal is to have fun and share music with friends. It's not much of a competition.</em></p>
+              </div>
+            )}
+          </div>
           
           <form className="lobby-form" onSubmit={(e) => e.preventDefault()}>
             <div className="lobby-input-group">
