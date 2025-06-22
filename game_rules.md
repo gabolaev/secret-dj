@@ -1,8 +1,9 @@
 # Secret DJ: Rules & Restrictions
 
 ## Game Overview
-- The game is a real-time, multiplayer music guessing competition.
+- The game is a real-time, multiplayer music discovery and guessing competition.
 - Players join a lobby, submit music tracks, and then take turns guessing which player submitted each track.
+- The goal is to share your musical taste and discover new music together!
 
 ---
 
@@ -19,13 +20,13 @@
 - All players (except the one who submitted the current track) listen to the track and try to guess who submitted it. They should see a message "This is your track, just enjoy it!"
 - The player whose track is being played cannot vote in that round.
 - Each player can only vote once per round, but they can still change their vote before the admin published the results (e.g. concluded the round).
-- Optionally, players may also be able to "like" a track in addition to guessing.
+- Players can "discover" tracks they like by clicking "Discover New Music!" - this means they found something new and interesting.
 - **Players never see the full list of submitted tracks.**
 
 ### 3. Voting and Results
 - Once all eligible players have voted, the admin is presented with a "Reveal Results" button.
 - Only the admin can reveal the results of the round.
-- When results are revealed, all players see who submitted the track, who guessed correctly, and any points or likes awarded. We can have something like a list of songs from the previous rounds and who submitted them. 
+- When results are revealed, all players see who submitted the track, who guessed correctly, and how many discoveries the track received.
 
 ### 4. Next Round
 - After viewing the results, the admin is presented with a "Next Round" button.
@@ -35,7 +36,18 @@
 
 ### 5. Game End
 - When all tracks have been played, the game ends.
-- A final leaderboard is shown, displaying each player's score and ranking.
+- Special nominations are awarded for different achievements.
+
+---
+
+## Final Nominations
+
+At the end of the game, players receive special nominations:
+
+**🏆 Musical Guide** - Who shared the most discoveries with others
+**🎯 Taste Expert** - Who correctly guessed the most tracks
+**💎 Discovery of the Year** - Who had the most discoveries for a single track
+**🎵 Music Collector** - Who discovered the most new tracks
 
 ---
 
@@ -61,6 +73,8 @@
 
 - **Game Progression:** The game cannot progress to the next round or reveal results without the admin's action.
 
+- **Musical Honesty:** Players are encouraged to submit tracks that genuinely represent their musical taste, as the goal is to share and discover music together.
+
 ---
 
-**These rules ensure a fair, fun, and challenging experience for all players.** 
+**These rules ensure a fair, fun, and musically enriching experience for all players.** 

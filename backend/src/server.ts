@@ -337,19 +337,34 @@ io.on('connection', (socket: Socket) => {
         }
     });
 
-    // Like track
-    socket.on('likeTrack', (
+    // Discover track
+    socket.on('discoverTrack', (
         data: { gameId: string; username: string },
         cb: (result: any) => void
     ) => {
         const { gameId, username } = data;
-        log('likeTrack event received:', { gameId, username });
-        const ok = gameManager.likeTrack(gameId, username);
+        log('discoverTrack event received:', { gameId, username });
+        const ok = gameManager.discoverTrack(gameId, username);
         if (ok) {
             emitGameState(gameId);
             cb({ success: true });
         } else {
-            cb({ success: false, error: 'Failed to like track' });
+            cb({ success: false, error: 'Failed to discover track' });
+        }
+    });
+
+    // Get game nominations
+    socket.on('getGameNominations', (
+        data: { gameId: string },
+        cb: (result: any) => void
+    ) => {
+        const { gameId } = data;
+        log('getGameNominations event received:', { gameId });
+        const nominations = gameManager.getGameNominations(gameId);
+        if (nominations) {
+            cb({ success: true, nominations });
+        } else {
+            cb({ success: false, error: 'Failed to get nominations' });
         }
     });
 });

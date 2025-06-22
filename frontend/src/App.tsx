@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { io, Socket } from 'socket.io-client'
 // import reactLogo from './assets/react.svg'
 // import viteLogo from '/vite.svg'
-import type { GameState } from '../../common/types'
+import type { GameState, GameNominations, PlayerNominations } from '../../common/types'
 import { PlayedTracksList } from './PlayedTracksList'
 import { MyTracksList } from './MyTracksList'
 import { TrackPlayer } from './TrackPlayer'
@@ -11,40 +11,29 @@ import { UrlPreview } from './UrlPreview'
 type SocketResponse = { success: boolean; [key: string]: unknown }
 import './App.css'
 
-const BACKEND_URL = '/'
-let socket: Socket | null = null
+const VITE_BACKEND_URL = import.meta.env.VITE_BACKEND_URL as string
 
 function App() {
-  const [username, setUsername] = useState('')
-  const [gameId, setGameId] = useState('')
   const [mode, setMode] = useState<'lobby' | 'game' | 'loading'>('lobby')
-  const [error, setError] = useState<string | null>(null)
+  const [socket, setSocket] = useState<Socket | null>(null)
   const [gameState, setGameState] = useState<GameState | null>(null)
+  const [username, setUsername] = useState(localStorage.getItem('username') || '')
+  const [gameId, setGameId] = useState(localStorage.getItem('gameId') || '')
+  const [error, setError] = useState<string | null>(null)
   const [trackUrl, setTrackUrl] = useState('')
   const [vote, setVote] = useState('')
-  const [likeLoading, setLikeLoading] = useState(false)
   const [isGameIdCopied, setIsGameIdCopied] = useState(false)
+  const [discoveryLoading, setDiscoveryLoading] = useState(false)
+  const [nominations, setNominations] = useState<GameNominations | null>(null)
 
-  // Connect to backend if not already connected
-  function getSocket() {
-    if (!socket) {
-      socket = io(BACKEND_URL)
-      console.log('Connecting to backend at', BACKEND_URL)
-      socket.on('connect', () => {
-        console.log('Socket connected:', socket?.id)
-      })
-      socket.on('disconnect', () => {
-        console.log('Socket disconnected')
-      })
-      socket.on('connect_error', (err) => {
-        console.error('Socket connection error:', err)
-      })
-      socket.on('gameState', (state: GameState) => {
-        setGameState(state)
-      })
+  const getSocket = useCallback(() => {
+    let s = socket
+    if (!s) {
+      s = io(VITE_BACKEND_URL)
+      setSocket(s)
     }
-    return socket
-  }
+    return s
+  }, [socket])
 
   const handleCreateGame = () => {
     setMode('loading')
@@ -170,14 +159,14 @@ function App() {
     })
   }
 
-  const handleLikeTrack = () => {
+  const handleDiscoverTrack = () => {
     if (!gameState) return
-    setLikeLoading(true)
+    setDiscoveryLoading(true)
     const s = getSocket()
-    s.emit('likeTrack', { gameId, username }, (res: SocketResponse) => {
-      setLikeLoading(false)
+    s.emit('discoverTrack', { gameId, username }, (res: SocketResponse) => {
+      setDiscoveryLoading(false)
       if (!res.success) {
-        setError(typeof res.error === 'string' ? res.error : 'Failed to like track')
+        setError(typeof res.error === 'string' ? res.error : 'Failed to discover track')
         setTimeout(() => setError(null), 3000)
       }
     })
@@ -240,6 +229,29 @@ function App() {
       }
     }
   }, [gameState]);
+
+  useEffect(() => {
+    if (gameState?.gamePhase === 'GameFinished' && !nominations) {
+      const s = getSocket();
+      s.emit('getGameNominations', { gameId }, (res: SocketResponse) => {
+        if (res.success) {
+          setNominations(res.nominations as GameNominations);
+        }
+      });
+    }
+  }, [gameState, nominations, gameId, getSocket]);
+
+  useEffect(() => {
+    if (socket) {
+      const handleGameState = (state: GameState) => {
+        setGameState(state);
+      };
+      socket.on('gameState', handleGameState);
+      return () => {
+        socket.off('gameState', handleGameState);
+      };
+    }
+  }, [socket]);
 
   if (mode === 'loading') {
     return (
@@ -370,23 +382,19 @@ function App() {
                     onClick={handleDecrementTracks}
                     disabled={(gameState.gameSettings.tracksPerPlayer || 2) <= 1}
                   >
-                    &lt;
+                    -
                   </button>
-                  <div className="number-display">
-                    {gameState.gameSettings.tracksPerPlayer || 2}
-                  </div>
+                  <span className="number-input-value">{gameState.gameSettings.tracksPerPlayer}</span>
                   <button
                     className="number-input-btn"
                     onClick={handleIncrementTracks}
                     disabled={(gameState.gameSettings.tracksPerPlayer || 2) >= 5}
                   >
-                    &gt;
+                    +
                   </button>
                 </div>
               ) : (
-                <div className="settings-value">
-                  {gameState.gameSettings.tracksPerPlayer || 2}
-                </div>
+                <span className="settings-value">{gameState.gameSettings.tracksPerPlayer}</span>
               )}
             </div>
           </div>
@@ -424,31 +432,6 @@ function App() {
             )
           })}
         </ul>
-        
-        {gameState.leaderboard && gameState.leaderboard.length > 0 && gameState.gamePhase !== 'Lobby' && gameState.gamePhase !== 'GameFinished' && (
-          <div className="mt-lg">
-            <h4>Leaderboard</h4>
-            <ul className="players-list">
-              {gameState.leaderboard
-                .sort((a, b) => b.points - a.points)
-                .map((player, index) => (
-                  <li key={player.username} className="player-item">
-                    <div className="player-info-left">
-                      <div className="player-avatar" style={{ 
-                        background: index === 0 ? 'linear-gradient(135deg, #FFD700, #FFA500)' : 
-                                   index === 1 ? 'linear-gradient(135deg, #C0C0C0, #A0A0A0)' :
-                                   index === 2 ? 'linear-gradient(135deg, #CD7F32, #B8860B)' : undefined
-                      }}>
-                        {index + 1}
-                      </div>
-                      <div className="player-name">{player.username}</div>
-                    </div>
-                    <div className="player-tracks">{player.points} pts</div>
-                  </li>
-                ))}
-            </ul>
-          </div>
-        )}
       </div>
     )
 
@@ -470,7 +453,6 @@ function App() {
           />
           {gameState.playedTracks.length > 0 && (
             <div className="mt-lg">
-              <h3>Track History</h3>
               <PlayedTracksList playedTracks={gameState.playedTracks} />
             </div>
           )}
@@ -540,9 +522,9 @@ function App() {
       // ROUND IN PROGRESS
       if (gameState.gamePhase === 'RoundInProgress' && gameState.currentRoundData) {
         const isMyTrack = !!me?.tracks?.some(t => t.id === gameState.currentRoundData?.track.id);
-        const hasLiked = !!gameState.currentRoundData.likes?.[username];
-        const likeCount = Object.keys(gameState.currentRoundData.likes || {}).length;
-        const likers = Object.keys(gameState.currentRoundData.likes || {});
+        const hasDiscovered = !!gameState.currentRoundData.discoveries?.[username];
+        const discoveryCount = Object.keys(gameState.currentRoundData.discoveries || {}).length;
+        const discoverers = Object.keys(gameState.currentRoundData.discoveries || {});
 
         return (
           <div className="game-phase">
@@ -566,26 +548,26 @@ function App() {
               <div className="like-section">
                 {!isMyTrack && (
                   <button 
-                    className={`like-button ${hasLiked ? 'liked' : ''}`}
-                    onClick={handleLikeTrack} 
-                    disabled={likeLoading}
+                    className={`like-button ${hasDiscovered ? 'liked' : ''}`}
+                    onClick={handleDiscoverTrack} 
+                    disabled={discoveryLoading}
                   >
-                    {likeLoading ? (
+                    {discoveryLoading ? (
                       <div className="loading-spinner-small"></div>
-                    ) : hasLiked ? (
-                      '❤️ LIKED!'
+                    ) : hasDiscovered ? (
+                      '❤️ DISCOVERED!'
                     ) : (
-                      '🤍 LIKE'
+                      '🤍 DISCOVER'
                     )}
                   </button>
                 )}
                 
-                {gameState.currentRoundData.likes && likeCount > 0 && (
+                {gameState.currentRoundData.discoveries && discoveryCount > 0 && (
                   <div className="like-count">
-                    {likeCount} {likeCount === 1 ? 'like' : 'likes'}
-                    {isMyTrack && likers.length > 0 && (
+                    {discoveryCount} {discoveryCount === 1 ? 'discovery' : 'discoveries'}
+                    {isMyTrack && discoverers.length > 0 && (
                       <span className="likers-list">
-                        ({likers.join(', ')})
+                        ({discoverers.join(', ')})
                       </span>
                     )}
                   </div>
@@ -683,14 +665,14 @@ function App() {
                 </div>
 
                 <div className="results-card">
-                  <h4>Likes</h4>
+                  <h4>Discoveries</h4>
                   <div className="text-center">
                     <div className="text-accent" style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>
-                      ❤️ {results.likeCount || 0}
+                      ❤️ {results.discoveryCount || 0}
                     </div>
-                    {results.likers && results.likers.length > 0 && (
+                    {results.discoverers && results.discoverers.length > 0 && (
                       <div className="text-secondary">
-                        {results.likers.join(', ')}
+                        {results.discoverers.join(', ')}
                       </div>
                     )}
                   </div>
@@ -715,10 +697,82 @@ function App() {
 
       // GAME FINISHED
       if (gameState.gamePhase === 'GameFinished') {
-        const likeLeaderboard = Object.values(gameState.players).map(p => ({
-          username: p.username,
-          likeCount: gameState.playedTracks.filter(pt => pt.ownerUsername === p.username).reduce((acc, pt) => acc + (pt.likes?.length || 0), 0)
-        })).sort((a, b) => b.likeCount - a.likeCount)
+
+        const renderNominations = () => {
+          if (!nominations) {
+            return (
+              <div className="loading">
+                <div className="loading-spinner"></div>
+                Calculating nominations...
+              </div>
+            );
+          }
+
+          const findWinner = (field: keyof Omit<PlayerNominations, 'username'>): { username: string; value: number } => {
+            if (!nominations || nominations.players.length === 0) return { username: 'N/A', value: 0 };
+            
+            let winner = nominations.players[0];
+            for (const player of nominations.players) {
+              if (player[field] > winner[field]) {
+                winner = player;
+              }
+            }
+
+            // If the max value is 0, there is no winner
+            if(winner[field] === 0) return { username: '-', value: 0 };
+
+            return { username: winner.username, value: winner[field] as number };
+          };
+
+          const nominationConfig = [
+            {
+              emoji: '🏆',
+              title: 'Musical Guide',
+              description: 'Shared the most discoveries with others',
+              winner: findWinner('musicalGuide'),
+              unit: 'discoveries'
+            },
+            {
+              emoji: '🎯',
+              title: 'Taste Expert',
+              description: 'Correctly guessed the most tracks',
+              winner: findWinner('tasteExpert'),
+              unit: 'guesses'
+            },
+            {
+              emoji: '💎',
+              title: 'Discovery of the Year',
+              description: 'Had the track with the most discoveries',
+              winner: findWinner('discoveryOfTheYear'),
+              unit: 'discoveries'
+            },
+            {
+              emoji: '🎵',
+              title: 'Music Collector',
+              description: 'Discovered the most new tracks',
+              winner: findWinner('musicCollector'),
+              unit: 'discoveries'
+            },
+          ];
+
+          return (
+            <div className="nominations-grid">
+              {nominationConfig.map(nom => (
+                <div key={nom.title} className="nomination-card">
+                  <div className="nomination-emoji">{nom.emoji}</div>
+                  <h4 className="nomination-title">{nom.title}</h4>
+                  <p className="nomination-description">{nom.description}</p>
+                  <div className="nomination-winner">
+                    <span className="winner-name">{nom.winner.username}</span>
+                    {nom.winner.value > 0 && (
+                      <span className="winner-score">({nom.winner.value} {nom.unit})</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
+        }
 
         return (
           <div className="game-phase">
@@ -728,39 +782,11 @@ function App() {
             </div>
 
             <div className="results-section">
-              <h3 className="results-title">Final Leaderboard</h3>
-              <div className="results-grid">
-                <div className="results-card">
-                  <h4>🏆 Points Leaderboard</h4>
-                  <ul className="results-list">
-                    {gameState.leaderboard.sort((a, b) => b.points - a.points).map((p, index) => (
-                      <li key={p.username}>
-                        <span>
-                          {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`} {p.username}
-                        </span>
-                        <span className="text-accent">{p.points} pts</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div className="results-card">
-                  <h4>❤️ Most Liked Songs</h4>
-                  <ul className="results-list">
-                    {likeLeaderboard.map((entry, index) => (
-                      <li key={entry.username}>
-                        <span>
-                          {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`} {entry.username}
-                        </span>
-                        <span className="text-accent">{entry.likeCount} likes</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
+              <h3 className="results-title">✨ Nominations</h3>
+              {renderNominations()}
             </div>
 
-            <div className="text-center">
+            <div className="text-center mt-xl">
               <button className="btn-secondary btn-large" onClick={handleReturnToLobby}>
                 Exit
               </button>

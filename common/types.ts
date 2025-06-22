@@ -21,7 +21,8 @@ export interface Track {
 export interface PlayedTrack {
     track: Track;
     ownerUsername: string;
-    likes: string[]; // usernames of players who liked this track
+    discoveries: string[]; // usernames of players who discovered this track
+    votes: Array<{ voter: string; guessed: string; correct: boolean }>;
 }
 
 // Game settings
@@ -43,13 +44,13 @@ export interface RoundData {
     track: Track;
     ownerUsername: string;
     votes: Record<string, string>; // voterUsername -> guessedOwnerUsername
-    likes: Record<string, boolean>; // username -> liked or not
+    discoveries: Record<string, boolean>; // username -> discovered or not
     results?: {
         correctOwner: string;
         votes: Array<{ voter: string; guessed: string; correct: boolean }>;
         pointsAwarded: Record<string, number>;
-        likeCount?: number;
-        likers?: string[];
+        discoveryCount?: number;
+        discoverers?: string[];
     };
 }
 
@@ -88,11 +89,25 @@ export interface GameState {
         track: Track;
         ownerUsername?: string; // Hidden until results are shown
         results?: RoundResults;
-        likes?: Record<string, boolean>;
+        discoveries?: Record<string, boolean>;
         votesCast?: number;
         totalVoters?: number;
     };
     playedTrackIds: string[];
     playedTracks: PlayedTrack[];
     leaderboard: Array<{ username: string; points: number }>;
+}
+
+// New nomination types for the end of the game
+export interface PlayerNominations {
+    username: string;
+    musicalGuide: number; // tracks discovered by others
+    tasteExpert: number; // correct guesses
+    discoveryOfTheYear: number; // most discoveries for a single track
+    musicCollector: number; // tracks discovered by this player
+}
+
+export interface GameNominations {
+    players: PlayerNominations[];
+    finalLeaderboard: Array<{ username: string; points: number }>;
 }
