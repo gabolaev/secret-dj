@@ -124,7 +124,7 @@ export class GameManager {
         let currentRoundDataForPlayer: GameState['currentRoundData'] | undefined = undefined;
 
         if (game.currentRoundData) {
-            const { ownerUsername, discoveries, votes, ...restOfRoundData } = game.currentRoundData;
+            const { ownerUsername, likes, votes, ...restOfRoundData } = game.currentRoundData;
             currentRoundDataForPlayer = { ...restOfRoundData };
 
             // Add voting progress
@@ -136,7 +136,7 @@ export class GameManager {
             const isOwner = perspectiveOf === ownerUsername;
             const resultsAreOut = game.gamePhase === 'RoundResults';
 
-            currentRoundDataForPlayer.discoveries = discoveries; // Always send discoveries
+            currentRoundDataForPlayer.likes = likes; // Always send likes
 
             if (isOwner || resultsAreOut) {
                 currentRoundDataForPlayer.ownerUsername = ownerUsername;
@@ -303,7 +303,7 @@ export class GameManager {
             track,
             ownerUsername: owner,
             votes: {},
-            discoveries: {}, // initialize discoveries for this round
+            likes: {}, // initialize likes for this round
         };
         game.playedTrackIds.add(track.id);
         game.gamePhase = 'RoundInProgress';
@@ -311,21 +311,21 @@ export class GameManager {
         return true;
     }
 
-    // Player discovers the current track
-    discoverTrack(gameId: string, username: string): boolean {
+    // Player likes the current track
+    likeTrack(gameId: string, username: string): boolean {
         const game = this.games.get(gameId);
         if (!game || !game.currentRoundData) return false;
-        // Owner cannot discover their own track
+        // Owner cannot like their own track
         if (username === game.currentRoundData.ownerUsername) return false;
-        // Only allow discovering if in RoundInProgress
+        // Only allow liking if in RoundInProgress
         if (game.gamePhase !== 'RoundInProgress') return false;
 
-        if (game.currentRoundData.discoveries[username]) {
-            delete game.currentRoundData.discoveries[username];
-            log(`Player ${username} undiscovered a track in game ${gameId}`);
+        if (game.currentRoundData.likes[username]) {
+            delete game.currentRoundData.likes[username];
+            log(`Player ${username} unliked a track in game ${gameId}`);
         } else {
-            game.currentRoundData.discoveries[username] = true;
-            log(`Player ${username} discovered a track in game ${gameId}`);
+            game.currentRoundData.likes[username] = true;
+            log(`Player ${username} liked a track in game ${gameId}`);
         }
         return true;
     }
@@ -355,15 +355,15 @@ export class GameManager {
         const game = this.games.get(gameId);
         if (!game || !game.currentRoundData) return false;
         if (game.gamePhase !== 'VotesTallied') return false;
-        const { ownerUsername, votes, track, discoveries } = game.currentRoundData;
+        const { ownerUsername, votes, track, likes } = game.currentRoundData;
         if (!ownerUsername) return false;
         // Tally results
         const results = {
             correctOwner: ownerUsername,
             votes: [] as Array<{ voter: string; guessed: string; correct: boolean }>,
             pointsAwarded: {} as Record<string, number>,
-            discoveryCount: Object.keys(discoveries || {}).length,
-            discoverers: Object.keys(discoveries || {}),
+            likeCount: Object.keys(likes || {}).length,
+            likers: Object.keys(likes || {}),
         };
         for (const [voter, guessed] of Object.entries(votes)) {
             const correct = guessed === ownerUsername;
@@ -375,12 +375,12 @@ export class GameManager {
                 results.pointsAwarded[voter] = (results.pointsAwarded[voter] || 0) + 1;
             }
         }
-        // Owner gets points for each discovery (new scoring system)
-        const discoveryCount = Object.keys(discoveries || {}).length;
-        if (discoveryCount > 0) {
+        // Owner gets points for each like (new scoring system)
+        const likeCount = Object.keys(likes || {}).length;
+        if (likeCount > 0) {
             if (!game.leaderboard) game.leaderboard = {};
-            game.leaderboard[ownerUsername] = (game.leaderboard[ownerUsername] || 0) + discoveryCount;
-            results.pointsAwarded[ownerUsername] = (results.pointsAwarded[ownerUsername] || 0) + discoveryCount;
+            game.leaderboard[ownerUsername] = (game.leaderboard[ownerUsername] || 0) + likeCount;
+            results.pointsAwarded[ownerUsername] = (results.pointsAwarded[ownerUsername] || 0) + likeCount;
         }
         game.currentRoundData.results = results;
         game.gamePhase = 'RoundResults';
@@ -389,7 +389,7 @@ export class GameManager {
         game.playedTracks.push({
             track,
             ownerUsername,
-            discoveries: Object.keys(discoveries || {}),
+            likes: Object.keys(likes || {}),
             votes: results.votes,
         });
 
@@ -431,16 +431,17 @@ export class GameManager {
         for (const username of usernames) {
             const nominations: PlayerNominations = {
                 username,
-                musicalGuide: 0, // tracks discovered by others
+                mostLiked: 0, // tracks liked by others
                 tasteExpert: 0, // correct guesses
-                discoveryOfTheYear: 0, // most discoveries for a single track (placeholder, calculated below)
-                musicCollector: 0, // tracks discovered by this player
+                mostLikedTrack: 0, // most likes for a single track (placeholder, calculated below)
+                musicCollector: 0, // tracks liked by this player
+                mysteryMaster: 0, // times this player successfully hid their identity (lower is better)
             };
 
             const tracksByThisPlayer = game.playedTracks.filter(pt => pt.ownerUsername === username);
 
-            // Musical Guide: total discoveries on user's tracks
-            nominations.musicalGuide = tracksByThisPlayer.reduce((acc, pt) => acc + (pt.discoveries?.length || 0), 0);
+            // Most Liked: total likes on user's tracks
+            nominations.mostLiked = tracksByThisPlayer.reduce((acc, pt) => acc + (pt.likes?.length || 0), 0);
 
             // Taste Expert: total correct guesses made by the user
             let correctGuesses = 0;
@@ -452,24 +453,35 @@ export class GameManager {
             }
             nominations.tasteExpert = correctGuesses;
 
-            // Music Collector: tracks this player discovered
-            const discoveriesByThisPlayer = game.playedTracks.filter(pt =>
-                pt.discoveries?.includes(username)
-            );
-            nominations.musicCollector = discoveriesByThisPlayer.length;
+            // Music Collector: tracks this player liked
+            const likesByThisPlayer = game.playedTracks.filter(pt => pt.likes?.includes(username));
+            nominations.musicCollector = likesByThisPlayer.length;
+
+            // Mystery Master: times this player successfully hid their identity (lower is better)
+            let hiddenCount = 0;
+            for (const round of game.playedTracks) {
+                if (round.ownerUsername === username) {
+                    for (const vote of round.votes) {
+                        if (vote.guessed !== username) {
+                            hiddenCount++;
+                        }
+                    }
+                }
+            }
+            nominations.mysteryMaster = hiddenCount;
 
             playerNominations.push(nominations);
         }
 
-        // Discovery of the Year is calculated globally across all tracks
+        // Most Liked Track is calculated globally across all tracks
         const allPlayedTracks = game.playedTracks;
         if (allPlayedTracks.length > 0) {
-            const topTrack = allPlayedTracks.sort((a, b) => (b.discoveries?.length || 0) - (a.discoveries?.length || 0))[0];
+            const topTrack = allPlayedTracks.sort((a, b) => (b.likes?.length || 0) - (a.likes?.length || 0))[0];
             const winnerUsername = topTrack.ownerUsername;
             const winnerNomination = playerNominations.find(p => p.username === winnerUsername);
             if (winnerNomination) {
-                // We use the nomination value to store the number of discoveries for the top track
-                winnerNomination.discoveryOfTheYear = topTrack.discoveries.length;
+                // We use the nomination value to store the number of likes for the top track
+                winnerNomination.mostLikedTrack = topTrack.likes.length;
             }
         }
 

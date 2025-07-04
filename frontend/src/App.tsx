@@ -2,16 +2,18 @@ import { useState, useEffect, useCallback } from 'react'
 import { io, Socket } from 'socket.io-client'
 // import reactLogo from './assets/react.svg'
 // import viteLogo from '/vite.svg'
-import type { GameState, GameNominations, PlayerNominations } from '../../common/types'
+import type { GameState, GameNominations, PlayerNominations, PlayedTrack } from '../../common/types'
 import { PlayedTracksList } from './PlayedTracksList'
 import { MyTracksList } from './MyTracksList'
 import { TrackPlayer } from './TrackPlayer'
 import { UrlPreview } from './UrlPreview'
-// Define a type for socket responses
-type SocketResponse = { success: boolean; [key: string]: unknown }
+import { getMusicService } from './utils/musicServices'
 import './App.css'
 
 const VITE_BACKEND_URL = import.meta.env.VITE_BACKEND_URL as string
+
+// Define a type for socket responses
+type SocketResponse = { success: boolean; [key: string]: unknown }
 
 function App() {
   const [mode, setMode] = useState<'lobby' | 'game' | 'loading'>('lobby')
@@ -23,7 +25,7 @@ function App() {
   const [trackUrl, setTrackUrl] = useState('')
   const [vote, setVote] = useState('')
   const [isGameIdCopied, setIsGameIdCopied] = useState(false)
-  const [discoveryLoading, setDiscoveryLoading] = useState(false)
+  const [likeLoading, setLikeLoading] = useState(false)
   const [nominations, setNominations] = useState<GameNominations | null>(null)
   const [showRules, setShowRules] = useState(false)
 
@@ -161,14 +163,14 @@ function App() {
     })
   }
 
-  const handleDiscoverTrack = () => {
+  const handleLikeTrack = () => {
     if (!gameState) return
-    setDiscoveryLoading(true)
+    setLikeLoading(true)
     const s = getSocket()
-    s.emit('discoverTrack', { gameId, username }, (res: SocketResponse) => {
-      setDiscoveryLoading(false)
+    s.emit('likeTrack', { gameId, username }, (res: SocketResponse) => {
+      setLikeLoading(false)
       if (!res.success) {
-        setError(typeof res.error === 'string' ? res.error : 'Failed to discover track')
+        setError(typeof res.error === 'string' ? res.error : 'Failed to like track')
         setTimeout(() => setError(null), 3000)
       }
     })
@@ -301,11 +303,11 @@ function App() {
             {showRules && (
               <div className="rules-content">
                 <h3>How to Play</h3>
-                <p><strong>🎵 Main Goal:</strong> Share your favorite music and discover amazing new tracks with your friends!</p>
+                <p><strong>🎵 Main Goal:</strong> Share your favorite music and like amazing new tracks from your friends!</p>
                 <p><strong>1. Share Music:</strong> Submit your favorite tracks in the lobby to share your musical taste.</p>
-                <p><strong>2. Discover & Enjoy:</strong> Listen to tracks and click "Discover New Music!" when you find something you love.</p>
+                <p><strong>2. Like & Enjoy:</strong> Listen to tracks and click "Like" when you find something you love.</p>
                 <p><strong>3. Guess:</strong> Try to guess who submitted each track!</p>
-                <p><strong>4. Celebrate:</strong> At the end, see the final results and celebrate your music discoveries!</p>
+                <p><strong>4. Celebrate:</strong> At the end, see the final results and celebrate your favorite tracks!</p>
                 <p><em>💡 Remember: Don't try to game the stats! The goal is to have fun and share music with friends. It's not much of a competition.</em></p>
               </div>
             )}
@@ -489,10 +491,10 @@ function App() {
                   />
                 </div>
               )}
-              {showTrackHistory && (
+              {showTrackHistory && gameState.gamePhase !== 'GameFinished' && (
                 <div className="mt-lg">
                   <h3>Played Tracks</h3>
-                  <PlayedTracksList playedTracks={gameState.playedTracks} />
+                  <PlayedTracksList playedTracks={gameState.playedTracks} currentUsername={username} />
                 </div>
               )}
             </div>
@@ -560,18 +562,23 @@ function App() {
         )
       }
 
-      // ROUND IN PROGRESS
-      if (gameState.gamePhase === 'RoundInProgress' && gameState.currentRoundData) {
+      // ROUND IN PROGRESS OR VOTES TALLIED
+      if ((gameState.gamePhase === 'RoundInProgress' || gameState.gamePhase === 'VotesTallied') && gameState.currentRoundData) {
         const isMyTrack = !!me?.tracks?.some(t => t.id === gameState.currentRoundData?.track.id);
-        const hasDiscovered = !!gameState.currentRoundData.discoveries?.[username];
-        const discoveryCount = Object.keys(gameState.currentRoundData.discoveries || {}).length;
-        const discoverers = Object.keys(gameState.currentRoundData.discoveries || {});
+        const hasLiked = !!gameState.currentRoundData.likes?.[username];
+        const likeCount = Object.keys(gameState.currentRoundData.likes || {}).length;
+        const likers = Object.keys(gameState.currentRoundData.likes || {});
+        const votesTallied = gameState.gamePhase === 'VotesTallied';
 
         return (
           <div className="game-phase">
             <div className="phase-header">
-              <h2 className="phase-title">Round in Progress</h2>
-              <p className="phase-description">Listen to the track and guess who submitted it!</p>
+              <h2 className="phase-title">
+                {votesTallied ? 'Votes are in!' : 'Round in Progress'}
+              </h2>
+              <p className="phase-description">
+                {votesTallied ? 'All eligible players have voted.' : 'Listen to the track and guess who submitted it!'}
+              </p>
             </div>
 
             <div className="track-player-section">
@@ -586,90 +593,84 @@ function App() {
                 </div>
               )}
 
-              <div className="like-section">
-                {!isMyTrack && (
-                  <button 
-                    className={`like-button ${hasDiscovered ? 'liked' : ''}`}
-                    onClick={handleDiscoverTrack} 
-                    disabled={discoveryLoading}
-                  >
-                    {discoveryLoading ? (
-                      <div className="loading-spinner-small"></div>
-                    ) : hasDiscovered ? (
-                      '❤️ DISCOVERED!'
-                    ) : (
-                      '🤍 DISCOVER'
-                    )}
-                  </button>
+              {!votesTallied && (
+                <div className="like-section">
+                  {!isMyTrack && (
+                    <button 
+                      className={`like-button ${hasLiked ? 'liked' : ''}`}
+                      onClick={handleLikeTrack} 
+                      disabled={likeLoading}
+                    >
+                      {likeLoading ? (
+                        <div className="loading-spinner-small"></div>
+                      ) : hasLiked ? (
+                        '❤️ LIKED!'
+                      ) : (
+                        '🤍 LIKE'
+                      )}
+                    </button>
+                  )}
+                  
+                  {gameState.currentRoundData.likes && likeCount > 0 && (
+                    <div className="like-count">
+                      {likeCount} {likeCount === 1 ? 'like' : 'likes'}
+                      {isMyTrack && likers.length > 0 && (
+                        <span className="likers-list">
+                          ({likers.join(', ')})
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {!votesTallied ? (
+              <div className="voting-section">
+                <h3 className="voting-title">Whose track is this?</h3>
+                {isMyTrack ? (
+                  <div className="success-message">
+                    This is your track! Just enjoy it and see how others vote.
+                  </div>
+                ) : (
+                  <div className="voting-form">
+                    <select 
+                      value={vote} 
+                      onChange={e => setVote(e.target.value)}
+                      className="voting-select"
+                    >
+                      <option value="">-- Select a player --</option>
+                      {gameState.players
+                        .filter(p => p.username !== username)
+                        .map(p => (
+                          <option key={p.username} value={p.username}>
+                            {p.username}
+                          </option>
+                        ))}
+                    </select>
+                    <button 
+                      className="btn-primary" 
+                      onClick={handleVote} 
+                      disabled={!vote}
+                    >
+                      Submit Vote
+                    </button>
+                  </div>
                 )}
-                
-                {gameState.currentRoundData.discoveries && discoveryCount > 0 && (
-                  <div className="like-count">
-                    {discoveryCount} {discoveryCount === 1 ? 'discovery' : 'discoveries'}
-                    {isMyTrack && discoverers.length > 0 && (
-                      <span className="likers-list">
-                        ({discoverers.join(', ')})
-                      </span>
-                    )}
+
+                {gameState.currentRoundData && typeof gameState.currentRoundData.votesCast === 'number' && typeof gameState.currentRoundData.totalVoters === 'number' && (
+                  <div className="vote-counter">
+                    Votes: {gameState.currentRoundData.votesCast} / {gameState.currentRoundData.totalVoters}
                   </div>
                 )}
               </div>
-            </div>
-
-            <div className="voting-section">
-              <h3 className="voting-title">Whose track is this?</h3>
-              {isMyTrack ? (
-                <div className="success-message">
-                  This is your track! Just enjoy it and see how others vote.
-                </div>
-              ) : (
-                <div className="voting-form">
-                  <select 
-                    value={vote} 
-                    onChange={e => setVote(e.target.value)}
-                    className="voting-select"
-                  >
-                    <option value="">-- Select a player --</option>
-                    {gameState.players
-                      .filter(p => p.username !== username)
-                      .map(p => (
-                        <option key={p.username} value={p.username}>
-                          {p.username}
-                        </option>
-                      ))}
-                  </select>
-                  <button 
-                    className="btn-primary" 
-                    onClick={handleVote} 
-                    disabled={!vote}
-                  >
-                    Submit Vote
-                  </button>
-                </div>
-              )}
-
-              {gameState.currentRoundData && typeof gameState.currentRoundData.votesCast === 'number' && typeof gameState.currentRoundData.totalVoters === 'number' && (
-                <div className="vote-counter">
-                  Votes: {gameState.currentRoundData.votesCast} / {gameState.currentRoundData.totalVoters}
-                </div>
-              )}
-            </div>
-          </div>
-        )
-      }
-
-      // VOTES TALLIED
-      if (gameState.gamePhase === 'VotesTallied') {
-        return (
-          <div className="game-phase">
-            <div className="phase-header">
-              <h2 className="phase-title">Votes are in!</h2>
-              <p className="phase-description">All eligible players have voted.</p>
-            </div>
-            
-            {!isAdmin && (
-              <div className="success-message text-center">
-                Waiting for admin to reveal results...
+            ) : (
+              <div className="voting-section">
+                {!isAdmin && (
+                  <div className="success-message text-center">
+                    Waiting for admin to reveal results...
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -689,6 +690,19 @@ function App() {
               </p>
             </div>
 
+            <div className="track-player-section">
+              {gameState.currentRoundData?.track?.url ? (
+                <div className="track-player-container">
+                  <TrackPlayer url={gameState.currentRoundData.track.url} />
+                </div>
+              ) : (
+                <div className="loading">
+                  <div className="loading-spinner"></div>
+                  Loading track...
+                </div>
+              )}
+            </div>
+
             <div className="results-section">
               <div className="results-grid">
                 <div className="results-card">
@@ -706,14 +720,14 @@ function App() {
                 </div>
 
                 <div className="results-card">
-                  <h4>Discoveries</h4>
+                  <h4>Likes</h4>
                   <div className="text-center">
                     <div className="text-accent" style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>
-                      ❤️ {results.discoveryCount || 0}
+                      ❤️ {results.likeCount || 0}
                     </div>
-                    {results.discoverers && results.discoverers.length > 0 && (
+                    {results.likers && results.likers.length > 0 && (
                       <div className="text-secondary">
-                        {results.discoverers.join(', ')}
+                        {results.likers.join(', ')}
                       </div>
                     )}
                   </div>
@@ -737,68 +751,119 @@ function App() {
             );
           }
 
-          const findWinner = (field: keyof Omit<PlayerNominations, 'username'>): { username: string; value: number } => {
-            if (!nominations || nominations.players.length === 0) return { username: 'N/A', value: 0 };
-            
-            let winner = nominations.players[0];
-            for (const player of nominations.players) {
-              if (player[field] > winner[field]) {
-                winner = player;
-              }
-            }
-
-            // If the max value is 0, there is no winner
-            if(winner[field] === 0) return { username: '-', value: 0 };
-
-            return { username: winner.username, value: winner[field] as number };
-          };
+          // Define the allowed nomination fields for type safety
+          type NominationField = 'mostLiked' | 'tasteExpert' | 'mostLikedTrack' | 'musicCollector' | 'mysteryMaster';
 
           const nominationConfig = [
             {
               emoji: '🏆',
-              title: 'Musical Guide',
-              description: 'Shared the most discoveries with others',
-              winner: findWinner('musicalGuide'),
-              unit: 'discoveries'
+              title: 'Most Liked',
+              description: 'Received the most likes from others',
+              field: 'mostLiked' as NominationField,
+              unit: 'likes',
+              sort: (a: PlayerNominations, b: PlayerNominations) => b.mostLiked - a.mostLiked,
+              best: (sorted: PlayerNominations[]) => sorted.length > 0 ? sorted[0].mostLiked : 0,
+              isLowerBetter: false,
+            },
+            {
+              emoji: '💎',
+              title: 'Most Liked Track',
+              description: 'Had the track with the most likes',
+              field: 'mostLikedTrack' as NominationField,
+              unit: 'likes',
+              sort: (a: PlayerNominations, b: PlayerNominations) => b.mostLikedTrack - a.mostLikedTrack,
+              best: (sorted: PlayerNominations[]) => sorted.length > 0 ? sorted[0].mostLikedTrack : 0,
+              isLowerBetter: false,
             },
             {
               emoji: '🎯',
               title: 'Taste Expert',
-              description: 'Correctly guessed the most tracks',
-              winner: findWinner('tasteExpert'),
-              unit: 'guesses'
+              description: 'Correctly guessed the authors of most tracks',
+              field: 'tasteExpert' as NominationField,
+              unit: 'guesses',
+              sort: (a: PlayerNominations, b: PlayerNominations) => b.tasteExpert - a.tasteExpert,
+              best: (sorted: PlayerNominations[]) => sorted.length > 0 ? sorted[0].tasteExpert : 0,
+              isLowerBetter: false,
             },
             {
-              emoji: '💎',
-              title: 'Discovery of the Year',
-              description: 'Had the track with the most discoveries',
-              winner: findWinner('discoveryOfTheYear'),
-              unit: 'discoveries'
+              emoji: '🕵️',
+              title: 'Mystery Master',
+              description: 'Managed to hide his identity the best (why would you do that?)',
+              field: 'mysteryMaster' as NominationField,
+              unit: 'times',
+              sort: (a: PlayerNominations, b: PlayerNominations) => a.mysteryMaster - b.mysteryMaster, // ascending
+              best: (sorted: PlayerNominations[]) => sorted.length > 0 ? sorted[0].mysteryMaster : 0,
+              isLowerBetter: true,
             },
             {
               emoji: '🎵',
               title: 'Music Collector',
-              description: 'Discovered the most new tracks',
-              winner: findWinner('musicCollector'),
-              unit: 'discoveries'
+              description: 'Liked the most tracks',
+              field: 'musicCollector' as NominationField,
+              unit: 'likes',
+              sort: (a: PlayerNominations, b: PlayerNominations) => b.musicCollector - a.musicCollector,
+              best: (sorted: PlayerNominations[]) => sorted.length > 0 ? sorted[0].musicCollector : 0,
+              isLowerBetter: false,
             },
           ];
 
           return (
             <div className="nominations-grid">
-              {nominationConfig.map(nom => (
-                <div key={nom.title} className="nomination-card">
-                  <div className="nomination-emoji">{nom.emoji}</div>
-                  <h4 className="nomination-title">{nom.title}</h4>
-                  <p className="nomination-description">{nom.description}</p>
-                  <div className="nomination-winner">
-                    <span className="winner-name">{nom.winner.username}</span>
-                    {nom.winner.value > 0 && (
-                      <span className="winner-score">({nom.winner.value} {nom.unit})</span>
-                    )}
+              {nominationConfig.map(nom => {
+                // Sort players by this nomination field
+                const sorted = [...nominations.players].sort(nom.sort);
+                const topScore = nom.best(sorted);
+                return (
+                  <div key={nom.title} className="nomination-card">
+                    <div className="nomination-emoji">{nom.emoji}</div>
+                    <h4 className="nomination-title">{nom.title}</h4>
+                    <p className="nomination-description">{nom.description}</p>
+                    <div className="nomination-winner">
+                      {sorted.map((player) => {
+                        const value = player[nom.field];
+                        const isTop = nom.isLowerBetter ? value === topScore : value === topScore && topScore > 0;
+                        if (nom.title === 'Most Liked Track' && gameState) {
+                          // Find this player's most liked track
+                          const playerTracks = gameState.playedTracks.filter(pt => pt.ownerUsername === player.username);
+                          const mostLikedTrack = playerTracks.reduce((max, t) => (t.likes?.length || 0) > (max.likes?.length || 0) ? t : max, playerTracks[0]);
+                          const mostLikedCount = mostLikedTrack && mostLikedTrack.likes ? mostLikedTrack.likes.length : 0;
+                          const mostLikedTitle = mostLikedTrack && mostLikedCount > 0 ? mostLikedTrack.track.title || mostLikedTrack.track.url : null;
+                          return (
+                            <div key={player.username} className="nomination-track-row">
+                              <span className="winner-name">
+                                {player.username}
+                                {isTop && <span title="Top player" style={{ marginLeft: 4 }}>🏆</span>}
+                              </span>
+                              {mostLikedCount > 0 ? (
+                                <span className="nomination-track-info">
+                                  <span className="nomination-track-title">{mostLikedTitle}</span>
+                                  <span className="nomination-track-likes">
+                                    <span role="img" aria-label="likes">❤️</span> {mostLikedCount}
+                                  </span>
+                                </span>
+                              ) : (
+                                <span className="nomination-track-none">-</span>
+                              )}
+                            </div>
+                          );
+                        } else {
+                          return (
+                            <div key={player.username} style={{display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4}}>
+                              <span className="winner-name">
+                                {player.username}
+                                {isTop && (
+                                  <span title="Top player" style={{marginLeft: 4}}>🏆</span>
+                                )}
+                              </span>
+                              <span className="winner-score">{value}</span>
+                            </div>
+                          );
+                        }
+                      })}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )
         }
@@ -813,6 +878,11 @@ function App() {
             <div className="results-section">
               <h3 className="results-title">✨ Nominations</h3>
               {renderNominations()}
+            </div>
+
+            <div className="results-section">
+              <h3 className="results-title">🎶 Played Tracks</h3>
+              <FinalPlayedTracksList playedTracks={gameState.playedTracks} currentUsername={username} />
             </div>
 
             <div className="text-center mt-xl">
@@ -888,11 +958,11 @@ function App() {
             {showRules && (
               <div className="rules-content">
                 <h3>How to Play</h3>
-                <p><strong>🎵 Main Goal:</strong> Share your favorite music and discover amazing new tracks with your friends!</p>
+                <p><strong>🎵 Main Goal:</strong> Share your favorite music and like amazing new tracks from your friends!</p>
                 <p><strong>1. Share Music:</strong> Submit your favorite tracks in the lobby to share your musical taste.</p>
-                <p><strong>2. Discover & Enjoy:</strong> Listen to tracks and click "Discover New Music!" when you find something you love.</p>
+                <p><strong>2. Like & Enjoy:</strong> Listen to tracks and click "Like" when you find something you love.</p>
                 <p><strong>3. Guess:</strong> Try to guess who submitted each track!</p>
-                <p><strong>4. Celebrate:</strong> At the end, see the final results and celebrate your music discoveries!</p>
+                <p><strong>4. Celebrate:</strong> At the end, see the final results and celebrate your favorite tracks!</p>
                 <p><em>💡 Remember: Don't try to game the stats! The goal is to have fun and share music with friends. It's not much of a competition.</em></p>
               </div>
             )}
@@ -954,6 +1024,38 @@ function App() {
       </div>
     </div>
   )
+}
+
+// FinalPlayedTracksList: for the final screen, shows author and likers
+function FinalPlayedTracksList({ playedTracks, currentUsername }: { playedTracks: PlayedTrack[], currentUsername: string }) {
+  return (
+    <div className="played-tracks-list">
+      <ul className="tracks-list">
+        {playedTracks.map(({ track, likes, ownerUsername }) => {
+          const service = getMusicService(track.url);
+          const isLiked = likes?.includes(currentUsername);
+          return (
+            <li key={track.id} className={`track-item${isLiked ? ' liked' : ''}`}>
+              <a href={track.url} target="_blank" rel="noopener noreferrer" className="track-link" style={{ width: '100%' }}>
+                {service && (
+                  <img src={service.logo} alt={service.name} className="track-service-logo" />
+                )}
+                <span className="track-title">{track.title || track.url}</span>
+                <span className="track-owner" style={{marginLeft: 12, fontStyle: 'italic', color: 'var(--text-tertiary)'}}>
+                  by {ownerUsername}
+                </span>
+                {likes && likes.length > 0 && (
+                  <span className="track-likes" style={{marginLeft: 'auto', color: 'var(--accent-primary)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4}}>
+                    <span role="img" aria-label="likes">❤️</span> {likes.join(', ')}
+                  </span>
+                )}
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
 }
 
 export default App

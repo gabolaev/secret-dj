@@ -5,9 +5,10 @@ import { shortenUrl } from './utils/string';
 
 interface PlayedTracksListProps {
     playedTracks: PlayedTrack[];
+    currentUsername: string;
 }
 
-export const PlayedTracksList: React.FC<PlayedTracksListProps> = ({ playedTracks }) => {
+export const PlayedTracksList: React.FC<PlayedTracksListProps> = ({ playedTracks, currentUsername }) => {
 
     const getTrackDisplayText = (track: PlayedTrack['track']) => {
         if (track.title) {
@@ -27,19 +28,18 @@ export const PlayedTracksList: React.FC<PlayedTracksListProps> = ({ playedTracks
     return (
         <div className="played-tracks-list">
             <ul className="tracks-list">
-                {playedTracks.map(({ track, discoveries }) => {
+                {playedTracks.map(({ track, likes }) => {
                     const service = getMusicService(track.url);
+                    const isLiked = likes?.includes(currentUsername);
                     return (
-                        <li key={track.id} className="track-item">
+                        <li key={track.id} className={`track-item${isLiked ? ' liked' : ''}`}>
                             <a href={track.url} target="_blank" rel="noopener noreferrer" className="track-link">
                                 {service && (
                                     <img src={service.logo} alt={service.name} className="track-service-logo" />
                                 )}
                                 <span className="track-title">{getTrackDisplayText(track)}</span>
-                                {discoveries && discoveries.length > 0 && (
-                                    <span className="track-discoveries">
-                                        ✨ {discoveries.length}
-                                    </span>
+                                {isLiked && (
+                                    <span className="track-liked" title="You liked this track" style={{marginLeft: 8}}>❤️</span>
                                 )}
                             </a>
                         </li>

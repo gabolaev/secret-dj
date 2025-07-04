@@ -337,19 +337,19 @@ io.on('connection', (socket: Socket) => {
         }
     });
 
-    // Discover track
-    socket.on('discoverTrack', (
+    // Like track
+    socket.on('likeTrack', (
         data: { gameId: string; username: string },
         cb: (result: any) => void
     ) => {
         const { gameId, username } = data;
-        log('discoverTrack event received:', { gameId, username });
-        const ok = gameManager.discoverTrack(gameId, username);
+        log('likeTrack event received:', { gameId, username });
+        const ok = gameManager.likeTrack(gameId, username);
         if (ok) {
             emitGameState(gameId);
             cb({ success: true });
         } else {
-            cb({ success: false, error: 'Failed to discover track' });
+            cb({ success: false, error: 'Failed to like track' });
         }
     });
 

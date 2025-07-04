@@ -1414,3 +1414,56 @@
     padding: var(--space-sm);
   }
 }
+
+.track-item.liked {
+  background: rgba(var(--accent-primary-rgb, 255, 99, 132), 0.12);
+  border-color: var(--accent-primary, #ff6384);
+  position: relative;
+}
+
+.track-liked {
+  font-size: 1.1em;
+  color: var(--accent-primary, #ff6384);
+  vertical-align: middle;
+}
+
+.nomination-track-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+  width: 100%;
+}
+
+.nomination-track-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  max-width: 260px;
+  justify-content: flex-end;
+  overflow: hidden;
+}
+
+.nomination-track-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
+
+.nomination-track-likes {
+  color: var(--accent-primary);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.nomination-track-none {
+  color: var(--text-tertiary);
+  flex: 1;
+  text-align: right;
+  font-weight: 400;
+}
