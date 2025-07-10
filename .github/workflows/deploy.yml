@@ -43,4 +43,4 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           port: ${{ secrets.SSH_PORT }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: ./redeploy.sh
+          script: ./secretdj/redeploy.sh
