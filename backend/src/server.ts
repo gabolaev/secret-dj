@@ -48,6 +48,35 @@ app.get('/api/track-metadata', async (req, res) => {
     }
 });
 
+// URL resolution endpoint
+app.get('/api/resolve-url', async (req, res) => {
+    const url = req.query.url;
+
+    if (typeof url !== 'string') {
+        return res.status(400).json({ error: 'URL parameter is required' });
+    }
+
+    try {
+        // Follow redirects to get the final URL
+        const response = await fetch(url, { 
+            method: 'HEAD', 
+            redirect: 'follow',
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (compatible; SecretDJ/1.0)'
+            }
+        });
+
+        if (response.ok) {
+            res.json({ resolvedUrl: response.url });
+        } else {
+            res.status(404).json({ error: 'Could not resolve URL' });
+        }
+    } catch (error) {
+        console.error('Error resolving URL:', error);
+        res.status(500).json({ error: 'Failed to resolve URL' });
+    }
+});
+
 // --- Production-only: Serve static frontend ---
 if (process.env.NODE_ENV === 'production') {
     const __dirname = path.resolve();

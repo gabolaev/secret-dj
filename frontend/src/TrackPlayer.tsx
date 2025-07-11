@@ -4,12 +4,19 @@ interface TrackPlayerProps {
   url: string;
 }
 
-// This function is a placeholder. In a real-world scenario, to avoid CORS issues
-// and reliably resolve redirecting URLs (like link.deezer.com or spotify.link),
-// you would implement a backend endpoint that handles the URL fetching.
+// Resolve URLs through the backend to handle redirects and CORS issues
 async function resolveUrl(url: string): Promise<string> {
     console.log(`Resolving URL: ${url}`);
-    // For now, we'll just return the original URL, as client-side fetching is unreliable.
+    try {
+        const response = await fetch(`/api/resolve-url?url=${encodeURIComponent(url)}`);
+        if (response.ok) {
+            const data = await response.json();
+            return data.resolvedUrl;
+        }
+    } catch (error) {
+        console.error('Error resolving URL:', error);
+    }
+    // Fallback to original URL if resolution fails
     return url;
 }
 
@@ -23,7 +30,7 @@ export const TrackPlayer: React.FC<TrackPlayerProps> = ({ url }) => {
         const resolvedUrl = await resolveUrl(trackUrl);
         let config: { src: string; height: string } | null = null;
 
-        const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/]{11})/;
+        const youtubeRegex = /(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/]{11})/;
         const youtubeMatch = resolvedUrl.match(youtubeRegex);
 
         if (youtubeMatch && youtubeMatch[1]) {
