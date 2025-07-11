@@ -39,11 +39,27 @@ export const TrackPlayer: React.FC<TrackPlayerProps> = ({ url }) => {
             height: '152'
           };
         } else if (resolvedUrl.includes('deezer.com')) {
-          const deezerId = new URL(resolvedUrl).pathname.split('/').pop();
-          config = {
-            src: `https://widget.deezer.com/widget/dark/track/${deezerId}`,
-            height: '152'
-          };
+          // Extract Deezer track ID using regex patterns
+          const deezerPatterns = [
+            /deezer\.com\/[a-z]{2}\/track\/(\d+)/,
+            /deezer\.com\/track\/(\d+)/,
+          ];
+          
+          let deezerId: string | null = null;
+          for (const pattern of deezerPatterns) {
+            const match = resolvedUrl.match(pattern);
+            if (match) {
+              deezerId = match[1];
+              break;
+            }
+          }
+          
+          if (deezerId) {
+            config = {
+              src: `https://widget.deezer.com/widget/dark/track/${deezerId}`,
+              height: '152'
+            };
+          }
         } else if (resolvedUrl.includes('soundcloud.com')) {
           config = {
             src: `https://w.soundcloud.com/player/?url=${encodeURIComponent(resolvedUrl)}&color=%23e8b4a0&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=true`,

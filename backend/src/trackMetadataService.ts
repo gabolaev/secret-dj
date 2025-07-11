@@ -44,6 +44,9 @@ export class TrackMetadataService {
                 case 'SoundCloud':
                     metadata = await this.getSoundCloudMetadata(url);
                     break;
+                case 'Deezer':
+                    metadata = await this.getDeezerMetadata(url);
+                    break;
                 default:
                     // For other services, try to extract basic info from the URL
                     metadata = this.extractBasicMetadata(url, service.name);
@@ -136,6 +139,48 @@ export class TrackMetadataService {
         }
     }
 
+    private async getDeezerMetadata(url: string): Promise<TrackMetadata | null> {
+        try {
+            // Extract track ID from Deezer URL
+            const trackId = this.extractDeezerTrackId(url);
+            if (!trackId) {
+                console.warn(`Could not extract track ID from Deezer URL: ${url}`);
+                return this.extractBasicMetadata(url, 'Deezer');
+            }
+
+            // Deezer doesn't have a public oEmbed API, so we'll use their public API
+            // Note: This is a simplified approach. In production, you might want to use
+            // Deezer's official API with proper authentication
+            const apiUrl = `https://api.deezer.com/track/${trackId}`;
+            
+            const response = await fetch(apiUrl);
+            if (!response.ok) {
+                console.warn(`Deezer API request failed for ${url}. Status: ${response.status}`);
+                return this.extractBasicMetadata(url, 'Deezer');
+            }
+
+            const data = await response.json() as any;
+
+            // Check if the API returned an error
+            if (data.error) {
+                console.warn(`Deezer API error for track ${trackId}:`, data.error);
+                return this.extractBasicMetadata(url, 'Deezer');
+            }
+
+            return {
+                title: data.title || 'Unknown Title',
+                artist: data.artist?.name,
+                thumbnail: data.album?.cover_medium,
+                duration: data.duration,
+                service: 'Deezer'
+            };
+        } catch (error) {
+            console.error('Deezer metadata fetch error:', error);
+            // Fallback to basic extraction on error
+            return this.extractBasicMetadata(url, 'Deezer');
+        }
+    }
+
     private extractBasicMetadata(url: string, serviceName: string): TrackMetadata {
         // Extract basic info from URL for services we can't easily fetch metadata from
         const urlObj = new URL(url);
@@ -162,6 +207,26 @@ export class TrackMetadataService {
         const patterns = [
             /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
             /youtube\.com\/v\/([^&\n?#]+)/,
+        ];
+
+        for (const pattern of patterns) {
+            const match = url.match(pattern);
+            if (match) {
+                return match[1];
+            }
+        }
+
+        return null;
+    }
+
+    private extractDeezerTrackId(url: string): string | null {
+        // Deezer URL patterns:
+        // https://www.deezer.com/us/track/123456789
+        // https://deezer.com/track/123456789
+        // https://www.deezer.com/track/123456789
+        const patterns = [
+            /deezer\.com\/[a-z]{2}\/track\/(\d+)/,
+            /deezer\.com\/track\/(\d+)/,
         ];
 
         for (const pattern of patterns) {
