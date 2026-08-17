@@ -37,9 +37,9 @@ docker compose up --build   # http://localhost:4000
 ## How it works
 
 ```
- browser                    node
-┌─────────────┐  socket.io  ┌──────────────┐    ┌───────────────┐
-│ useSecretDj │◀───────────▶│   gateway    │───▶│   GameRoom    │  the engine:
+ browser                     node
+┌─────────────┐  socket.io   ┌──────────────┐    ┌───────────────┐
+│ useSecretDj │◀────────────▶│   gateway    │───▶│   GameRoom    │  the engine:
 │  (1 socket) │   session    │ auth + limits│    │ every rule,   │  pure, no I/O
 └─────────────┘   token      └──────┬───────┘    │ every guard   │
        ▲                            │            └───────┬───────┘
