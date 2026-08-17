@@ -39,6 +39,7 @@ jobs:
       - name: Deploy
         run: |
           curl \
+            -s \
             --fail-with-body \
             --request POST \
             --header "Authorization: Bearer ${{ secrets.DEPLOY_TOKEN }}" \
