@@ -1,0 +1,19 @@
+{
+  // Tests live outside each package's `rootDir`, so they get their own
+  // check-only pass rather than being silently excluded from `tsc -b`.
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": ["node", "vite/client"],
+    "baseUrl": ".",
+    "paths": {
+      // Match the vitest alias: tests run against sources, not build output.
+      "@secret-dj/common": ["./common/src/index.ts"]
+    }
+  },
+  "include": ["common/test", "backend/test", "frontend/test", "vitest.config.ts", "eslint.config.js"]
+}

@@ -1,12 +1,16 @@
 services:
-  game_app:
-    # This tells Docker Compose to build the image from the Dockerfile
-    # in the current directory, instead of pulling it from a registry.
+  secret-dj:
     build: .
-    container_name: music_guesser_app_local
+    container_name: secret-dj
+    restart: unless-stopped
     ports:
-      - "4000:4000"
+      - '4000:4000'
     environment:
-      # We run in production mode to test the final build, but you could
-      # change this to 'development' if you had a separate dev setup.
-      - NODE_ENV=production 
+      NODE_ENV: production
+      PORT: 4000
+      LOG_LEVEL: info
+      # Same-origin by default: this container serves both the API and the app.
+      # Set to a comma-separated origin list if you host the frontend elsewhere.
+      # CORS_ORIGIN: https://secretdj.example.com
+      # Number of proxy hops in front of the app, for correct per-IP rate limits.
+      TRUST_PROXY_HOPS: 1

@@ -1,80 +1,165 @@
-# Secret DJ: Rules & Restrictions
+# Secret DJ — the rules
 
-## Game Overview
-- The game is a real-time, multiplayer music discovery and guessing competition.
-- Players join a lobby, submit music tracks, and then take turns guessing which player submitted each track.
-- The goal is to share your musical taste and discover new music together!
+A real-time listening party. Everyone queues music in secret, the room listens
+together, spends its hearts, and tries to work out who put each track on.
 
----
-
-## Game Phases
-
-### 1. Lobby Phase
-- All players, including the admin, must submit a set number of music tracks (the number is set by the admin).
-- Players can see who has joined and who has submitted their tracks, but **cannot see the tracks themselves** (only their own submissions are visible).
-- The admin can change the number of tracks required per player before the game starts.
-- The admin is the only player who can start the game, and only after all players have submitted their tracks.
-
-### 2. Gameplay Rounds
-- In each round, one track is randomly selected from the pool of unplayed tracks.
-- All players (except the one who submitted the current track) listen to the track and try to guess who submitted it. They should see a message "This is your track, just enjoy it!"
-- The player whose track is being played cannot vote in that round.
-- Each player can only vote once per round, but they can still change their vote before the admin published the results (e.g. concluded the round).
-- Players can "discover" tracks they like by clicking "Discover New Music!" - this means they found something new and interesting.
-- **Players never see the full list of submitted tracks.**
-
-### 3. Voting and Results
-- Once all eligible players have voted, the admin is presented with a "Reveal Results" button.
-- Only the admin can reveal the results of the round.
-- When results are revealed, all players see who submitted the track, who guessed correctly, and how many discoveries the track received.
-
-### 4. Next Round
-- After viewing the results, the admin is presented with a "Next Round" button.
-- Only the admin can start the next round.
-- The game continues with new rounds until all tracks have been played.
-- After the last round the button should be "Finish Game" instead of "Next Round"
-
-### 5. Game End
-- When all tracks have been played, the game ends.
-- Special nominations are awarded for different achievements.
+Available in English and Russian; the toggle is in the header.
 
 ---
 
-## Final Nominations
+## The night, in order
 
-At the end of the game, players receive special nominations:
+### 1. The room
 
-**🏆 Musical Guide** - Who shared the most discoveries with others
-**🎯 Taste Expert** - Who correctly guessed the most tracks
-**💎 Discovery of the Year** - Who had the most discoveries for a single track
-**🎵 Music Collector** - Who discovered the most new tracks
+The first person to create a room is the **host**. Everyone else joins with a
+five-character room code (or the invite link, which carries the code in the
+URL fragment).
+
+- Names must be unique within a room, compared case-insensitively.
+- Up to 16 people.
+- **Nobody can join once the music has started.**
+
+### 2. Queueing
+
+Everyone — the host included — queues the number of tracks the host sets. But
+**only some of them play**, chosen at random. The default is queue three, play
+two.
+
+That gap is deliberate. If every DJ contributed exactly the same, known number
+of tracks, the last rounds would be solvable by elimination: once someone's
+tracks had all been revealed, they were out of the running, and the final track
+was a free point for everybody. Queueing more than plays means you can never be
+sure a DJ is spent.
+
+- Supported: Spotify, YouTube, YouTube Music, Apple Music, Deezer, SoundCloud,
+  TIDAL, Bandcamp and Yandex Music.
+- The same song cannot be queued twice **in the whole room**, no matter how the
+  link was shared. `?si=` tokens and locale prefixes don't fool it.
+- You can add and remove your own tracks freely until the game starts, and
+  nobody else's — ever.
+- **You never see another player's queue.** Only the tracks that actually got
+  played become public — and at the very end, the ones that didn't.
+
+The host can start once every player has finished queueing. Guessing needs at
+least two DJs; a listening party can be played solo.
+
+### 3. The setlist
+
+The running order is built **once**, when the game starts:
+
+- each DJ contributes a random subset of what they queued;
+- the order is shuffled, then rearranged so the **same DJ never plays twice in a
+  row** whenever that's mathematically possible.
+
+### 4. Each round
+
+One track plays. Everyone can see it, open it, and hear it. There are three
+things to do, depending on who you are.
+
+#### Spend a heart — or don't
+
+You get a **limited number of hearts for the whole night**: about 40% of the
+tracks you will actually hear. You cannot heart everything, so every heart is a
+choice with a cost, and passing on something you liked is part of the game.
+
+A heart is **+1** to the DJ.
+
+#### Or spend your one anthem
+
+You get exactly **one anthem per night**, worth **+3**. Save it for the track
+you'll still be thinking about tomorrow — and once it's gone, it's gone.
+
+Each round you choose one of: nothing, a heart, or the anthem. You can change
+your mind until the reveal; switching refunds whatever you'd already spent.
+
+#### Guess the DJ
+
+Everyone except the DJ picks a name. Change your guess as often as you like —
+nothing is locked until the host reveals. A correct guess is **+1**.
+
+#### If it's your track: set a decoy
+
+The DJ can't vote and can't heart their own track, so instead they get a move
+nobody else has: **secretly name the player you want the room to blame.** Every
+listener who guesses your decoy is **+1** to you.
+
+A decoy pointing at the real answer scores nothing, obviously. If your decoy
+leaves the room mid-round, it's dropped.
 
 ---
 
-## Restrictions & Special Rules
+Once everyone still connected has voted, the round is marked ready. The host can
+reveal at any point regardless, so one person walking away from their laptop can
+never freeze the game.
 
-- **Admin Role:**
-  - The first player to join a new game becomes the admin.
-  - If the admin leaves, admin rights are transferred to a **random** remaining player.
-  - The new admin receives all admin privileges and responsibilities (changing settings, starting the game, revealing results, starting the next round, etc.).
-  - This transfer happens automatically and transparently, ensuring the game can always continue.
+### 5. The reveal
 
-- **Player Identity:** Each player is identified by a unique username within the game.
-
-- **Disconnections:** If a player disconnects, their spot and data are preserved. They can reconnect and continue playing.
-
-- **No Cheating:** The identity of the track's submitter is hidden until the admin reveals the results. Players never see the list of tracks submitted by others.
-
-- **One Vote Per Player:** Each eligible player can only vote once per round and cannot change their vote after submitting.
-
-- **No Voting for Self:** The player whose track is being played cannot vote in that round.
-
-- **Game Settings:** Only the admin can change game settings (like tracks per player) and only before the game starts.
-
-- **Game Progression:** The game cannot progress to the next round or reveal results without the admin's action.
-
-- **Musical Honesty:** Players are encouraged to submit tracks that genuinely represent their musical taste, as the goal is to share and discover music together.
+Everyone sees who the DJ was, every guess, who got it right, who fell for the
+decoy, and who spent what. Then the host moves on, or closes out the night.
 
 ---
 
-**These rules ensure a fair, fun, and musically enriching experience for all players.** 
+## Two scoreboards
+
+The game serves two different people: the one who wants to share music they
+love, and the one who wants to read the room. Forcing both onto one number
+served neither, so there are two, and **nothing crosses between them**.
+
+| Board | Counts |
+|---|---|
+| ♥ **Selector** | Hearts (+1) and anthems (+3) your tracks earned |
+| ◎ **Detective** | Your correct guesses (+1) and listeners your decoys fooled (+1) |
+
+Your taste cannot win you the deduction game, and reading the room cannot win
+you the music one.
+
+## Awards
+
+Three per board, at the end. **Ties are shared, never broken arbitrarily**, and
+an award nobody earned simply isn't given.
+
+| Award | Board | Won by |
+|---|---|---|
+| ♥ **Crowd Favourite** | Selector | Most love collected across the night |
+| ★ **Track of the Night** | Selector | The single track that moved the most people |
+| ◈ **Golden Ear** | Selector | Spent their anthem on the track that earned it |
+| ◎ **Human Shazam** | Detective | Most correct guesses |
+| ☾ **The Ghost** | Detective | Lowest *rate* of being correctly identified |
+| ⌘ **Puppet Master** | Detective | Sent the most people chasing the wrong DJ |
+
+The Ghost is scored as a percentage, not a count, so it can't be won by simply
+queueing more tracks than everyone else.
+
+---
+
+## Fair play, and how it's enforced
+
+These aren't honour-system rules. They're properties of the server.
+
+- **Your identity is a token, not a name.** The server issues a secret when you
+  join and derives who you are from your connection. No client message carries
+  a username, so "vote as someone else" is not a request the protocol can
+  express.
+- **Only the host** can change settings, start the game, reveal a round or
+  advance — checked on the server, on every command.
+- **Secrets are withheld, not hidden.** The DJ's identity, their decoy,
+  individual votes, and who spent which heart are simply not in the data your
+  browser receives until the reveal. Nor is anyone else's wallet — knowing whose
+  anthem was still unspent would narrow down who just used one.
+- **The wallet is server-side and atomic.** Switching a heart for your anthem
+  refunds and charges in a single step, so no amount of clicking can conjure an
+  extra heart.
+- **Every limit is server-side**: track counts, duplicates, name rules, who may
+  vote and when.
+
+## Coming and going
+
+- **Disconnecting keeps your seat.** Your tracks, scores, hearts and guesses
+  survive a refresh, a closed tab, a dead train tunnel.
+- **Multiple tabs are fine.** You show as present until the last one closes.
+- **Leaving is deliberate.** Press Leave and your seat is released: your
+  unplayed tracks come out of the setlist, while everything already played stays
+  in the history with your name on it.
+- **The crown always moves.** If the host leaves, it passes immediately. If the
+  host merely vanishes, it passes after a short grace period.
+- **Rooms clean themselves up** once everyone has gone.

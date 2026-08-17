@@ -1,18 +1,16 @@
-# Git
-.git
-.gitignore
-
-# GitHub
-.github
-
-# Node
 node_modules
-npm-debug.log
-
-# Build artifacts
+**/node_modules
 dist
-build
-.env
+**/dist
+*.tsbuildinfo
+**/*.tsbuildinfo
+.git
+.github
+.vscode
+.idea
 .DS_Store
-*.pem
-*.key
+*.log
+.env
+.env.*
+coverage
+**/coverage
