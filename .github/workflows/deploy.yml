@@ -36,11 +36,10 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
       
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.2.2
-        with:
-          username: ${{ secrets.SSH_USERNAME }}
-          host: ${{ secrets.SSH_HOST }}
-          port: ${{ secrets.SSH_PORT }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: cd secretdj && ./redeploy.sh
+      - name: Deploy
+        run: |
+          curl \
+            --fail-with-body \
+            --request POST \
+            --header "Authorization: Bearer ${{ secrets.DEPLOY_TOKEN }}" \
+            "${{ secrets.DEPLOY_URL }}"

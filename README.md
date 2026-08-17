@@ -11,28 +11,75 @@ English · Русский
 
 ---
 
-## Quick start
+## Run it
+
+The published image bundles the API and the built frontend, so one container is
+the whole app.
+
+```bash
+docker run -d --name secret-dj -p 4000:4000 --restart unless-stopped \
+  gabolaev/secret-dj:latest
+```
+
+Open <http://localhost:4000>, start a room, and share the invite link.
+
+To update, pull and recreate:
+
+```bash
+docker pull gabolaev/secret-dj:latest
+docker rm -f secret-dj && docker run -d --name secret-dj -p 4000:4000 \
+  --restart unless-stopped gabolaev/secret-dj:latest
+```
+
+Behind a reverse proxy, pass the two settings that matter — see
+[Configuration](#configuration) for the rest:
+
+```bash
+docker run -d --name secret-dj -p 4000:4000 --restart unless-stopped \
+  -e TRUST_PROXY_HOPS=1 \
+  -e CORS_ORIGIN=https://secretdj.example.com \
+  gabolaev/secret-dj:latest
+```
+
+Or build from this checkout instead of pulling:
+
+```bash
+docker compose up --build      # http://localhost:4000
+```
+
+> **Run exactly one instance.** Game state lives in the server's memory — there
+> is no shared store — so a second replica means players landing on different
+> instances and not seeing each other. For the same reason, restarting the
+> container ends any game in progress.
+
+## Development
 
 ```bash
 npm install
-npm run dev          # backend :4000, frontend :5173
+npm run dev
 ```
 
-Open http://localhost:5173, start a room, and share the invite link.
+Three watchers start together: `common` rebuilds shared types, the backend runs
+on **:4000** with hot restart, and Vite serves the app on **:5173**. Vite
+proxies both `/api` and `/socket.io` through to the backend, so there is nothing
+to configure.
 
-```bash
-npm run build        # common -> backend -> frontend
-npm test             # 116 unit tests
-npm run typecheck    # whole-repo project references
-npm run lint
-npm start            # serves API + built frontend on :4000
-```
+Open <http://localhost:5173>.
 
-Or with Docker:
+To play a real game you need **two browsers** (or one normal window and one
+private) — the session token lives in `localStorage`, so two tabs in the same
+profile are the same player. Guessing needs at least two DJs; to poke at it
+alone, turn **Guessing** off in room settings for a solo listening party.
 
-```bash
-docker compose up --build   # http://localhost:4000
-```
+| | |
+|---|---|
+| `npm run verify` | typecheck + lint + tests + build, everything the CI would run |
+| `npm test` | 154 tests |
+| `npm run test:watch` | tests on save |
+| `npm run typecheck` | whole-repo project references, plus the test files |
+| `npm run lint` | |
+| `npm run build` | `common` → `backend` → `frontend` |
+| `npm start` | production mode: API + built frontend on :4000 |
 
 ## How it works
 
