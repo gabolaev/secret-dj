@@ -25,7 +25,7 @@ export const en = {
 
     join: {
         tagline:
-            'Everyone queues a track in secret. The room rates it out of five, and tries to work out who put it on.',
+            'Everyone queues a track in secret. The room rates it.',
         nameLabel: 'Your name',
         namePlaceholder: 'DJ Nightshift',
         codeLabel: 'Room code',

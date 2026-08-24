@@ -24,9 +24,9 @@ export const ru: Messages = {
 
     join: {
         tagline:
-            'Каждый втайне ставит трек в очередь. Комната оценивает его по пятибалльной шкале и пытается угадать, кто его включил.',
+            'Каждый втайне ставит трек в очередь. Комната оценивает его.',
         nameLabel: 'Ваше имя',
-        namePlaceholder: 'DJ Полночь',
+        namePlaceholder: 'DJ Набе',
         codeLabel: 'Код комнаты',
         codeOptional: 'необязательно',
         codePlaceholder: 'напр., K7QM2',
