@@ -29,7 +29,7 @@ export const ru: Messages = {
         namePlaceholder: 'DJ Полночь',
         codeLabel: 'Код комнаты',
         codeOptional: 'необязательно',
-        codePlaceholder: 'например, K7QM2',
+        codePlaceholder: 'напр., K7QM2',
         create: 'Создать комнату',
         join: 'Войти в комнату',
         connecting: 'Подключение…',
