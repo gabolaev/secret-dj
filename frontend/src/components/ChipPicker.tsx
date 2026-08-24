@@ -6,35 +6,19 @@ interface ChipPickerProps {
     options: readonly PublicPlayer[];
     value?: PlayerId;
     onSelect: (playerId: PlayerId) => void;
-    /** Adds a leading "none" chip; used by the decoy, which is optional. */
-    noneLabel?: string;
-    onSelectNone?: () => void;
-    tone?: 'guess' | 'decoy';
 }
 
 /**
  * One row of avatar chips.
  *
- * Guessing the DJ and naming a decoy are the same interaction — pick one
- * player — so they are the same component. Previously they were two separate
- * panels, each with a heading, a paragraph of explanation and a grid of cards,
- * which is what made the round screen feel like a form.
+ * One row of chips, one player picked. It was a whole panel with a heading, a
+ * paragraph of explanation and a grid of cards, which is what made the round
+ * screen feel like a form.
  */
-export function ChipPicker({ label, options, value, onSelect, noneLabel, onSelectNone, tone = 'guess' }: ChipPickerProps) {
+export function ChipPicker({ label, options, value, onSelect }: ChipPickerProps) {
     return (
-        <div className={`pick pick--${tone}`} role="group" aria-label={label}>
+        <div className="pick pick--guess" role="group" aria-label={label}>
             <span className="pick__label">{label}</span>
-
-            {noneLabel && onSelectNone && (
-                <button
-                    type="button"
-                    className={`chip chip--bare${!value ? ' is-active' : ''}`}
-                    aria-pressed={!value}
-                    onClick={onSelectNone}
-                >
-                    {noneLabel}
-                </button>
-            )}
 
             {options.map(player => {
                 const active = value === player.id;

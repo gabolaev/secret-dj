@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { CLAIMS } from '@secret-dj/common';
 import { useT } from '../i18n';
 import { LocaleToggle } from './LocaleToggle';
 
@@ -57,6 +58,53 @@ export function RulesSheet({ open, onClose }: RulesSheetProps) {
                         </li>
                     ))}
                 </ol>
+
+                {/* The moves are a list; the arithmetic is a table, because
+                    "how many points do I get" is a lookup, not a paragraph. */}
+                {/* Driven off the claim registry rather than a second copy of
+                    the wording, so a new claim cannot land in the lobby and be
+                    missing from the rules. */}
+                <h3 className="sheet__subhead">{t.rules.claimsTitle}</h3>
+                <p className="sheet__note">{t.rules.claimsBody}</p>
+                <ul className="rules-claims">
+                    {CLAIMS.filter(claim => claim.id !== 'none').map(claim => (
+                        <li key={claim.id}>
+                            <strong>{t.claims[claim.id].title}</strong>
+                            <span>{t.claims[claim.id].blurb}</span>
+                            {(claim.minPlayers > 1 || claim.needsGuessing) && (
+                                <em>
+                                    {claim.minPlayers > 1
+                                        ? t.claims.needsPlayers(claim.minPlayers)
+                                        : t.claims.needsGuessing}
+                                </em>
+                            )}
+                        </li>
+                    ))}
+                </ul>
+
+                {/* What adds up, then what scales it. Two separate ideas, and
+                    printing "×0.5" without saying what it multiplies taught
+                    nobody anything. */}
+                <h3 className="sheet__subhead">{t.rules.scoring.title}</h3>
+
+                <p className="sheet__lead">{t.rules.scoring.addTitle}</p>
+                <dl className="scoring">
+                    {t.rules.scoring.add.map(line => (
+                        <div className="scoring__row" key={line.what}>
+                            <dt>{line.what}</dt>
+                            <dd>{line.points}</dd>
+                        </div>
+                    ))}
+                </dl>
+                <p className="sheet__note">{t.rules.scoring.addNote}</p>
+
+                <p className="sheet__lead">{t.rules.scoring.obviousTitle}</p>
+                <p className="sheet__note">{t.rules.scoring.obviousBody}</p>
+
+                <p className="sheet__lead">{t.rules.scoring.claimTitle}</p>
+                <p className="sheet__note">{t.rules.scoring.claimBody}</p>
+
+                <p className="sheet__example">{t.rules.scoring.example}</p>
 
                 <p className="sheet__note">{t.rules.note}</p>
             </article>

@@ -44,7 +44,6 @@ export interface SecretDj {
     vote: (guessId: PlayerId) => Promise<Result<Record<string, unknown>>>;
     setClaim: (trackId: string, claim: ClaimId) => Promise<Result<Record<string, unknown>>>;
     answer: (patch: Partial<Answer>) => Promise<Result<Record<string, unknown>>>;
-    setDecoy: (decoyId: PlayerId | null) => Promise<Result<Record<string, unknown>>>;
     reveal: () => Promise<Result<Record<string, unknown>>>;
     nextRound: () => Promise<Result<Record<string, unknown>>>;
 }
@@ -215,7 +214,6 @@ export function useSecretDj(): SecretDj {
             vote: guessId => act('round:vote', { guessId }),
             setClaim: (trackId, claim) => act('track:claim', { trackId, claim }),
             answer: patch => act('round:answer', patch),
-            setDecoy: decoyId => act('round:decoy', { decoyId }),
             reveal: () => act('round:reveal', {}),
             nextRound: () => act('round:next', {}),
         }),

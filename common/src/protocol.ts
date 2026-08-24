@@ -79,8 +79,6 @@ export interface ClientToServerEvents {
      * Idempotent: send the answer you want to stand, not a toggle.
      */
     'round:answer': (req: Partial<Answer>, ack: Ack) => void;
-    /** DJ only: who you would like the room to mistake this track for. */
-    'round:decoy': (req: { decoyId: PlayerId | null }, ack: Ack) => void;
     'round:reveal': (req: Record<string, never>, ack: Ack) => void;
     'round:next': (req: Record<string, never>, ack: Ack) => void;
 }

@@ -20,6 +20,7 @@ export type ErrorCode =
     | 'NOT_AUTHENTICATED'
     | 'NOT_HOST'
     | 'WRONG_PHASE'
+    | 'ROUND_NOT_READY'
     | 'NOT_READY'
     | 'NOT_ENOUGH_PLAYERS'
     | 'TRACK_LIMIT_REACHED'
@@ -35,8 +36,6 @@ export type ErrorCode =
     | 'VOTE_INVALID_TARGET'
     | 'ANSWER_OWN_TRACK'
     | 'RATING_INVALID'
-    | 'DECOY_NOT_DJ'
-    | 'DECOY_INVALID_TARGET'
     | 'RATE_LIMITED'
     | 'INTERNAL';
 
@@ -51,6 +50,7 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
     NOT_AUTHENTICATED: 'You are not in a game yet.',
     NOT_HOST: 'Only the host can do that.',
     WRONG_PHASE: 'That is not possible right now.',
+    ROUND_NOT_READY: 'Somebody in the room has not finished yet.',
     NOT_READY: 'Everyone needs to finish queueing tracks first.',
     NOT_ENOUGH_PLAYERS: 'Guessing needs at least two DJs. Invite someone, or switch to a listening party.',
     TRACK_LIMIT_REACHED: 'You have already queued all of your tracks.',
@@ -66,8 +66,6 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
     VOTE_INVALID_TARGET: 'That is not someone you can vote for.',
     ANSWER_OWN_TRACK: 'Answering about your own track is cheating, and a little sad.',
     RATING_INVALID: 'A like is a whole number from zero to five.',
-    DECOY_NOT_DJ: 'Only the DJ can set a decoy.',
-    DECOY_INVALID_TARGET: 'Pick someone else in the room to be mistaken for.',
     RATE_LIMITED: 'Slow down a moment.',
     INTERNAL: 'Something broke on our side.',
 };

@@ -20,7 +20,8 @@ const view: GameView = {
     number: 3, total: 6,
     track: { id: 't', url: 'https://open.spotify.com/track/abc', title: 'X', service: 'Spotify', metadata: 'ready', claim: { id: 'none' } },
     isMine: false, myAnswer: { like: 4, heard: false, popular: false, moved: false },
-    answersIn: 2, votesIn: 1, votersExpected: 2, canVote: true, canAnswer: true,
+    answersIn: 2, answersExpected: 2, votesIn: 1, votersExpected: 2,
+    isReady: false, canVote: true, canAnswer: true,
   },
   history: [], setlistLength: 6, now: Date.now(),
 };

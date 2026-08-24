@@ -64,7 +64,7 @@ export interface Answer {
     like?: Rating;
     /** They had heard this track before tonight. */
     heard: boolean;
-    /** They reckon this is a well-known track, whatever they think of it. */
+    /** They reckon this is a popular track, whatever they think of it. */
     popular: boolean;
     /** It got to them, one way or the other. Liking it is a separate question. */
     moved: boolean;
@@ -110,7 +110,7 @@ export interface GameSettings {
     tracksPlayedPerPlayer: number;
     /**
      * When false the game becomes a pure listening party: no guessing, no
-     * decoys, no identification claims. Just tracks and what people made of them.
+     * no identification claims. Just tracks and what people made of them.
      */
     guessingEnabled: boolean;
 }
@@ -144,9 +144,9 @@ export interface PublicPlayer {
     submitted: number;
     ready: boolean;
     /**
-     * One number. Everything you score, you score as a DJ: what your tracks did
-     * to the room, and the decoys you got away with. Reading the room is still
-     * played and still wins trophies — it no longer pays.
+     * One number, and you only ever score it as a DJ: what your tracks did to
+     * the room, put through your claim. Reading the room is still played and
+     * still wins trophies — it no longer pays.
      */
     score: number;
     // Deliberately absent: any per-player "has voted" flag identifies the DJ.
@@ -161,18 +161,15 @@ export interface VoteRecord {
     voterId: PlayerId;
     guessId: PlayerId;
     correct: boolean;
-    /** True when this voter fell for the DJ's decoy. */
-    fooled: boolean;
 }
 
 export type PointReason =
     /** What the room gave: likes, plus the novelty and emotion bonuses. */
     | 'room-verdict'
-    /** What calling it obvious took back off. Never positive. */
+    /** What calling it popular took back off. Never positive. */
     | 'obviousness'
     /** The swing from the DJ's claim. Negative when the claim did not land. */
-    | 'claim-landed'
-    | 'decoy-hit';
+    | 'claim-landed';
 
 export interface PointDelta {
     playerId: PlayerId;
@@ -190,10 +187,8 @@ export interface RoundReveal {
     listenerCount: number;
     /** What the DJ's claim turned out to be worth, e.g. 1.4. */
     claimMultiplier: number;
-    /** What calling it obvious cost, as a multiplier, e.g. 0.75. */
+    /** What calling it popular cost, as a multiplier, e.g. 0.75. */
     obviousnessDrag: number;
-    /** Who the DJ tried to be mistaken for, if they named anyone. */
-    decoyId?: PlayerId;
     points: PointDelta[];
 }
 
@@ -215,14 +210,16 @@ export interface RoundView {
      * in it would give away what the first one was.
      */
     answersIn: number;
+    /** Listeners present and expected to answer. */
+    answersExpected: number;
     votesIn: number;
     votersExpected: number;
+    /** True once nobody present still owes a vote or an answer. Gates the reveal. */
+    isReady: boolean;
     /** False for the DJ, and when guessing is disabled. */
     canVote: boolean;
     /** False for the DJ, who cannot answer on their own track. */
     canAnswer: boolean;
-    /** Only ever set for the DJ, and only before the reveal. */
-    myDecoy?: PlayerId;
     reveal?: RoundReveal;
 }
 
@@ -239,7 +236,6 @@ export interface PlayedTrack {
      * making tea is still comparable with every other round.
      */
     listenerCount: number;
-    decoyId?: PlayerId;
 }
 
 /** A queued track that never made the setlist, revealed once the game is over. */
@@ -256,8 +252,7 @@ export type AwardId =
     | 'gut-punch'
     // What you did to the people. These pay in trophies, never in points.
     | 'human-shazam'
-    | 'ghost'
-    | 'puppet-master';
+    | 'ghost';
 
 export interface Award {
     id: AwardId;

@@ -10,7 +10,6 @@ const GLYPHS: Record<Award['id'], string> = {
     'gut-punch': '⚡︎',
     'human-shazam': '◎',
     ghost: '☾',
-    'puppet-master': '⌘',
 };
 
 interface AwardCardProps {

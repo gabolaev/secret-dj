@@ -16,6 +16,17 @@ function seeded(seed: number): () => number {
     };
 }
 
+/**
+ * Casts whatever votes the round is still waiting on, then reveals.
+ *
+ * Scoring tests care about answers, not guesses; the round now refuses to close
+ * until both are in, so this fills in the half they are not testing.
+ */
+function settle(room: GameRoom, hostId: string): void {
+    for (const player of room.pending().toVote) room.vote(player.id, room.round!.djId);
+    room.reveal(hostId);
+}
+
 /** A room with `names` seated, connected, and everyone's tracks queued. */
 function setup(
     names: string[],
@@ -129,7 +140,12 @@ describe('authorisation', () => {
         expectError('NOT_HOST', () => room.start(ids.bo));
 
         room.start(ids.ana);
+        // Being the host is checked before the round is ready to reveal.
         expectError('NOT_HOST', () => room.reveal(ids.bo));
+
+        const listener = ids.bo === room.round!.djId ? ids.ana : ids.bo;
+        room.vote(listener, room.round!.djId);
+        room.answer(listener, { like: 3 });
         room.reveal(ids.ana);
         expectError('NOT_HOST', () => room.next(ids.bo));
     });
@@ -163,7 +179,10 @@ describe('starting', () => {
     it('allows a solo listening party', () => {
         const { room, ids } = setup(['ana'], { guessingEnabled: false });
         room.start(ids.ana);
-        expect(room.phase).toBe('listening');
+        // Nobody to wait on, so the round is ready the moment it opens.
+        expect(room.round).not.toBeNull();
+        expect(room.phase).toBe('tallying');
+        expect(room.isRoundReady).toBe(true);
     });
 
     it('cannot be restarted mid-game', () => {
@@ -251,6 +270,8 @@ describe('voting', () => {
 
         room.vote(voter, other);
         room.vote(other, voter);
+        room.answer(voter, { like: 3 });
+        room.answer(other, { like: 3 });
         expect(room.phase).toBe('tallying');
 
         // Still changeable while tallying - the v1 rules contradicted themselves
@@ -259,37 +280,65 @@ describe('voting', () => {
         expect(room.round!.votes.get(voter)).toBe(dj);
     });
 
-    it('moves to tallying once every eligible voter has voted', () => {
+    it('refuses to let the host reveal over the top of a live vote', () => {
         const { room, ids } = setup(['ana', 'bo', 'cy']);
         room.start(ids.ana);
         const dj = room.round!.djId;
-        const voters = Object.values(ids).filter(id => id !== dj);
+        const listeners = Object.values(ids).filter(id => id !== dj);
 
-        room.vote(voters[0], dj);
-        expect(room.phase).toBe('listening');
-        room.vote(voters[1], dj);
-        expect(room.phase).toBe('tallying');
-    });
+        expectError('ROUND_NOT_READY', () => room.reveal(ids.ana));
+        room.vote(listeners[0], dj);
+        expectError('ROUND_NOT_READY', () => room.reveal(ids.ana));
 
-    it('does not stall the round when a voter disconnects', () => {
-        const { room, ids } = setup(['ana', 'bo', 'cy']);
-        room.start(ids.ana);
-        const dj = room.round!.djId;
-        const voters = Object.values(ids).filter(id => id !== dj);
-
-        room.vote(voters[0], dj);
-        expect(room.phase).toBe('listening');
-        // v1 waited on every player forever, so one closed laptop froze the game.
-        room.detachSocket(voters[1]);
-        expect(room.phase).toBe('tallying');
-    });
-
-    it('lets the host reveal early rather than wait on an absent player', () => {
-        const { room, ids } = setup(['ana', 'bo', 'cy']);
-        room.start(ids.ana);
-        expect(room.phase).toBe('listening');
+        room.vote(listeners[1], dj);
         room.reveal(ids.ana);
         expect(room.phase).toBe('reveal');
+    });
+
+    it('does not hold the round hostage to somebody who never answers', () => {
+        const { room, ids } = setup(['ana', 'bo', 'cy']);
+        room.start(ids.ana);
+        const dj = room.round!.djId;
+        const listeners = Object.values(ids).filter(id => id !== dj);
+
+        // Waiting on answers as well would mean one person with the tab open and
+        // their phone in their pocket freezes the night, and the host has no way
+        // out. The count is published so the host can choose to wait.
+        for (const id of listeners) room.vote(id, dj);
+        expect(room.answersIn()).toBe(0);
+        expect(room.isRoundReady).toBe(true);
+        expect(room.pending().toAnswer).toHaveLength(2);
+        room.reveal(ids.ana);
+        expect(room.phase).toBe('reveal');
+    });
+
+    it('drops whoever actually left rather than freezing on them', () => {
+        const { room, ids } = setup(['ana', 'bo', 'cy']);
+        room.start(ids.ana);
+        const dj = room.round!.djId;
+        const [present, absent] = Object.values(ids).filter(id => id !== dj);
+
+        room.vote(present, dj);
+        room.answer(present, { like: 5 });
+        expect(room.phase).toBe('listening');
+
+        // The host has no escape hatch any more, so the escape has to be
+        // automatic: one closed laptop must not freeze the night.
+        room.detachSocket(absent);
+        expect(room.phase).toBe('tallying');
+        room.reveal(ids.ana);
+        expect(room.phase).toBe('reveal');
+    });
+
+    it('counts a listener as having answered only once they pick a number', () => {
+        const { room, ids } = setup(['ana', 'bo'], { guessingEnabled: false });
+        room.start(ids.ana);
+        const listener = Object.values(ids).find(id => id !== room.round!.djId)!;
+
+        room.answer(listener, { heard: true, moved: true });
+        expect(room.pending().toAnswer).toHaveLength(1);
+        room.answer(listener, { like: 0 });
+        expect(room.pending().toAnswer).toHaveLength(0);
     });
 });
 
@@ -360,36 +409,43 @@ describe('answering', () => {
         // nothing. The first drags the average, the second is not counted.
         room.answer(a, { like: 0, heard: true });
         room.answer(b, { like: 4, heard: true });
+        for (const id of [a, b]) room.vote(id, dj);
         room.reveal(ids.ana);
 
         // (0 + 4) / 2 answerers x 2 listeners = 4.
         expect(room.players.get(dj)!.score).toBe(4);
     });
 
-    it('stays open after voting closes, until the reveal', () => {
+    it('stays open after the round closes, until the reveal', () => {
         const { room, ids } = setup(['ana', 'bo']);
         room.start(ids.ana);
         const dj = room.round!.djId;
         const listener = Object.values(ids).find(id => id !== dj)!;
 
         room.vote(listener, dj);
-        expect(room.phase).toBe('tallying');
         room.answer(listener, { like: 2 });
+        expect(room.phase).toBe('tallying');
         expect(room.answersIn()).toBe(1);
+        // Changing your mind is still allowed right up to the reveal.
+        room.answer(listener, { like: 5 });
+        expect(room.round!.answers.get(listener)!.like).toBe(5);
 
         room.reveal(ids.ana);
         expectError('WRONG_PHASE', () => room.answer(listener, { like: 0 }));
     });
 
-    it('scales the verdict to the table, so staying quiet is neutral', () => {
+    it('scales the verdict to the table, so a listener who drops out is neutral', () => {
         const { room, ids } = setup(['ana', 'bo', 'cy'], { tracksPerPlayer: 1, tracksPlayedPerPlayer: 1 });
         room.start(ids.ana);
         const dj = room.round!.djId;
-        const [a] = Object.values(ids).filter(id => id !== dj);
+        const [a, b] = Object.values(ids).filter(id => id !== dj);
 
-        // One of two listeners answers: 4 + 1 for novelty, averaged over the
-        // one who spoke, scaled back up to the two who could have.
+        // One of two listeners answers and the other closes their laptop:
+        // 4 + 1 for novelty, averaged over the one who spoke, scaled back up to
+        // the two who were seated. The DJ is not punished for the empty chair.
         room.answer(a, { like: 4 });
+        room.vote(a, dj);
+        room.detachSocket(b);
         room.reveal(ids.ana);
 
         expect(room.players.get(dj)!.score).toBe(10);
@@ -482,7 +538,7 @@ describe('claims', () => {
         room.answer(b, { like: 4 });
         // Neither had heard it: 4 + 1 each = 10 from the room, and freshness 1
         // pays the claim at x1.5.
-        room.reveal(ids.ana);
+        settle(room, ids.ana);
 
         expect(room.players.get(dj)!.score).toBe(15);
     });
@@ -497,7 +553,7 @@ describe('the tax on the obvious', () => {
 
         room.answer(a, { like: 4, heard: true, popular: true });
         room.answer(b, { like: 4, heard: true, popular: true });
-        room.reveal(ids.ana);
+        settle(room, ids.ana);
         // 8 from the room, halved: a famous banger is never the easy win.
         expect(room.players.get(dj)!.score).toBe(4);
 
@@ -506,7 +562,7 @@ describe('the tax on the obvious', () => {
         for (const id of Object.values(ids).filter(other => other !== dj2)) {
             room.answer(id, { like: 4, heard: true });
         }
-        room.reveal(ids.ana);
+        settle(room, ids.ana);
         const banked = dj2 === dj ? room.players.get(dj2)!.score - 4 : room.players.get(dj2)!.score;
         expect(banked).toBe(8);
     });
@@ -520,7 +576,7 @@ describe('the tax on the obvious', () => {
         // Half the room calls it obvious: a quarter off, not a half.
         room.answer(a, { like: 4, heard: true, popular: true });
         room.answer(b, { like: 4, heard: true });
-        room.reveal(ids.ana);
+        settle(room, ids.ana);
         expect(room.players.get(dj)!.score).toBe(6);
     });
 });
@@ -536,7 +592,7 @@ describe('novelty and emotion', () => {
         // b: liked it 3, heard it, unmoved -> 3
         room.answer(a, { like: 3, moved: true });
         room.answer(b, { like: 3, heard: true });
-        room.reveal(ids.ana);
+        settle(room, ids.ana);
 
         expect(room.players.get(dj)!.score).toBe(9);
     });
@@ -549,70 +605,10 @@ describe('novelty and emotion', () => {
 
         room.answer(a, { like: 0, heard: true, moved: true });
         room.answer(b, { like: 0, heard: true, moved: true });
-        room.reveal(ids.ana);
+        settle(room, ids.ana);
 
         // Nobody liked it and it still scored: getting to people is the point.
         expect(room.players.get(dj)!.score).toBe(4);
-    });
-});
-
-describe('decoys', () => {
-    it('is the DJ\'s move and nobody else\'s', () => {
-        const { room, ids } = setup(['ana', 'bo', 'cy']);
-        room.start(ids.ana);
-        const dj = room.round!.djId;
-        const other = Object.values(ids).find(id => id !== dj)!;
-
-        expectError('DECOY_NOT_DJ', () => room.setDecoy(other, dj));
-        room.setDecoy(dj, other);
-        expect(room.round!.decoyId).toBe(other);
-    });
-
-    it('rejects pointing at yourself or at a stranger', () => {
-        const { room, ids } = setup(['ana', 'bo', 'cy']);
-        room.start(ids.ana);
-        const dj = room.round!.djId;
-        expectError('DECOY_INVALID_TARGET', () => room.setDecoy(dj, dj));
-        expectError('DECOY_INVALID_TARGET', () => room.setDecoy(dj, 'batman'));
-    });
-
-    it('can be cleared again', () => {
-        const { room, ids } = setup(['ana', 'bo', 'cy']);
-        room.start(ids.ana);
-        const dj = room.round!.djId;
-        const other = Object.values(ids).find(id => id !== dj)!;
-        room.setDecoy(dj, other);
-        room.setDecoy(dj, null);
-        expect(room.round!.decoyId).toBeNull();
-    });
-
-    it('scores a point for every listener it fools', () => {
-        const { room, ids } = setup(['ana', 'bo', 'cy'], { tracksPerPlayer: 2, tracksPlayedPerPlayer: 1 });
-        room.start(ids.ana);
-        const dj = room.round!.djId;
-        const [a, b] = Object.values(ids).filter(id => id !== dj);
-
-        room.setDecoy(dj, a);
-        room.vote(b, a); // fooled
-        room.vote(a, dj); // correct
-        room.reveal(ids.ana);
-
-        expect(room.players.get(dj)!.score).toBe(1);
-        // Naming the DJ correctly is still worth playing for — it feeds their
-        // `so-me` claim and the trophies — but it is worth no points.
-        expect(room.players.get(a)!.score).toBe(0);
-        expect(room.history[0].votes.find(v => v.voterId === b)!.fooled).toBe(true);
-    });
-
-    it('is dropped if the decoy target walks out', () => {
-        const { room, ids } = setup(['ana', 'bo', 'cy']);
-        room.start(ids.ana);
-        const dj = room.round!.djId;
-        const target = Object.values(ids).find(id => id !== dj)!;
-        room.setDecoy(dj, target);
-        room.leave(target);
-        // Blaming somebody who is no longer in the room is unguessable.
-        expect(room.round!.decoyId).toBeNull();
     });
 });
 
@@ -685,7 +681,7 @@ describe('scoring and progression', () => {
         expect(room.unplayedTracks()).toHaveLength(0); // not until the game ends
 
         for (let i = 0; i < 4; i++) {
-            room.reveal(ids.ana);
+            settle(room, ids.ana);
             room.next(ids.ana);
         }
 
@@ -706,10 +702,14 @@ describe('scoring and progression', () => {
     });
 
     it('hands out no awards when the room was completely silent', () => {
-        // Nobody voted, nobody rated: an honest empty list beats five trophies
-        // for zero of everything, which is what v1 rendered.
+        // Nobody voted, nobody answered: an honest empty list beats a wall of
+        // trophies for zero of everything, which is what v1 rendered. The only
+        // way to a silent round now is everybody walking off, so that is the
+        // shape of the test.
         const { room, ids } = setup(['ana', 'bo'], { tracksPerPlayer: 1 });
         room.start(ids.ana);
+        room.detachSocket(ids.ana);
+        room.detachSocket(ids.bo);
         room.reveal(ids.ana);
         room.next(ids.ana);
         room.reveal(ids.ana);
@@ -724,7 +724,7 @@ describe('leaving and host succession', () => {
     it('keeps a leaver in history but pulls their unplayed tracks', () => {
         const { room, ids } = setup(['ana', 'bo', 'cy'], { tracksPerPlayer: 2 });
         room.start(ids.ana);
-        room.reveal(ids.ana);
+        settle(room, ids.ana);
         room.next(ids.ana);
 
         const before = room.setlist.length;
@@ -778,7 +778,6 @@ describe('projection', () => {
 
         room.vote(watcher, other);
         room.answer(watcher, { like: 4 });
-        room.setDecoy(dj, watcher);
 
         const view = projectGame(room, watcher);
         expect(view.round!.reveal).toBeUndefined();
@@ -786,7 +785,6 @@ describe('projection', () => {
         expect(view.round!.myGuess).toBe(other);
         expect(view.round!.myAnswer.like).toBe(4);
         expect(view.round!.answersIn).toBe(1);
-        expect(view.round!.myDecoy).toBeUndefined();
         // The payload must not contain the DJ's id anywhere.
         expect(JSON.stringify(view.round)).not.toContain(dj);
     });
@@ -810,22 +808,10 @@ describe('projection', () => {
         // The DJ has to be able to remember what they bet.
         expect(projectGame(room, dj).round!.track.claim).toEqual({ id: 'never-heard' });
 
-        room.reveal(ids.ana);
+        settle(room, ids.ana);
         expect(projectGame(room, listener).round!.track.claim).toEqual({ id: 'never-heard' });
     });
 
-    it('shows the DJ their own decoy and nobody else theirs', () => {
-        const { room, ids } = setup(['ana', 'bo', 'cy']);
-        room.start(ids.ana);
-        const dj = room.round!.djId;
-        const [watcher, target] = Object.values(ids).filter(id => id !== dj);
-        room.setDecoy(dj, target);
-
-        expect(projectGame(room, dj).round!.myDecoy).toBe(target);
-        // For everyone else the decoy must be absent, not merely unrendered.
-        const others = JSON.stringify(projectGame(room, watcher).round);
-        expect(others).not.toContain('myDecoy');
-    });
 
     it('never leaks who answered what before the reveal', () => {
         const { room, ids } = setup(['ana', 'bo', 'cy']);
@@ -893,7 +879,7 @@ describe('projection', () => {
         expect(reveal.answers).toEqual([
             { listenerId: other, like: 4, heard: true, popular: false, moved: true },
         ]);
-        expect(reveal.votes).toEqual([{ voterId: other, guessId: dj, correct: true, fooled: false }]);
+        expect(reveal.votes).toEqual([{ voterId: other, guessId: dj, correct: true }]);
         expect(reveal.points).toContainEqual({ playerId: dj, points: 6, reason: 'room-verdict' });
     });
 

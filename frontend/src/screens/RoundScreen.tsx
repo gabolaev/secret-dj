@@ -40,7 +40,7 @@ export function RoundScreen({ view, game }: RoundScreenProps) {
             {round.isMine && <span className="stat stat--mine">{t.round.titleMine}</span>}
             <span className="stat stat--rated" title={t.round.answered(round.answersIn)}>
                 <i aria-hidden="true">✓</i>
-                {round.answersIn}
+                {round.answersIn}/{round.answersExpected}
             </span>
             {view.settings.guessingEnabled && !revealed && (
                 <span className="stat" title={t.round.voted(round.votesIn, round.votersExpected)}>
@@ -93,19 +93,6 @@ export function RoundScreen({ view, game }: RoundScreenProps) {
                     </div>
                 )}
 
-                {!revealed && round.isMine && view.settings.guessingEnabled && (
-                    <div className="rack">
-                        <ChipPicker
-                            tone="decoy"
-                            label={t.decoy.title}
-                            options={others}
-                            value={round.myDecoy}
-                            noneLabel={t.decoy.none}
-                            onSelectNone={() => void game.setDecoy(null)}
-                            onSelect={playerId => void game.setDecoy(playerId)}
-                        />
-                    </div>
-                )}
 
                 {revealed && <RevealPanel view={view} />}
             </Window>
@@ -125,13 +112,12 @@ export function RoundScreen({ view, game }: RoundScreenProps) {
                             <button
                                 type="button"
                                 className="button button--primary button--lg button--block"
+                                disabled={!round.isReady}
                                 onClick={() => void game.reveal()}
                             >
                                 {t.round.hostReveal}
                             </button>
-                            {view.phase === 'listening' && round.votersExpected > round.votesIn && (
-                                <p className="muted">{t.round.hostWaitingVotes(round.votersExpected - round.votesIn)}</p>
-                            )}
+                            {!round.isReady && <p className="muted">{t.round.hostWaiting}</p>}
                         </>
                     )}
                 </div>

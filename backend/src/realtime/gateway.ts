@@ -274,12 +274,6 @@ export function attachGateway({ io, store, metadata }: GatewayDeps): () => void 
             return {};
         });
 
-        bind<{ decoyId: PlayerId | null }, Record<string, never>>(socket, 'round:decoy', req => {
-            const { room, playerId } = context(socket);
-            publish(room, room.setDecoy(playerId, req?.decoyId ?? null));
-            return {};
-        });
-
         bind<Record<string, never>, Record<string, never>>(socket, 'round:reveal', () => {
             const { room, playerId } = context(socket);
             publish(room, room.reveal(playerId));

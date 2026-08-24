@@ -18,7 +18,7 @@ function multiplier(value: number): string {
  * Three of the four answers are self-reports no server can check, so this panel
  * prints **every answer with a name on it**. That is the enforcement: not a
  * validation rule, but having to sit next to someone who watched you call their
- * obscure B-side obvious. Which is also why the toggles are rendered as plain
+ * obscure B-side popular. Which is also why the toggles are rendered as plain
  * tags rather than tucked behind a hover.
  */
 export function RevealPanel({ view }: RevealPanelProps) {
@@ -28,7 +28,6 @@ export function RevealPanel({ view }: RevealPanelProps) {
 
     const djName = nameOf(view.players, reveal.djId);
     const correct = reveal.votes.filter(vote => vote.correct);
-    const fooled = reveal.votes.filter(vote => vote.fooled);
     const points = new Map(reveal.points.map(delta => [delta.reason, delta.points]));
     const pointsFor = (reason: PointReason) => points.get(reason);
 
@@ -59,7 +58,7 @@ export function RevealPanel({ view }: RevealPanelProps) {
                 </div>
             </div>
 
-            {/* What the room gave, what calling it obvious took back, and what
+            {/* What the room gave, what calling it popular took back, and what
                 the DJ's bet did to the remainder — in that order, so the score
                 shows its working rather than arriving as one number. */}
             <ul className="ledger">
@@ -88,18 +87,11 @@ export function RevealPanel({ view }: RevealPanelProps) {
                 </li>
             </ul>
 
-            {reveal.decoyId && (
-                <p className="reveal__decoy">
-                    <span aria-hidden="true">⌘</span>
-                    {t.reveal.decoyWas(nameOf(view.players, reveal.decoyId))} · {t.reveal.decoyHits(fooled.length)}
-                    {line('decoy-hit')}
-                </p>
-            )}
 
             {view.settings.guessingEnabled && reveal.votes.length > 0 && (
                 <ul className="reveal__votes">
                     {reveal.votes.map(vote => (
-                        <li key={vote.voterId} className={vote.correct ? 'is-correct' : vote.fooled ? 'is-fooled' : 'is-wrong'}>
+                        <li key={vote.voterId} className={vote.correct ? 'is-correct' : 'is-wrong'}>
                             <Avatar id={vote.voterId} name={nameOf(view.players, vote.voterId)} size="sm" />
                             {nameOf(view.players, vote.voterId)}
                             <span className="reveal__arrow" aria-hidden="true">
@@ -108,9 +100,9 @@ export function RevealPanel({ view }: RevealPanelProps) {
                             <span className="reveal__guess">{nameOf(view.players, vote.guessId)}</span>
                             <span
                                 className="reveal__mark"
-                                aria-label={vote.correct ? t.reveal.correct : vote.fooled ? t.reveal.fooled : t.reveal.wrong}
+                                aria-label={vote.correct ? t.reveal.correct : t.reveal.wrong}
                             >
-                                {vote.correct ? '✓' : vote.fooled ? '⌘' : '✗'}
+                                {vote.correct ? '✓' : '✗'}
                             </span>
                         </li>
                     ))}

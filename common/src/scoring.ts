@@ -2,13 +2,12 @@
  * Scoring and end-of-night awards. Pure functions, no game state, fully tested.
  *
  * One number per player, and everything you score, you score as a DJ. The model
- * exists to make three decisions matter:
+ * exists to make two decisions matter:
  *  - the **answer** is a verdict, not a like: how much you liked it, whether it
  *    was new to you, whether it moved you, and whether you reckon everybody
  *    already knows it;
  *  - the **claim** is the DJ's own bet, made blind in the lobby, and it is what
- *    stops "queue what they will all mildly enjoy" from being the best line;
- *  - the **decoy** gives the DJ something to play for during their own round.
+ *    stops "queue what they will all mildly enjoy" from being the best line.
  *
  * Reading the room is still played — guessing feeds the DJ's `so-me` claim and
  * still wins trophies — but it no longer pays points.
@@ -23,11 +22,6 @@ import {
     type PlayerId,
     type PointDelta,
 } from './types.js';
-
-export const POINTS = {
-    /** To the DJ, per listener who fell for their decoy. */
-    decoyHit: 1,
-} as const;
 
 /**
  * Added per listener the track was new to.
@@ -45,9 +39,9 @@ export const NOVELTY_BONUS = 1;
 export const EMOTION_BONUS = 2;
 
 /**
- * How much of a track's score a unanimously "we all know this one" verdict takes
- * away. The tax on the obvious: it is what stops a famous banger from being the
- * safe winning move, without taking a beloved classic all the way to nothing.
+ * How much of a track's score a unanimous "everyone knows this" verdict takes
+ * away. The popularity tax: it is what stops a famous banger from being the safe
+ * winning move, without taking a beloved classic all the way to nothing.
  */
 export const OBVIOUSNESS_DRAG = 0.5;
 
@@ -71,7 +65,7 @@ export function roomVerdict(played: { answers: readonly AnswerRecord[]; listener
     return average * played.listenerCount;
 }
 
-/** The tax on the obvious, as a multiplier between 0.5 and 1. */
+/** The popularity tax, as a multiplier between 0.5 and 1. */
 export function obviousnessDrag(answers: readonly AnswerRecord[]): number {
     if (answers.length === 0) return 1;
     const share = answers.filter(answer => answer.popular).length / answers.length;
@@ -113,7 +107,6 @@ export const AWARDS: readonly AwardDefinition[] = [
     { id: 'gut-punch', group: 'music', unit: 'listeners', lowerIsBetter: false },
     { id: 'human-shazam', group: 'people', unit: 'guesses', lowerIsBetter: false },
     { id: 'ghost', group: 'people', unit: 'percent', lowerIsBetter: true },
-    { id: 'puppet-master', group: 'people', unit: 'listeners', lowerIsBetter: false },
 ];
 
 export const AWARDS_BY_ID: Record<AwardId, AwardDefinition> = Object.fromEntries(
@@ -123,7 +116,7 @@ export const AWARDS_BY_ID: Record<AwardId, AwardDefinition> = Object.fromEntries
 export interface RoundOutcome {
     djId: PlayerId;
     claim: { id: ClaimId };
-    votes: Array<{ voterId: PlayerId; correct: boolean; fooled: boolean }>;
+    votes: Array<{ voterId: PlayerId; correct: boolean }>;
     answers: readonly AnswerRecord[];
     listenerCount: number;
 }
@@ -132,7 +125,7 @@ export interface RoundOutcome {
  * Points earned by a single round, as a flat list the UI can animate.
  *
  * Split into three so the reveal can show its working: what the room gave, what
- * calling it obvious took back, and what the claim did to the remainder.
+ * calling it popular took back, and what the claim did to the remainder.
  */
 export function computeRoundPoints(round: RoundOutcome): PointDelta[] {
     const deltas: PointDelta[] = [];
@@ -156,11 +149,6 @@ export function computeRoundPoints(round: RoundOutcome): PointDelta[] {
         deltas.push({ playerId: round.djId, points: swing, reason: 'claim-landed' });
     }
 
-    const fooled = round.votes.filter(vote => vote.fooled).length;
-    if (fooled > 0) {
-        deltas.push({ playerId: round.djId, points: fooled * POINTS.decoyHit, reason: 'decoy-hit' });
-    }
-
     return deltas;
 }
 
@@ -176,7 +164,6 @@ interface Tally {
     correctGuesses: number;
     guessesAgainst: number;
     identifications: number;
-    decoyHits: number;
 }
 
 function emptyTally(): Tally {
@@ -188,7 +175,6 @@ function emptyTally(): Tally {
         correctGuesses: 0,
         guessesAgainst: 0,
         identifications: 0,
-        decoyHits: 0,
     };
 }
 
@@ -242,7 +228,6 @@ export function tallyHistory(history: readonly PlayedTrack[], playerIds: readonl
                 voter.correctGuesses += 1;
                 dj.identifications += 1;
             }
-            if (vote.fooled) dj.decoyHits += 1;
         }
     }
 
@@ -362,14 +347,6 @@ export function computeAwards(history: readonly PlayedTrack[], playerIds: readon
         ),
     );
 
-    add(
-        'puppet-master',
-        pickWinners(
-            entries.map(([playerId, tally]) => ({ playerId, value: tally.decoyHits })),
-            false,
-            best => best > 0,
-        ),
-    );
 
     return awards;
 }

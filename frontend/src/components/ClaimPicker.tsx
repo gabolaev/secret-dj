@@ -44,9 +44,21 @@ export function ClaimPicker({ track, view, spent, open, onToggle, onPick }: Clai
 
             {open && (
                 <div className="claim__deck" role="group" aria-label={t.claims.label}>
-                    {CLAIMS.filter(definition => claimAvailable(definition, table)).map(definition => {
+                    {/* Unavailable claims are shown greyed out with the reason
+                        rather than hidden: silently dropping half the deck reads
+                        as a broken feature, not as a rule. */}
+                    {CLAIMS.map(definition => {
                         const isCurrent = current.id === definition.id;
-                        const blocked = !isCurrent && spent.has(definition.id);
+                        const available = claimAvailable(definition, table);
+                        const blocked = !isCurrent && (!available || spent.has(definition.id));
+
+                        const reason = !available
+                            ? table.players < definition.minPlayers
+                                ? t.claims.needsPlayers(definition.minPlayers)
+                                : t.claims.needsGuessing
+                            : spent.has(definition.id) && !isCurrent
+                              ? t.claims.spent
+                              : null;
 
                         return (
                             <button
@@ -59,7 +71,7 @@ export function ClaimPicker({ track, view, spent, open, onToggle, onPick }: Clai
                             >
                                 <span className="claim__name">{t.claims[definition.id].title}</span>
                                 <span className="claim__blurb">
-                                    {blocked ? t.claims.spent : t.claims[definition.id].blurb}
+                                    {reason ?? t.claims[definition.id].blurb}
                                 </span>
                             </button>
                         );

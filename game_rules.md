@@ -69,33 +69,38 @@ Each track you queue carries a **claim**: what you are betting it will do to the
 room. **Nobody else sees it until the reveal** — it multiplies whatever the room
 gives you, and then they find out what you were playing for.
 
-| Claim | Multiplier | How many |
+| Claim | What it takes to land | Needs |
 |---|---|---|
-| · **No claim** | ×1 | as many as you like |
-| ☄ **You've never heard this** | ×0.5–1.5 on the share it was new to | one a night |
-| ♡ **Everyone will like this** | ×0.5–1.5 on the share who gave it 4+ | one a night |
-| ⚡ **This will get to you** | ×0.5–1.5 on the share it moved | one a night |
-| ◈ **You will know it was me** | ×0.5–1.5 on the share who named you | one a night |
-| ◑ **This will split the room** | ×0.5–1.5 on how evenly it divided them | one a night |
+| **No claim** | nothing — you keep exactly what the room gave | any table |
+| **You've never heard this** | the more of the room it was new to, the better — and it still has to land | any table |
+| **Everyone will like this** | how many gave it 4 or 5; one holdout costs you | 3+ players |
+| **This will get to you** | how many say it moved them, whether or not they liked it | any table |
+| **You will know it was me** | how many named you correctly — and it makes you easier to name all night | 3+ players, guessing on |
+| **This will split the room** | an even split of loved (4–5) and not (0–1); agreement scores nothing | 3+ players |
 
-**No claim is the floor, and that is the whole point.** It asks nothing of the
-music and can never lose you anything — but it can never win you anything
-either. Every other claim pays up to half again, and halves your take if it
-misses. Queueing something everybody will mildly enjoy is therefore never the
-strongest line available.
+Each claim is **one a night**, so the whole decision is which of your tracks
+deserves which bet. A claim that came true completely pays **half as much
+again**; one that half came true changes nothing; one that did not come true at
+all leaves the track worth **half**. A track with no claim is left alone — which
+is exactly what makes no claim the safe play.
 
-A few notes on what lands:
+**The safe play is the floor, and that is the whole point.** No claim can never
+lose you anything, and can never win you anything either. Everything else pays
+more only if the track really is new to them, really does land with all of them,
+really moves them, really is recognisably yours, or really does divide them.
+Queueing something everybody will mildly enjoy is therefore never the strongest
+line available.
 
-- **This will split the room** needs both camps. Loved is a 4 or 5; not-loved is
-  a 0 or a 1. Unanimous praise scores nothing here, and so does unanimous
-  contempt — you cannot farm it with something merely annoying.
-- **This will get to you** is not the same bet as *everyone will like this*.
-  A track can wreck somebody who gives it a 1.
-- **You will know it was me** is the one claim that costs you on the other side
-  of the game: the easier you are to name, the worse you do at being the Ghost.
-- Claims that would give the game away are simply not offered — identification
-  needs guessing switched on, and "everyone", "split" and "recognise me" all
-  need at least three at the table to mean anything.
+Three things worth knowing:
+
+- **Splitting the room needs both camps.** Unanimous praise scores nothing here,
+  and so does unanimous contempt — you cannot farm it with something merely
+  annoying.
+- **Getting to someone is not the same as being liked.** A track can wreck a
+  listener who gives it a 1, and that still pays.
+- **Being recognised cuts both ways.** *You will know it was me* is the one claim
+  that costs you elsewhere: the easier you are to name, the worse you do at being
+  the Ghost.
 
 Claims are locked when the music starts. It is a bet, made blind, or it is
 nothing.
@@ -127,7 +132,7 @@ Four questions, and only the first one is about the score.
 |---|---|
 | **How much did you like it?** | 0–5. Zero is a real answer, not a shrug. |
 | **Heard it before?** | Had you come across it before tonight? |
-| **Everyone knows this?** | Is it a well-known track, whatever you think of it? |
+| **Popular?** | Is it a well-known track, whatever you think of it? |
 | **It got to you?** | Did it move you? Liking it is a separate question. |
 
 **The number is the signature on your whole answer.** Until you pick one, the
@@ -151,10 +156,31 @@ their like  +1 if it was new to them  +2 if it got to them
 
 averaged, then scaled to the size of the table. Then two multipliers:
 
-- **the tax on the obvious** — the more of the room that calls it well known,
-  the less it scores, down to half. A famous banger is never the easy winning
-  move, but a beloved classic still keeps half of what it earned.
+- **the popularity tax** — the more of the room that calls it popular, the less
+  it scores, down to half. A famous banger is never the easy winning move, but a
+  beloved classic still keeps half of what it earned.
 - **the claim** — the DJ's own bet, from ×0.5 to ×1.5.
+
+#### Where the points come from
+
+| | |
+|---|---|
+| A listener liked it | 0 to 5 |
+| They had not heard it before | +1 |
+| It got to them | +2 |
+| They called it popular | takes off up to half the track |
+| Your claim landed | up to ×1.5 |
+| Your claim missed | ×0.5 |
+| You named the DJ correctly | nothing |
+
+Everyone who answered is added up, averaged, and multiplied back by how many
+listeners were at the table — so somebody staying quiet costs the DJ nothing.
+
+**Worked example.** Four listeners, all four answer: 5, 4, 4 and 3 makes 16.
+None of them had heard it, so +1 each — 20. Two of them were moved, +2 each —
+24. Nobody called it popular, so it stays 24. The claim *you've never heard
+this* came true completely, half as much again: 36 points. Had two of the
+four called it popular, the 24 would have become 18, and 27 after the claim.
 
 #### Guess the DJ
 
@@ -165,37 +191,39 @@ Guessing **wins you no points**. It feeds the DJ's *you will know it was me*
 claim, and it decides two of the trophies at the end. It is played for the fun
 of being right, which turns out to be enough.
 
-#### If it's your track: set a decoy
+#### If it's your track
 
-The DJ can't vote and can't answer on their own track, so instead they get a
-move nobody else has: **secretly name the player you want the room to blame.**
-Every listener who guesses your decoy is **+1** to you.
-
-A decoy pointing at the real answer scores nothing, obviously. If your decoy
-leaves the room mid-round, it's dropped.
+Nothing to do. You can't answer and you can't guess, so you sit and listen to
+the room work out what it makes of something you chose — which is its own kind
+of tension, and the only round of the night you spend as the audience.
 
 ---
 
-Once everyone still connected has voted, the round is marked ready. The host can
-reveal at any point regardless, so one person walking away from their laptop can
-never freeze the game.
+**The host cannot reveal until everyone still connected has voted.** Cutting the
+room off mid-vote used to be possible and it threw away real answers.
+
+Waiting cannot strand the night either: anyone who closes their laptop drops out
+of the count the moment their socket goes, so the round becomes revealable on its
+own. Answers are *not* waited on — one person with the tab open and their phone
+in their pocket would freeze the game with no way out — but the round header
+shows how many are still deciding, so the host can choose to wait.
 
 ### 6. The reveal
 
 Everyone sees who the DJ was, what they claimed, every guess, who fell for the
-decoy, whether the claim landed — and **every answer, with a name against it**. That attribution is
+whether the claim landed — and **every answer, with a name against it**. That attribution is
 not decoration; it is the only thing holding rule zero up.
 
 The score shows its working in three lines: what the room gave, what calling it
-obvious took back, and what the claim did to the remainder.
+popular took back, and what the claim did to the remainder.
 
 ---
 
 ## One score
 
 Everything you score, you score as a DJ: what your tracks did to the room, put
-through your claim, plus the decoys you got away with. Reading the room is still
-played and still wins trophies — it no longer pays.
+through your claim. Nothing else on the night is worth a point. Reading the room
+is still played and still wins trophies — it no longer pays.
 
 ## What you take home
 
@@ -205,7 +233,7 @@ more, with who played it, copyable in one click. That is the part you keep.
 
 ## Awards
 
-Seven at the end. **Ties are shared, never broken arbitrarily**, and an award
+Six at the end. **Ties are shared, never broken arbitrarily**, and an award
 nobody earned simply isn't given.
 
 | Award | Won by |
@@ -216,7 +244,6 @@ nobody earned simply isn't given.
 | ⚡ **Gut Punch** | Played the track that got to the most people |
 | ◎ **Human Shazam** | Named the most DJs correctly |
 | ☾ **The Ghost** | Lowest *rate* of being correctly identified |
-| ⌘ **Puppet Master** | Sent the most people chasing the wrong DJ |
 
 Track of the Night is judged on what the room gave, **before** the DJ's claim
 touches it, so a lucky bet can never crown a track the room liked less. The
@@ -236,15 +263,15 @@ thing it can't.
   express.
 - **Only the host** can change settings, start the game, reveal a round or
   advance — checked on the server, on every command.
-- **Secrets are withheld, not hidden.** The DJ's identity, their decoy, their
-  claim, individual votes and every answer are simply not in the data your
+- **Secrets are withheld, not hidden.** The DJ's identity, their claim,
+  individual votes and every answer are simply not in the data your
   browser receives until the reveal — only a count of how many have answered.
 - **Claims are locked at the drop**, one of each per player, and a claim the
   table can no longer support falls back to no claim rather than stranding you.
 - **Every limit is server-side**: track counts, duplicates, name rules, who may
   answer and when, and what a like is allowed to be.
 - **What the server cannot check is rule zero.** Whether you had heard it,
-  whether it moved you, whether you think it's obvious — those are self-reports,
+  whether it moved you, whether you think it's popular — those are self-reports,
   and no amount of engineering changes that. What the code does instead is print
   them with your name on them, and make sure a single lie is worth almost
   nothing.

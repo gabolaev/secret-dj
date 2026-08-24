@@ -31,7 +31,6 @@ interface RoundSpec {
     /** Defaults to however many actually answered. */
     listeners?: number;
     claim?: ClaimId;
-    decoy?: string;
     votes?: Array<[voter: string, guess: string]>;
 }
 
@@ -50,12 +49,10 @@ function played(number: number, spec: RoundSpec): PlayedTrack {
         djId: spec.dj,
         answers,
         listenerCount: spec.listeners ?? answers.length,
-        decoyId: spec.decoy,
         votes: (spec.votes ?? []).map(([voterId, guessId]) => ({
             voterId,
             guessId,
             correct: guessId === spec.dj,
-            fooled: spec.decoy !== undefined && guessId === spec.decoy && guessId !== spec.dj,
         })),
     };
 }
@@ -177,18 +174,18 @@ describe('computeRoundPoints', () => {
         expect(points.some(delta => delta.reason === 'obviousness')).toBe(false);
     });
 
-    it('pays the DJ for decoys and nobody for guessing', () => {
+    it('pays nobody for guessing, however many get it right', () => {
         const points = computeRoundPoints({
             djId: 'ana',
             claim: DEFAULT_CLAIM,
             listenerCount: 2,
             answers: [],
             votes: [
-                { voterId: 'bo', correct: true, fooled: false },
-                { voterId: 'cy', correct: false, fooled: true },
+                { voterId: 'bo', correct: true },
+                { voterId: 'cy', correct: false },
             ],
         });
-        expect(points).toEqual([{ playerId: 'ana', points: 1, reason: 'decoy-hit' }]);
+        expect(points).toEqual([]);
     });
 
     it('awards nothing when nothing happened', () => {
@@ -291,20 +288,7 @@ describe('computeAwards', () => {
         expect(favourite?.winners.sort()).toEqual(['ana', 'bo']);
     });
 
-    it('crowns the puppet master by decoys that landed', () => {
-        const history = [
-            played(1, { dj: 'ana', decoy: 'cy', votes: [['bo', 'cy'], ['cy', 'bo']] }),
-            played(2, { dj: 'bo', decoy: 'ana', votes: [['ana', 'cy'], ['cy', 'ana']] }),
-        ];
-        const puppet = computeAwards(history, players).find(award => award.id === 'puppet-master');
-        expect(puppet?.winners.sort()).toEqual(['ana', 'bo']);
-        expect(puppet?.value).toBe(1);
-    });
 
-    it('does not count a decoy that happens to be the right answer', () => {
-        const history = [played(1, { dj: 'ana', decoy: 'ana', votes: [['bo', 'ana']] })];
-        expect(computeAwards(history, players).find(award => award.id === 'puppet-master')).toBeUndefined();
-    });
 
     it('omits awards nobody earned rather than handing out zeroes', () => {
         // Nobody voted, nobody answered: an honest empty list beats seven

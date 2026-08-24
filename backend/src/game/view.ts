@@ -8,7 +8,6 @@
  * Secrecy rules, in one place:
  *  - who queued the current track  -> only the DJ themself, until `reveal`
  *  - who has and has not voted     -> nobody: an aggregate count only
- *  - the DJ's decoy                -> only the DJ themself, until `reveal`
  *  - who voted for whom            -> only your own guess, until `reveal`
  *  - what anybody answered         -> an anonymous count only, until `reveal`
  *  - the DJ's claim                -> only the DJ themself, until `reveal`
@@ -50,7 +49,6 @@ export function projectGame(room: GameRoom, viewerId: PlayerId): GameView {
         const appearsInHistory = room.history.some(
             entry =>
                 entry.djId === player.id ||
-                entry.decoyId === player.id ||
                 entry.votes.some(vote => vote.voterId === player.id || vote.guessId === player.id) ||
                 entry.answers.some(answer => answer.listenerId === player.id),
         );
@@ -114,6 +112,10 @@ function projectRound(room: GameRoom, viewerId: PlayerId): RoundView | undefined
         myGuess: round.votes.get(viewerId),
         myAnswer,
         answersIn: room.answersIn(),
+        // An aggregate, like the vote counter: it says how many are still to
+        // come, never which of them, so it cannot single the DJ out.
+        answersExpected: Math.max(room.answersIn(), room.listenerCount()),
+        isReady: room.isRoundReady,
         votesIn,
         // A voter who disconnects after voting must not make the counter read 3/2.
         votersExpected: Math.max(votesIn, room.eligibleVoters().length),
@@ -122,8 +124,6 @@ function projectRound(room: GameRoom, viewerId: PlayerId): RoundView | undefined
             !isMine &&
             (room.phase === 'listening' || room.phase === 'tallying'),
         canAnswer: !isMine && (room.phase === 'listening' || room.phase === 'tallying'),
-        // Only the DJ learns their own decoy before the reveal.
-        myDecoy: isMine && !revealed ? (round.decoyId ?? undefined) : undefined,
     };
 
     if (revealed) {
@@ -139,7 +139,6 @@ function projectRound(room: GameRoom, viewerId: PlayerId): RoundView | undefined
             listenerCount,
             claimMultiplier: claimMultiplier({ claim, answers, votes }),
             obviousnessDrag: obviousnessDrag(answers),
-            decoyId: entry?.decoyId,
             // Re-derived from the same pure functions that banked the points, so
             // the displayed breakdown can never drift from the scoreboard.
             points: computeRoundPoints({ djId: round.djId, claim, votes, answers, listenerCount }),

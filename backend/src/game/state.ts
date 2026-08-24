@@ -49,7 +49,7 @@ export interface PlayerState {
     /** When `presence` last became 'offline'; used for the host grace period. */
     offlineSince: number | null;
     trackIds: TrackId[];
-    /** One number: what your tracks did to the room, plus your decoy hits. */
+    /** One number: what your tracks did to the room, put through your claim. */
     score: number;
 }
 
@@ -62,8 +62,6 @@ export interface RoundState {
     votes: Map<PlayerId, PlayerId>;
     /** Listener -> what they said. An entry without a `like` has not answered. */
     answers: Map<PlayerId, Answer>;
-    /** Who the DJ wants the room to blame. Set during their own round. */
-    decoyId: PlayerId | null;
 }
 
 export interface PlayedRound {
@@ -73,8 +71,7 @@ export interface PlayedRound {
     answers: AnswerRecord[];
     /** Listeners entitled to answer, answered or not. The scoring scales to it. */
     listenerCount: number;
-    decoyId?: PlayerId;
-    votes: Array<{ voterId: PlayerId; guessId: PlayerId; correct: boolean; fooled: boolean }>;
+    votes: Array<{ voterId: PlayerId; guessId: PlayerId; correct: boolean }>;
 }
 
 export const DEFAULT_SETTINGS: GameSettings = {

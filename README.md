@@ -107,9 +107,9 @@ Three workspaces:
 
 Everyone queues three tracks; two of them play, chosen at random. For each one
 the room answers four questions: **how much you liked it** (0–5), whether you'd
-**heard it before**, whether **everyone knows it**, and whether **it got to
-you**. Likes score, novelty and emotion add, and the more of you that call a
-track obvious the less it's worth — so a famous banger is never the easy win.
+**heard it before**, whether it's **popular**, and whether **it got to you**.
+Likes score, novelty and emotion add, and the more of you that call a track
+popular the less it's worth — so a famous banger is never the easy win.
 
 The decision that makes it a game is the **claim**. Each track you queue carries
 a bet nobody else sees until the reveal: *you have never heard this*, *everyone
@@ -119,8 +119,8 @@ it can never lose you anything and never win you anything. The rest pay up to
 half again, and halve your take if they miss. Which is why queueing something
 everyone will mildly enjoy is never the strongest line.
 
-Meanwhile you're guessing the DJ behind each track and setting a decoy while
-your own plays. One score, all of it earned as a DJ; guessing pays in trophies.
+Meanwhile you're guessing the DJ behind each track. One score, all of it earned
+as a DJ; guessing pays in trophies rather than points.
 At the end everyone walks out with their own playlist of what they liked.
 
 **Rule zero: never lie in your answers.** Three of the four can't be checked by

@@ -213,9 +213,6 @@ export class GameRoom {
         const upcoming = new Set(player.trackIds);
         this.setlist = this.setlist.filter((trackId, index) => index <= this.roundIndex || !upcoming.has(trackId));
 
-        // A decoy pointing at someone who walked out would be unguessable.
-        if (this.round?.decoyId === player.id) this.round.decoyId = null;
-
         this.pruneClaims();
 
         const feed: FeedEvent[] = [{ kind: 'player-left', playerId: player.id, name: player.name }];
@@ -422,7 +419,6 @@ export class GameRoom {
             startedAt: this.now(),
             votes: new Map(),
             answers: new Map(),
-            decoyId: null,
         };
         this.phase = 'listening';
         this.touch();
@@ -441,10 +437,35 @@ export class GameRoom {
         return this.activePlayers.filter(player => player.id !== djId && player.presence === 'online');
     }
 
+    /** Listeners who are present and still owe the round something. */
+    pending(): { toVote: PlayerState[]; toAnswer: PlayerState[] } {
+        const round = this.round;
+        if (!round) return { toVote: [], toAnswer: [] };
+        const present = this.activePlayers.filter(
+            player => player.id !== round.djId && player.presence === 'online',
+        );
+        return {
+            toVote: this.settings.guessingEnabled ? present.filter(player => !round.votes.has(player.id)) : [],
+            toAnswer: present.filter(player => round.answers.get(player.id)?.like === undefined),
+        };
+    }
+
+    /**
+     * True once nobody present still owes the round a vote.
+     *
+     * Deliberately *not* waiting on answers as well. Requiring one would mean a
+     * single person with the tab open and their phone in their pocket freezes
+     * the night, and the host no longer has an escape hatch — a worse failure
+     * than the one this gate exists to prevent. How many are still deciding is
+     * published instead, so the host can choose to wait.
+     */
+    get isRoundReady(): boolean {
+        return this.pending().toVote.length === 0;
+    }
+
     private maybeCloseVoting(): FeedEvent[] {
-        if (this.phase !== 'listening' || !this.round || !this.settings.guessingEnabled) return [];
-        const pending = this.eligibleVoters().filter(player => !this.round!.votes.has(player.id));
-        if (pending.length > 0) return [];
+        if (this.phase !== 'listening' || !this.round) return [];
+        if (!this.isRoundReady) return [];
         this.phase = 'tallying';
         return [];
     }
@@ -495,7 +516,9 @@ export class GameRoom {
         round.answers.set(player.id, next);
 
         this.touch();
-        return [{ kind: 'track-answered', answersIn: this.answersIn() }];
+        const feed: FeedEvent[] = [{ kind: 'track-answered', answersIn: this.answersIn() }];
+        feed.push(...this.maybeCloseVoting());
+        return feed;
     }
 
     /**
@@ -519,43 +542,19 @@ export class GameRoom {
         return this.activePlayers.filter(player => player.id !== this.round!.djId).length;
     }
 
-    /**
-     * The DJ names who they would like the room to blame. Their one job during
-     * a round they cannot otherwise participate in.
-     */
-    setDecoy(playerId: PlayerId, decoyId: PlayerId | null): FeedEvent[] {
-        const player = this.requirePlayer(playerId);
-        this.requirePhase('listening', 'tallying');
-        const round = this.requireRound();
-        if (player.id !== round.djId) throw new GameError('DECOY_NOT_DJ');
-        if (!this.settings.guessingEnabled) throw new GameError('VOTE_NOT_ALLOWED');
-
-        if (decoyId === null) {
-            round.decoyId = null;
-        } else {
-            const target = this.players.get(decoyId);
-            if (!target || target.presence === 'left' || target.id === player.id) {
-                throw new GameError('DECOY_INVALID_TARGET');
-            }
-            round.decoyId = target.id;
-        }
-
-        this.touch();
-        return [];
-    }
-
     reveal(playerId: PlayerId): FeedEvent[] {
         this.requireHost(playerId);
         this.requirePhase('listening', 'tallying');
         const round = this.requireRound();
+        // The host used to be able to reveal over the top of people still
+        // voting. Anyone who actually walks away drops out of `pending()` the
+        // moment their socket goes, so waiting can no longer strand the room.
+        if (!this.isRoundReady) throw new GameError('ROUND_NOT_READY');
 
-        const decoyId = round.decoyId ?? undefined;
         const votes = [...round.votes.entries()].map(([voterId, guessId]) => ({
             voterId,
             guessId,
             correct: guessId === round.djId,
-            // A decoy only counts as a hit when the voter was actually wrong.
-            fooled: decoyId !== undefined && guessId === decoyId && guessId !== round.djId,
         }));
 
         // Only signed answers count, best-liked first: the reveal reads as a
@@ -579,7 +578,6 @@ export class GameRoom {
             djId: round.djId,
             answers,
             listenerCount,
-            decoyId,
             votes,
         });
 
@@ -625,7 +623,6 @@ export class GameRoom {
                     djId: entry.djId,
                     answers: entry.answers,
                     listenerCount: entry.listenerCount,
-                    decoyId: entry.decoyId,
                     votes: entry.votes,
                 },
             ];

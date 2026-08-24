@@ -24,9 +24,9 @@ export function AnswerBar({ answer, disabled, onAnswer }: AnswerBarProps) {
     const like = answer.like;
 
     const toggles = [
-        { key: 'heard', glyph: '☄︎', label: t.answer.heard, hint: t.answer.heardHint },
-        { key: 'popular', glyph: '◉', label: t.answer.popular, hint: t.answer.popularHint },
-        { key: 'moved', glyph: '⚡︎', label: t.answer.moved, hint: t.answer.movedHint },
+        { key: 'heard', label: t.answer.heard, hint: t.answer.heardHint },
+        { key: 'popular', label: t.answer.popular, hint: t.answer.popularHint },
+        { key: 'moved', label: t.answer.moved, hint: t.answer.movedHint },
     ] as const;
 
     return (
@@ -68,7 +68,6 @@ export function AnswerBar({ answer, disabled, onAnswer }: AnswerBarProps) {
                             title={toggle.hint}
                             onClick={() => onAnswer({ [toggle.key]: !on })}
                         >
-                            <span aria-hidden="true">{toggle.glyph}</span>
                             {toggle.label}
                         </button>
                     );

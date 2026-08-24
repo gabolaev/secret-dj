@@ -847,9 +847,104 @@
     border-top: 1px solid var(--line);
 }
 
+/* `.chip` keeps a narrow left pad for the avatar a guess chip carries. These
+   have no avatar, so they need it back or the label sits on the border. */
+.chip--answer {
+    padding-left: 0.75rem;
+}
+
 .chip--answer.is-active {
     border-color: var(--love);
     color: var(--love);
+}
+
+.rules-claims {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    margin: var(--sp-3) 0;
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    overflow: hidden;
+    list-style: none;
+}
+
+.rules-claims li {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    padding: var(--sp-2) var(--sp-3);
+    background: var(--surface-2);
+}
+
+.rules-claims strong {
+    font-size: var(--fs-base);
+}
+
+.rules-claims span {
+    color: var(--faint);
+    font-size: var(--fs-micro);
+}
+
+.rules-claims em {
+    color: var(--accent);
+    font-size: var(--fs-micro);
+    font-style: normal;
+}
+
+.sheet__lead {
+    margin-top: var(--sp-4);
+    font-size: var(--fs-micro);
+    font-weight: 600;
+    color: var(--text);
+}
+
+.sheet__subhead {
+    margin-top: var(--sp-5);
+    font-size: var(--fs-base);
+    font-weight: 600;
+}
+
+.scoring {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    margin: var(--sp-3) 0;
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    overflow: hidden;
+}
+
+.scoring__row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--sp-3);
+    padding: var(--sp-2) var(--sp-3);
+    background: var(--surface-2);
+    font-size: var(--fs-micro);
+}
+
+.scoring__row dt {
+    color: var(--muted);
+}
+
+.scoring__row dd {
+    margin: 0;
+    flex-shrink: 0;
+    color: var(--accent);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+
+.sheet__example {
+    margin-top: var(--sp-2);
+    padding: var(--sp-3);
+    border-radius: var(--r-md);
+    background: var(--surface-2);
+    color: var(--muted);
+    font-size: var(--fs-micro);
 }
 
 .sheet__oath {
@@ -868,6 +963,10 @@
     align-items: center;
     gap: var(--sp-2);
     flex-wrap: wrap;
+}
+
+.pick--guess {
+    /* The only tone left now that decoys are gone. */
 }
 
 .pick__label {
@@ -913,11 +1012,6 @@
     background: var(--accent);
     color: var(--accent-ink);
     font-weight: 600;
-}
-
-.pick--decoy .chip.is-active {
-    background: var(--detective);
-    color: #06251f;
 }
 
 /* ------------------------------------------------------------------- stage */
@@ -993,21 +1087,6 @@
     font-size: var(--fs-base);
 }
 
-.reveal__decoy {
-    display: flex;
-    align-items: center;
-    gap: var(--sp-2);
-    padding: var(--sp-3);
-    border-radius: var(--r-md);
-    background: rgb(75 220 200 / 10%);
-    color: var(--detective);
-    font-size: var(--fs-base);
-}
-
-.reveal__decoy .reveal__pts {
-    margin-left: auto;
-}
-
 .reveal__votes {
     display: flex;
     flex-direction: column;
@@ -1030,10 +1109,6 @@
 
 .reveal__votes li.is-correct {
     color: var(--good);
-}
-
-.reveal__votes li.is-fooled {
-    color: var(--detective);
 }
 
 .reveal__arrow {
