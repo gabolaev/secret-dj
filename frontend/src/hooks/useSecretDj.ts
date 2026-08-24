@@ -1,5 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { ErrorCode, FeedEvent, GameSettings, GameView, PlayerId, Reaction, Result, Session } from '@secret-dj/common';
+import type {
+    Answer,
+    ClaimId,
+    ErrorCode,
+    FeedEvent,
+    GameSettings,
+    GameView,
+    PlayerId,
+    Result,
+    Session,
+} from '@secret-dj/common';
 import { getSocket, request } from '../lib/socket';
 import { clearSession, loadSession, rememberName, saveSession } from '../lib/session';
 import { useT } from '../i18n';
@@ -32,7 +42,8 @@ export interface SecretDj {
     updateSettings: (patch: Partial<GameSettings>) => Promise<Result<Record<string, unknown>>>;
     startGame: () => Promise<Result<Record<string, unknown>>>;
     vote: (guessId: PlayerId) => Promise<Result<Record<string, unknown>>>;
-    react: (reaction: Reaction) => Promise<Result<Record<string, unknown>>>;
+    setClaim: (trackId: string, claim: ClaimId) => Promise<Result<Record<string, unknown>>>;
+    answer: (patch: Partial<Answer>) => Promise<Result<Record<string, unknown>>>;
     setDecoy: (decoyId: PlayerId | null) => Promise<Result<Record<string, unknown>>>;
     reveal: () => Promise<Result<Record<string, unknown>>>;
     nextRound: () => Promise<Result<Record<string, unknown>>>;
@@ -202,7 +213,8 @@ export function useSecretDj(): SecretDj {
             updateSettings: patch => act('settings:update', patch),
             startGame: () => act('game:start', {}),
             vote: guessId => act('round:vote', { guessId }),
-            react: reaction => act('round:react', { reaction }),
+            setClaim: (trackId, claim) => act('track:claim', { trackId, claim }),
+            answer: patch => act('round:answer', patch),
             setDecoy: decoyId => act('round:decoy', { decoyId }),
             reveal: () => act('round:reveal', {}),
             nextRound: () => act('round:next', {}),

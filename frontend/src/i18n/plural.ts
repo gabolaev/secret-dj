@@ -10,7 +10,7 @@
 const EN_RULES = new Intl.PluralRules('en-US');
 const RU_RULES = new Intl.PluralRules('ru-RU');
 
-/** English: `1 heart` / `2 hearts`. */
+/** English: `1 star` / `2 stars`. */
 export function en2(count: number, one: string, other: string): string {
     return `${count} ${EN_RULES.select(count) === 'one' ? one : other}`;
 }

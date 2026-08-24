@@ -3,7 +3,7 @@
 # ◉ Secret DJ
 
 **A real-time listening party. Everyone queues a track in secret, the room
-spends its hearts, and guesses who put it on.**
+says what it honestly thought, and guesses who put it on.**
 
 English · Русский
 
@@ -74,7 +74,7 @@ alone, turn **Guessing** off in room settings for a solo listening party.
 | | |
 |---|---|
 | `npm run verify` | typecheck + lint + tests + build, everything the CI would run |
-| `npm test` | 154 tests |
+| `npm test` | 198 tests |
 | `npm run test:watch` | tests on save |
 | `npm run typecheck` | whole-repo project references, plus the test files |
 | `npm run lint` | |
@@ -105,13 +105,28 @@ Three workspaces:
 
 ### The game
 
-Everyone queues three tracks; two of them play, chosen at random. You get a
-small budget of **hearts** for the whole night and exactly one **anthem** worth
-triple, so backing a track always costs you something. Guess the DJ behind each
-track — and while your own track plays, secretly pick who you want the room to
-blame instead. Two scoreboards: **Selector** for the love your tracks earned,
-**Detective** for guesses and decoys. Full rules in
-[`game_rules.md`](./game_rules.md).
+Everyone queues three tracks; two of them play, chosen at random. For each one
+the room answers four questions: **how much you liked it** (0–5), whether you'd
+**heard it before**, whether **everyone knows it**, and whether **it got to
+you**. Likes score, novelty and emotion add, and the more of you that call a
+track obvious the less it's worth — so a famous banger is never the easy win.
+
+The decision that makes it a game is the **claim**. Each track you queue carries
+a bet nobody else sees until the reveal: *you have never heard this*, *everyone
+will like this*, *this will get to you*, *you will know it was me*, *this will
+split the room*. Making no claim is the floor —
+it can never lose you anything and never win you anything. The rest pay up to
+half again, and halve your take if they miss. Which is why queueing something
+everyone will mildly enjoy is never the strongest line.
+
+Meanwhile you're guessing the DJ behind each track and setting a decoy while
+your own plays. One score, all of it earned as a DJ; guessing pays in trophies.
+At the end everyone walks out with their own playlist of what they liked.
+
+**Rule zero: never lie in your answers.** Three of the four can't be checked by
+anything but the people in the room, so every answer is printed with a name
+against it at the reveal, and every number in the scoring is a share — one lie
+moves it by a fraction. Full rules in [`game_rules.md`](./game_rules.md).
 
 ### Design rules the code actually follows
 
@@ -126,7 +141,7 @@ that skips it.
 
 **One projection.** `projectGame(room, viewer)` is the only function that turns
 state into something a client sees. Who queued the track, who voted for whom,
-and who hearted it are *withheld from the payload* until the reveal — not
+the claim and every answer are *withheld from the payload* until the reveal — not
 hidden in the UI. One file to audit.
 
 **Nothing user-supplied gets fetched blindly.** Outbound requests are restricted

@@ -138,7 +138,7 @@ describe('authorisation', () => {
         const { room, ids } = setup(['ana', 'bo']);
         room.start(ids.ana);
         expectError('SESSION_INVALID', () => room.vote('not-a-player', ids.ana));
-        expectError('SESSION_INVALID', () => room.react('not-a-player', 'heart'));
+        expectError('SESSION_INVALID', () => room.answer('not-a-player', { like: 3 }));
     });
 });
 
@@ -215,17 +215,12 @@ describe('starting', () => {
         expect(room.settings.tracksPlayedPerPlayer).toBe(1);
     });
 
-    it('hands out a heart budget once the setlist is known', () => {
+    it('starts everybody on zero when the night starts', () => {
         const { room, ids } = setup(['ana', 'bo', 'cy'], { tracksPerPlayer: 4, tracksPlayedPerPlayer: 4 });
-        // Nobody has a wallet before the night has a length.
-        expect(room.players.get(ids.ana)!.heartBudget).toBe(0);
         room.start(ids.ana);
 
-        // 12 tracks, you DJ 4, so you hear 8 -> ceil(8 * 0.4) = 4 hearts.
         for (const id of Object.values(ids)) {
-            expect(room.players.get(id)!.heartBudget).toBe(4);
-            expect(room.players.get(id)!.heartsLeft).toBe(4);
-            expect(room.players.get(id)!.anthemSpent).toBe(false);
+            expect(room.players.get(id)!.score).toBe(0);
         }
     });
 });
@@ -298,95 +293,77 @@ describe('voting', () => {
     });
 });
 
-describe('hearts and anthems', () => {
+describe('answering', () => {
     it('is idempotent and refuses the DJ', () => {
         const { room, ids } = setup(['ana', 'bo']);
         room.start(ids.ana);
         const dj = room.round!.djId;
         const listener = Object.values(ids).find(id => id !== dj)!;
 
-        room.react(listener, 'heart');
-        room.react(listener, 'heart');
-        expect(room.reactionCounts().hearts).toBe(1);
-        room.react(listener, 'none');
-        expect(room.reactionCounts().hearts).toBe(0);
-        expectError('REACT_OWN_TRACK', () => room.react(dj, 'heart'));
+        room.answer(listener, { like: 4 });
+        room.answer(listener, { like: 4 });
+        expect(room.answersIn()).toBe(1);
+        expectError('ANSWER_OWN_TRACK', () => room.answer(dj, { like: 4 }));
     });
 
-    it('charges and refunds the wallet exactly once', () => {
-        const { room, ids } = setup(['ana', 'bo'], { tracksPerPlayer: 4, tracksPlayedPerPlayer: 4 });
+    it('patches, so the four answers never overwrite each other', () => {
+        const { room, ids } = setup(['ana', 'bo']);
+        room.start(ids.ana);
+        const listener = Object.values(ids).find(id => id !== room.round!.djId)!;
+
+        room.answer(listener, { heard: true });
+        room.answer(listener, { like: 2 });
+        room.answer(listener, { moved: true });
+        room.answer(listener, { like: 5 });
+
+        expect(room.round!.answers.get(listener)).toEqual({
+            like: 5,
+            heard: true,
+            popular: false,
+            moved: true,
+        });
+    });
+
+    it('refuses a like off the scale, and keeps the last good one', () => {
+        const { room, ids } = setup(['ana', 'bo']);
+        room.start(ids.ana);
+        const listener = Object.values(ids).find(id => id !== room.round!.djId)!;
+
+        room.answer(listener, { like: 5 });
+        expectError('RATING_INVALID', () => room.answer(listener, { like: 6 as never }));
+        expectError('RATING_INVALID', () => room.answer(listener, { like: -1 as never }));
+        expectError('RATING_INVALID', () => room.answer(listener, { like: 2.5 as never }));
+        expect(room.round!.answers.get(listener)!.like).toBe(5);
+    });
+
+    it('counts nobody until they sign the answer with a like', () => {
+        const { room, ids } = setup(['ana', 'bo']);
+        room.start(ids.ana);
+        const listener = Object.values(ids).find(id => id !== room.round!.djId)!;
+
+        // Toggles alone say nothing: one denominator for the whole game, and
+        // this is what a player has to do to enter it.
+        room.answer(listener, { heard: true, popular: true, moved: true });
+        expect(room.answersIn()).toBe(0);
+
+        room.answer(listener, { like: 0 });
+        expect(room.answersIn()).toBe(1);
+    });
+
+    it('treats zero as a real answer, not as silence', () => {
+        const { room, ids } = setup(['ana', 'bo', 'cy'], { tracksPerPlayer: 1, tracksPlayedPerPlayer: 1 });
         room.start(ids.ana);
         const dj = room.round!.djId;
-        const listener = Object.values(ids).find(id => id !== dj)!;
-        const budget = room.players.get(listener)!.heartBudget;
+        const [a, b] = Object.values(ids).filter(id => id !== dj);
 
-        room.react(listener, 'heart');
-        expect(room.players.get(listener)!.heartsLeft).toBe(budget - 1);
-        // Repeating the same reaction must not charge twice.
-        room.react(listener, 'heart');
-        expect(room.players.get(listener)!.heartsLeft).toBe(budget - 1);
-        room.react(listener, 'none');
-        expect(room.players.get(listener)!.heartsLeft).toBe(budget);
-    });
-
-    it('swaps a heart for the anthem atomically', () => {
-        const { room, ids } = setup(['ana', 'bo'], { tracksPerPlayer: 4, tracksPlayedPerPlayer: 4 });
-        room.start(ids.ana);
-        const dj = room.round!.djId;
-        const listener = Object.values(ids).find(id => id !== dj)!;
-        const budget = room.players.get(listener)!.heartBudget;
-
-        room.react(listener, 'heart');
-        room.react(listener, 'anthem');
-        // The heart comes back, the anthem is gone, and the round holds one anthem.
-        expect(room.players.get(listener)!.heartsLeft).toBe(budget);
-        expect(room.players.get(listener)!.anthemSpent).toBe(true);
-        expect(room.reactionCounts()).toEqual({ hearts: 0, anthems: 1 });
-    });
-
-    it('runs out of hearts, and says so', () => {
-        // 2 DJs x 2 tracks = a 4-track night. Each hears 2 -> a budget of 1,
-        // so the second track they like is one they have to let go.
-        const { room, ids } = setup(['ana', 'bo'], { tracksPerPlayer: 2, tracksPlayedPerPlayer: 2 });
-        room.start(ids.ana);
-        expect(room.players.get(ids.bo)!.heartBudget).toBe(1);
-
-        const listenedIn: number[] = [];
-        for (let index = 0; index < 4; index++) {
-            const round = room.round!;
-            if (round.djId !== ids.bo) {
-                listenedIn.push(index);
-                if (listenedIn.length === 1) {
-                    room.react(ids.bo, 'heart');
-                    expect(room.players.get(ids.bo)!.heartsLeft).toBe(0);
-                } else {
-                    expectError('OUT_OF_HEARTS', () => room.react(ids.bo, 'heart'));
-                    // The anthem is a separate pocket and is still available.
-                    room.react(ids.bo, 'anthem');
-                    expect(room.reactionCounts().anthems).toBe(1);
-                }
-            }
-            room.reveal(ids.ana);
-            if (index < 3) room.next(ids.ana);
-        }
-
-        expect(listenedIn).toHaveLength(2);
-    });
-
-    it('only ever grants one anthem for the whole night', () => {
-        const { room, ids } = setup(['ana', 'bo'], { tracksPerPlayer: 4, tracksPlayedPerPlayer: 4 });
-        room.start(ids.ana);
-
-        const first = room.round!.djId === ids.bo ? ids.ana : ids.bo;
-        room.react(first, 'anthem');
+        // One listener says "nothing at all" and means it; the other says
+        // nothing. The first drags the average, the second is not counted.
+        room.answer(a, { like: 0, heard: true });
+        room.answer(b, { like: 4, heard: true });
         room.reveal(ids.ana);
-        room.next(ids.ana);
 
-        // Next round, whoever spent it cannot spend it again.
-        if (room.round!.djId !== first) {
-            expectError('ANTHEM_SPENT', () => room.react(first, 'anthem'));
-        }
-        expect(room.players.get(first)!.anthemSpent).toBe(true);
+        // (0 + 4) / 2 answerers x 2 listeners = 4.
+        expect(room.players.get(dj)!.score).toBe(4);
     });
 
     it('stays open after voting closes, until the reveal', () => {
@@ -397,11 +374,185 @@ describe('hearts and anthems', () => {
 
         room.vote(listener, dj);
         expect(room.phase).toBe('tallying');
-        room.react(listener, 'heart');
-        expect(room.reactionCounts().hearts).toBe(1);
+        room.answer(listener, { like: 2 });
+        expect(room.answersIn()).toBe(1);
 
         room.reveal(ids.ana);
-        expectError('WRONG_PHASE', () => room.react(listener, 'none'));
+        expectError('WRONG_PHASE', () => room.answer(listener, { like: 0 }));
+    });
+
+    it('scales the verdict to the table, so staying quiet is neutral', () => {
+        const { room, ids } = setup(['ana', 'bo', 'cy'], { tracksPerPlayer: 1, tracksPlayedPerPlayer: 1 });
+        room.start(ids.ana);
+        const dj = room.round!.djId;
+        const [a] = Object.values(ids).filter(id => id !== dj);
+
+        // One of two listeners answers: 4 + 1 for novelty, averaged over the
+        // one who spoke, scaled back up to the two who could have.
+        room.answer(a, { like: 4 });
+        room.reveal(ids.ana);
+
+        expect(room.players.get(dj)!.score).toBe(10);
+    });
+});
+
+describe('claims', () => {
+    it('is a lobby decision, made before you know anything about the night', () => {
+        const { room, ids } = setup(['ana', 'bo', 'cy']);
+        const mine = room.players.get(ids.ana)!.trackIds[0];
+
+        room.setClaim(ids.ana, mine, 'so-me');
+        expect(room.tracks.get(mine)!.claim).toEqual({ id: 'so-me' });
+
+        room.start(ids.ana);
+        // Once the music is playing the bet is locked: otherwise it stops being
+        // a bet and becomes a read on how the night is going.
+        expectError('WRONG_PHASE', () => room.setClaim(ids.ana, mine, 'divisive'));
+    });
+
+    it('starts every track on the safe claim', () => {
+        const { room, ids } = setup(['ana', 'bo']);
+        for (const trackId of room.players.get(ids.ana)!.trackIds) {
+            expect(room.tracks.get(trackId)!.claim).toEqual({ id: 'none' });
+        }
+    });
+
+    it('refuses to let you claim somebody else\u2019s track', () => {
+        const { room, ids } = setup(['ana', 'bo', 'cy']);
+        const theirs = room.players.get(ids.bo)!.trackIds[0];
+        expectError('TRACK_NOT_FOUND', () => room.setClaim(ids.ana, theirs, 'so-me'));
+    });
+
+    it('allows one of each limited claim, and any number of the safe one', () => {
+        const { room, ids } = setup(['ana', 'bo', 'cy'], { tracksPerPlayer: 3, tracksPlayedPerPlayer: 2 });
+        const [first, second, third] = room.players.get(ids.ana)!.trackIds;
+
+        room.setClaim(ids.ana, first, 'so-me');
+        expectError('CLAIM_SPENT', () => room.setClaim(ids.ana, second, 'so-me'));
+
+        // Moving it to another track is fine; having two is not.
+        room.setClaim(ids.ana, first, 'never-heard');
+        room.setClaim(ids.ana, second, 'so-me');
+        expect(room.tracks.get(first)!.claim.id).toBe('never-heard');
+
+        room.setClaim(ids.ana, third, 'none');
+        room.setClaim(ids.ana, first, 'none');
+        expect(room.tracks.get(third)!.claim.id).toBe('none');
+    });
+
+    it('withholds the claims a two-player table would give away', () => {
+        const { room, ids } = setup(['ana', 'bo']);
+        const mine = room.players.get(ids.ana)!.trackIds[0];
+
+        expectError('CLAIM_UNAVAILABLE', () => room.setClaim(ids.ana, mine, 'so-me'));
+        expectError('CLAIM_UNAVAILABLE', () => room.setClaim(ids.ana, mine, 'divisive'));
+        // Freshness needs nobody to deduce anything, so it stands.
+        room.setClaim(ids.ana, mine, 'never-heard');
+        expect(room.tracks.get(mine)!.claim.id).toBe('never-heard');
+    });
+
+    it('drops a claim the table can no longer support instead of stranding it', () => {
+        const { room, ids } = setup(['ana', 'bo', 'cy']);
+        const identified = room.players.get(ids.ana)!.trackIds[0];
+        const split = room.players.get(ids.ana)!.trackIds[1];
+
+        room.setClaim(ids.ana, identified, 'so-me');
+        room.setClaim(ids.ana, split, 'divisive');
+
+        // Guessing off makes identification unscoreable...
+        room.updateSettings(ids.ana, { guessingEnabled: false });
+        expect(room.tracks.get(identified)!.claim.id).toBe('none');
+        expect(room.tracks.get(split)!.claim.id).toBe('divisive');
+
+        // ...and a table of two has nobody left to split.
+        room.leave(ids.cy);
+        expect(room.tracks.get(split)!.claim.id).toBe('none');
+    });
+
+    it('puts the claim through the scoreboard when the round is revealed', () => {
+        const { room, ids } = setup(['ana', 'bo', 'cy'], { tracksPerPlayer: 1, tracksPlayedPerPlayer: 1 });
+        for (const id of Object.values(ids)) {
+            room.setClaim(id, room.players.get(id)!.trackIds[0], 'never-heard');
+        }
+        room.start(ids.ana);
+
+        const dj = room.round!.djId;
+        const [a, b] = Object.values(ids).filter(id => id !== dj);
+        room.answer(a, { like: 4 });
+        room.answer(b, { like: 4 });
+        // Neither had heard it: 4 + 1 each = 10 from the room, and freshness 1
+        // pays the claim at x1.5.
+        room.reveal(ids.ana);
+
+        expect(room.players.get(dj)!.score).toBe(15);
+    });
+});
+
+describe('the tax on the obvious', () => {
+    it('takes half when everybody calls it a hit, and nothing when nobody does', () => {
+        const { room, ids } = setup(['ana', 'bo', 'cy'], { tracksPerPlayer: 2, tracksPlayedPerPlayer: 2 });
+        room.start(ids.ana);
+        const dj = room.round!.djId;
+        const [a, b] = Object.values(ids).filter(id => id !== dj);
+
+        room.answer(a, { like: 4, heard: true, popular: true });
+        room.answer(b, { like: 4, heard: true, popular: true });
+        room.reveal(ids.ana);
+        // 8 from the room, halved: a famous banger is never the easy win.
+        expect(room.players.get(dj)!.score).toBe(4);
+
+        room.next(ids.ana);
+        const dj2 = room.round!.djId;
+        for (const id of Object.values(ids).filter(other => other !== dj2)) {
+            room.answer(id, { like: 4, heard: true });
+        }
+        room.reveal(ids.ana);
+        const banked = dj2 === dj ? room.players.get(dj2)!.score - 4 : room.players.get(dj2)!.score;
+        expect(banked).toBe(8);
+    });
+
+    it('scales with the share, so one dissenting voice is not a cliff', () => {
+        const { room, ids } = setup(['ana', 'bo', 'cy'], { tracksPerPlayer: 1, tracksPlayedPerPlayer: 1 });
+        room.start(ids.ana);
+        const dj = room.round!.djId;
+        const [a, b] = Object.values(ids).filter(id => id !== dj);
+
+        // Half the room calls it obvious: a quarter off, not a half.
+        room.answer(a, { like: 4, heard: true, popular: true });
+        room.answer(b, { like: 4, heard: true });
+        room.reveal(ids.ana);
+        expect(room.players.get(dj)!.score).toBe(6);
+    });
+});
+
+describe('novelty and emotion', () => {
+    it('pays a little for being new and more for getting to somebody', () => {
+        const { room, ids } = setup(['ana', 'bo', 'cy'], { tracksPerPlayer: 1, tracksPlayedPerPlayer: 1 });
+        room.start(ids.ana);
+        const dj = room.round!.djId;
+        const [a, b] = Object.values(ids).filter(id => id !== dj);
+
+        // a: liked it 3, new to them, moved -> 3 + 1 + 2 = 6
+        // b: liked it 3, heard it, unmoved -> 3
+        room.answer(a, { like: 3, moved: true });
+        room.answer(b, { like: 3, heard: true });
+        room.reveal(ids.ana);
+
+        expect(room.players.get(dj)!.score).toBe(9);
+    });
+
+    it('counts being moved even by a track nobody liked', () => {
+        const { room, ids } = setup(['ana', 'bo', 'cy'], { tracksPerPlayer: 1, tracksPlayedPerPlayer: 1 });
+        room.start(ids.ana);
+        const dj = room.round!.djId;
+        const [a, b] = Object.values(ids).filter(id => id !== dj);
+
+        room.answer(a, { like: 0, heard: true, moved: true });
+        room.answer(b, { like: 0, heard: true, moved: true });
+        room.reveal(ids.ana);
+
+        // Nobody liked it and it still scored: getting to people is the point.
+        expect(room.players.get(dj)!.score).toBe(4);
     });
 });
 
@@ -446,8 +597,10 @@ describe('decoys', () => {
         room.vote(a, dj); // correct
         room.reveal(ids.ana);
 
-        expect(room.players.get(dj)!.scores.detective).toBe(1);
-        expect(room.players.get(a)!.scores.detective).toBe(1);
+        expect(room.players.get(dj)!.score).toBe(1);
+        // Naming the DJ correctly is still worth playing for — it feeds their
+        // `so-me` claim and the trophies — but it is worth no points.
+        expect(room.players.get(a)!.score).toBe(0);
         expect(room.history[0].votes.find(v => v.voterId === b)!.fooled).toBe(true);
     });
 
@@ -464,7 +617,7 @@ describe('decoys', () => {
 });
 
 describe('scoring and progression', () => {
-    it('banks guesses on Detective and love on Selector, once', () => {
+    it('banks every point on one score, once', () => {
         const { room, ids } = setup(['ana', 'bo', 'cy'], { tracksPerPlayer: 1, tracksPlayedPerPlayer: 1 });
         room.start(ids.ana);
         const dj = room.round!.djId;
@@ -472,18 +625,18 @@ describe('scoring and progression', () => {
 
         room.vote(a, dj); // correct
         room.vote(b, a); // wrong
-        room.react(a, 'heart');
-        room.react(b, 'anthem');
+        room.answer(a, { like: 4, heard: true });
+        room.answer(b, { like: 2, heard: true });
         room.reveal(ids.ana);
 
-        expect(room.players.get(a)!.scores).toEqual({ selector: 0, detective: 1 });
-        expect(room.players.get(b)!.scores).toEqual({ selector: 0, detective: 0 });
-        // 1 heart + 1 anthem = 1 + 3, all on the Selector board.
-        expect(room.players.get(dj)!.scores).toEqual({ selector: 4, detective: 0 });
+        // Naming the DJ wins a trophy at the end, never a point on the night.
+        expect(room.players.get(a)!.score).toBe(0);
+        expect(room.players.get(b)!.score).toBe(0);
+        expect(room.players.get(dj)!.score).toBe(6);
 
         // Revealing twice must not double-score.
         expectError('WRONG_PHASE', () => room.reveal(ids.ana));
-        expect(room.players.get(dj)!.scores.selector).toBe(4);
+        expect(room.players.get(dj)!.score).toBe(6);
     });
 
     it('cannot skip a round by calling next at the wrong time', () => {
@@ -505,8 +658,7 @@ describe('scoring and progression', () => {
 
             const listener = Object.values(ids).find(id => id !== room.round!.djId)!;
             room.vote(listener, room.round!.djId);
-            // Hearts are scarce: spend only what the wallet actually holds.
-            if (room.players.get(listener)!.heartsLeft > 0) room.react(listener, 'heart');
+            room.answer(listener, { like: 3 });
 
             room.reveal(ids.ana);
             room.next(ids.ana);
@@ -517,6 +669,7 @@ describe('scoring and progression', () => {
         expect(room.history).toHaveLength(4);
         expect(room.awards().map(award => award.id).sort()).toEqual([
             'crowd-favourite',
+            'deep-cut',
             'human-shazam',
             'track-of-the-night',
         ]);
@@ -553,7 +706,7 @@ describe('scoring and progression', () => {
     });
 
     it('hands out no awards when the room was completely silent', () => {
-        // Nobody voted, nobody hearted: an honest empty list beats five trophies
+        // Nobody voted, nobody rated: an honest empty list beats five trophies
         // for zero of everything, which is what v1 rendered.
         const { room, ids } = setup(['ana', 'bo'], { tracksPerPlayer: 1 });
         room.start(ids.ana);
@@ -617,25 +770,48 @@ describe('leaving and host succession', () => {
 });
 
 describe('projection', () => {
-    it('hides the DJ, the voters and the hearts until the reveal', () => {
+    it('hides the DJ, the voters and the answers until the reveal', () => {
         const { room, ids } = setup(['ana', 'bo', 'cy']);
         room.start(ids.ana);
         const dj = room.round!.djId;
         const [watcher, other] = Object.values(ids).filter(id => id !== dj);
 
         room.vote(watcher, other);
-        room.react(watcher, 'heart');
+        room.answer(watcher, { like: 4 });
         room.setDecoy(dj, watcher);
 
         const view = projectGame(room, watcher);
         expect(view.round!.reveal).toBeUndefined();
         expect(view.round!.isMine).toBe(false);
         expect(view.round!.myGuess).toBe(other);
-        expect(view.round!.myReaction).toBe('heart');
-        expect(view.round!.heartCount).toBe(1);
+        expect(view.round!.myAnswer.like).toBe(4);
+        expect(view.round!.answersIn).toBe(1);
         expect(view.round!.myDecoy).toBeUndefined();
         // The payload must not contain the DJ's id anywhere.
         expect(JSON.stringify(view.round)).not.toContain(dj);
+    });
+
+    it('withholds the DJ\u2019s claim from the room until the reveal', () => {
+        const { room, ids } = setup(['ana', 'bo', 'cy'], { tracksPerPlayer: 1, tracksPlayedPerPlayer: 1 });
+        for (const id of Object.values(ids)) {
+            room.setClaim(id, room.players.get(id)!.trackIds[0], 'never-heard');
+        }
+        room.start(ids.ana);
+        const dj = room.round!.djId;
+        const listener = Object.values(ids).find(id => id !== dj)!;
+
+        // A claim on screen is elimination information — one of each per night,
+        // so a second `never-heard` would say "not whoever played the first".
+        // It also leans on the very answers it is scored on.
+        const hidden = projectGame(room, listener).round!;
+        expect(hidden.track.claim).toBeUndefined();
+        expect(JSON.stringify(hidden)).not.toContain('never-heard');
+
+        // The DJ has to be able to remember what they bet.
+        expect(projectGame(room, dj).round!.track.claim).toEqual({ id: 'never-heard' });
+
+        room.reveal(ids.ana);
+        expect(projectGame(room, listener).round!.track.claim).toEqual({ id: 'never-heard' });
     });
 
     it('shows the DJ their own decoy and nobody else theirs', () => {
@@ -651,36 +827,38 @@ describe('projection', () => {
         expect(others).not.toContain('myDecoy');
     });
 
-    it('never leaks who hearted or anthemed before the reveal', () => {
+    it('never leaks who answered what before the reveal', () => {
         const { room, ids } = setup(['ana', 'bo', 'cy']);
         room.start(ids.ana);
         const dj = room.round!.djId;
         const [a, b] = Object.values(ids).filter(id => id !== dj);
-        room.react(a, 'anthem');
-        room.react(b, 'heart');
+        room.answer(a, { like: 5, moved: true });
+        room.answer(b, { like: 1, popular: true });
 
         const view = projectGame(room, dj);
-        expect(view.round!.heartCount).toBe(1);
-        expect(view.round!.anthemCount).toBe(1);
-        // Counts only: the DJ must not learn who spent what on their own track.
+        expect(view.round!.answersIn).toBe(2);
+        // A count, never a total: the running score would give away the answers
+        // themselves, and the DJ must not learn who said what about their track.
+        expect(JSON.stringify(view.round)).not.toContain(a);
+        expect(JSON.stringify(view.round)).not.toContain(b);
         expect(JSON.stringify(view.round)).not.toContain(a);
         expect(JSON.stringify(view.round)).not.toContain(b);
     });
 
-    it('keeps every wallet private', () => {
+    it('never puts another player\u2019s answer on the wire', () => {
         const { room, ids } = setup(['ana', 'bo', 'cy']);
         room.start(ids.ana);
         const dj = room.round!.djId;
         const other = Object.values(ids).find(id => id !== dj)!;
-        room.react(other, 'anthem');
+        room.answer(other, { like: 5, moved: true });
 
-        const view = projectGame(room, dj);
-        // Knowing someone else's anthem is spent would narrow down who did it.
-        expect(JSON.stringify(view.players)).not.toContain('anthemSpent');
-        expect(view.you.wallet.anthemSpent).toBe(false);
+        // The viewer sees their own answer and an anonymous count, nothing else.
+        expect(projectGame(room, other).round!.myAnswer.like).toBe(5);
+        expect(projectGame(room, dj).round!.myAnswer.like).toBeUndefined();
+        expect(JSON.stringify(projectGame(room, dj).players)).not.toContain('like');
     });
 
-    it('never includes another player\'s queue', () => {
+    it('never includes another player\u2019s queue', () => {
         const { room, ids } = setup(['ana', 'bo']);
         const view = projectGame(room, ids.bo);
         const bosTracks = room.players.get(ids.bo)!.trackIds;
@@ -706,19 +884,17 @@ describe('projection', () => {
         const dj = room.round!.djId;
         const other = Object.values(ids).find(id => id !== dj)!;
         room.vote(other, dj);
-        room.react(other, 'heart');
+        room.answer(other, { like: 4, heard: true, moved: true });
         room.reveal(ids.ana);
 
         const reveal = projectGame(room, other).round!.reveal!;
         expect(reveal.djId).toBe(dj);
-        expect(reveal.heartedBy).toEqual([other]);
+        // Attributed on purpose: it is the only thing holding the honesty rule up.
+        expect(reveal.answers).toEqual([
+            { listenerId: other, like: 4, heard: true, popular: false, moved: true },
+        ]);
         expect(reveal.votes).toEqual([{ voterId: other, guessId: dj, correct: true, fooled: false }]);
-        expect(reveal.points).toContainEqual({
-            playerId: other,
-            points: 1,
-            reason: 'correct-guess',
-            board: 'detective',
-        });
+        expect(reveal.points).toContainEqual({ playerId: dj, points: 6, reason: 'room-verdict' });
     });
 
     it('never puts a per-player vote flag on the wire at all', () => {

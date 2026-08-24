@@ -83,7 +83,7 @@ export function Sidebar({ view }: SidebarProps) {
                                     >
                                         {trackLabel(played.track)}
                                     </a>
-                                    {score > 0 && <span className="track__meta track__meta--heart">♥{score}</span>}
+                                    {score > 0 && <span className="track__meta track__meta--score">★{score}</span>}
                                 </li>
                             );
                         })}

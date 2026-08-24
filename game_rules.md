@@ -1,9 +1,27 @@
 # Secret DJ — the rules
 
 A real-time listening party. Everyone queues music in secret, the room listens
-together, spends its hearts, and tries to work out who put each track on.
+together, says what it honestly thought, and tries to work out who put it on.
 
 Available in English and Russian; the toggle is in the header.
+
+---
+
+## Rule zero
+
+**Never lie in your answers.**
+
+Whether you had heard a track before, whether you reckon everybody knows it,
+whether it got to you — none of that can be checked by anything except the
+people sitting with you. There is no clever mechanism that could verify it, and
+there never will be. The game is a room of people describing honestly what music
+did to them; strip that out and there is nothing left to play.
+
+Two things back it up rather than nagging about it. Every answer is **printed
+with your name on it at the reveal**, so a lie is something you have to say out
+loud to your friends. And every number in the scoring is a **share of the room**
+rather than a threshold, so one dishonest answer moves any of it by a fraction —
+in a room of six, by a sixth. Lying is visible and it is barely worth telling.
 
 ---
 
@@ -37,13 +55,59 @@ sure a DJ is spent.
   link was shared. `?si=` tokens and locale prefixes don't fool it.
 - You can add and remove your own tracks freely until the game starts, and
   nobody else's — ever.
+- **Every track carries a claim.** See below; it is the one decision you make
+  before the night begins, and it is worth more than the tracks themselves.
 - **You never see another player's queue.** Only the tracks that actually got
   played become public — and at the very end, the ones that didn't.
 
 The host can start once every player has finished queueing. Guessing needs at
 least two DJs; a listening party can be played solo.
 
-### 3. The setlist
+### 3. Claims
+
+Each track you queue carries a **claim**: what you are betting it will do to the
+room. **Nobody else sees it until the reveal** — it multiplies whatever the room
+gives you, and then they find out what you were playing for.
+
+| Claim | Multiplier | How many |
+|---|---|---|
+| · **No claim** | ×1 | as many as you like |
+| ☄ **You've never heard this** | ×0.5–1.5 on the share it was new to | one a night |
+| ♡ **Everyone will like this** | ×0.5–1.5 on the share who gave it 4+ | one a night |
+| ⚡ **This will get to you** | ×0.5–1.5 on the share it moved | one a night |
+| ◈ **You will know it was me** | ×0.5–1.5 on the share who named you | one a night |
+| ◑ **This will split the room** | ×0.5–1.5 on how evenly it divided them | one a night |
+
+**No claim is the floor, and that is the whole point.** It asks nothing of the
+music and can never lose you anything — but it can never win you anything
+either. Every other claim pays up to half again, and halves your take if it
+misses. Queueing something everybody will mildly enjoy is therefore never the
+strongest line available.
+
+A few notes on what lands:
+
+- **This will split the room** needs both camps. Loved is a 4 or 5; not-loved is
+  a 0 or a 1. Unanimous praise scores nothing here, and so does unanimous
+  contempt — you cannot farm it with something merely annoying.
+- **This will get to you** is not the same bet as *everyone will like this*.
+  A track can wreck somebody who gives it a 1.
+- **You will know it was me** is the one claim that costs you on the other side
+  of the game: the easier you are to name, the worse you do at being the Ghost.
+- Claims that would give the game away are simply not offered — identification
+  needs guessing switched on, and "everyone", "split" and "recognise me" all
+  need at least three at the table to mean anything.
+
+Claims are locked when the music starts. It is a bet, made blind, or it is
+nothing.
+
+**And it stays secret while the track plays**, for two reasons. Each claim is
+one a night, so a claim on screen would narrow who the DJ is by elimination —
+a second *you've never heard this* says "not whoever played the first". Worse,
+announcing it leans on the very answers it is scored on: told that a track is
+obscure, people are slower to admit they knew it. A bet nobody can hear cannot
+bend the answers it depends on.
+
+### 4. The setlist
 
 The running order is built **once**, when the game starts:
 
@@ -51,37 +115,61 @@ The running order is built **once**, when the game starts:
 - the order is shuffled, then rearranged so the **same DJ never plays twice in a
   row** whenever that's mathematically possible.
 
-### 4. Each round
+### 5. Each round
 
-One track plays. Everyone can see it, open it, and hear it. There are three
-things to do, depending on who you are.
+One track plays. Everyone can see it, open it, and hear it.
 
-#### Spend a heart — or don't
+#### Answer, honestly
 
-You get a **limited number of hearts for the whole night**: about 40% of the
-tracks you will actually hear. You cannot heart everything, so every heart is a
-choice with a cost, and passing on something you liked is part of the game.
+Four questions, and only the first one is about the score.
 
-A heart is **+1** to the DJ.
+| | |
+|---|---|
+| **How much did you like it?** | 0–5. Zero is a real answer, not a shrug. |
+| **Heard it before?** | Had you come across it before tonight? |
+| **Everyone knows this?** | Is it a well-known track, whatever you think of it? |
+| **It got to you?** | Did it move you? Liking it is a separate question. |
 
-#### Or spend your one anthem
+**The number is the signature on your whole answer.** Until you pick one, the
+three toggles count for nothing — and if you say nothing at all, you are simply
+not counted. Staying quiet is an honest thing to do if you stepped out, and it
+is worth knowing that it is also *neutral*: the scoring averages over whoever
+answered and scales back up to the whole table, so silence neither helps nor
+hurts a DJ.
 
-You get exactly **one anthem per night**, worth **+3**. Save it for the track
-you'll still be thinking about tomorrow — and once it's gone, it's gone.
+While the round is open the room sees only **how many people have answered**,
+never what they said. Publishing the running score would anchor everyone still
+deciding, and with two answers in it would give away what the first one was.
 
-Each round you choose one of: nothing, a heart, or the anthem. You can change
-your mind until the reveal; switching refunds whatever you'd already spent.
+#### What a track is worth
+
+Per listener who answered:
+
+```
+their like  +1 if it was new to them  +2 if it got to them
+```
+
+averaged, then scaled to the size of the table. Then two multipliers:
+
+- **the tax on the obvious** — the more of the room that calls it well known,
+  the less it scores, down to half. A famous banger is never the easy winning
+  move, but a beloved classic still keeps half of what it earned.
+- **the claim** — the DJ's own bet, from ×0.5 to ×1.5.
 
 #### Guess the DJ
 
 Everyone except the DJ picks a name. Change your guess as often as you like —
-nothing is locked until the host reveals. A correct guess is **+1**.
+nothing is locked until the host reveals.
+
+Guessing **wins you no points**. It feeds the DJ's *you will know it was me*
+claim, and it decides two of the trophies at the end. It is played for the fun
+of being right, which turns out to be enough.
 
 #### If it's your track: set a decoy
 
-The DJ can't vote and can't heart their own track, so instead they get a move
-nobody else has: **secretly name the player you want the room to blame.** Every
-listener who guesses your decoy is **+1** to you.
+The DJ can't vote and can't answer on their own track, so instead they get a
+move nobody else has: **secretly name the player you want the room to blame.**
+Every listener who guesses your decoy is **+1** to you.
 
 A decoy pointing at the real answer scores nothing, obviously. If your decoy
 leaves the room mid-round, it's dropped.
@@ -92,49 +180,55 @@ Once everyone still connected has voted, the round is marked ready. The host can
 reveal at any point regardless, so one person walking away from their laptop can
 never freeze the game.
 
-### 5. The reveal
+### 6. The reveal
 
-Everyone sees who the DJ was, every guess, who got it right, who fell for the
-decoy, and who spent what. Then the host moves on, or closes out the night.
+Everyone sees who the DJ was, what they claimed, every guess, who fell for the
+decoy, whether the claim landed — and **every answer, with a name against it**. That attribution is
+not decoration; it is the only thing holding rule zero up.
+
+The score shows its working in three lines: what the room gave, what calling it
+obvious took back, and what the claim did to the remainder.
 
 ---
 
-## Two scoreboards
+## One score
 
-The game serves two different people: the one who wants to share music they
-love, and the one who wants to read the room. Forcing both onto one number
-served neither, so there are two, and **nothing crosses between them**.
+Everything you score, you score as a DJ: what your tracks did to the room, put
+through your claim, plus the decoys you got away with. Reading the room is still
+played and still wins trophies — it no longer pays.
 
-| Board | Counts |
-|---|---|
-| ♥ **Selector** | Hearts (+1) and anthems (+3) your tracks earned |
-| ◎ **Detective** | Your correct guesses (+1) and listeners your decoys fooled (+1) |
+## What you take home
 
-Your taste cannot win you the deduction game, and reading the room cannot win
-you the music one.
+The setlist is a record of the night; it is nobody's playlist. So the finale
+also hands each player **their own takeaway** — every track *they* rated four or
+more, with who played it, copyable in one click. That is the part you keep.
 
 ## Awards
 
-Three per board, at the end. **Ties are shared, never broken arbitrarily**, and
-an award nobody earned simply isn't given.
+Seven at the end. **Ties are shared, never broken arbitrarily**, and an award
+nobody earned simply isn't given.
 
-| Award | Board | Won by |
-|---|---|---|
-| ♥ **Crowd Favourite** | Selector | Most love collected across the night |
-| ★ **Track of the Night** | Selector | The single track that moved the most people |
-| ◈ **Golden Ear** | Selector | Spent their anthem on the track that earned it |
-| ◎ **Human Shazam** | Detective | Most correct guesses |
-| ☾ **The Ghost** | Detective | Lowest *rate* of being correctly identified |
-| ⌘ **Puppet Master** | Detective | Sent the most people chasing the wrong DJ |
+| Award | Won by |
+|---|---|
+| ♥ **Crowd Favourite** | Scored the most across the night |
+| ★ **Track of the Night** | The single track the room rated highest |
+| ☄ **Deep Cut** | Brought the track fewest people had heard — and it landed |
+| ⚡ **Gut Punch** | Played the track that got to the most people |
+| ◎ **Human Shazam** | Named the most DJs correctly |
+| ☾ **The Ghost** | Lowest *rate* of being correctly identified |
+| ⌘ **Puppet Master** | Sent the most people chasing the wrong DJ |
 
-The Ghost is scored as a percentage, not a count, so it can't be won by simply
+Track of the Night is judged on what the room gave, **before** the DJ's claim
+touches it, so a lucky bet can never crown a track the room liked less. The
+Ghost is scored as a percentage, not a count, so it can't be won by simply
 queueing more tracks than everyone else.
 
 ---
 
 ## Fair play, and how it's enforced
 
-These aren't honour-system rules. They're properties of the server.
+Everything the server *can* check, it does — and it is honest about the one
+thing it can't.
 
 - **Your identity is a token, not a name.** The server issues a secret when you
   join and derives who you are from your connection. No client message carries
@@ -142,19 +236,22 @@ These aren't honour-system rules. They're properties of the server.
   express.
 - **Only the host** can change settings, start the game, reveal a round or
   advance — checked on the server, on every command.
-- **Secrets are withheld, not hidden.** The DJ's identity, their decoy,
-  individual votes, and who spent which heart are simply not in the data your
-  browser receives until the reveal. Nor is anyone else's wallet — knowing whose
-  anthem was still unspent would narrow down who just used one.
-- **The wallet is server-side and atomic.** Switching a heart for your anthem
-  refunds and charges in a single step, so no amount of clicking can conjure an
-  extra heart.
+- **Secrets are withheld, not hidden.** The DJ's identity, their decoy, their
+  claim, individual votes and every answer are simply not in the data your
+  browser receives until the reveal — only a count of how many have answered.
+- **Claims are locked at the drop**, one of each per player, and a claim the
+  table can no longer support falls back to no claim rather than stranding you.
 - **Every limit is server-side**: track counts, duplicates, name rules, who may
-  vote and when.
+  answer and when, and what a like is allowed to be.
+- **What the server cannot check is rule zero.** Whether you had heard it,
+  whether it moved you, whether you think it's obvious — those are self-reports,
+  and no amount of engineering changes that. What the code does instead is print
+  them with your name on them, and make sure a single lie is worth almost
+  nothing.
 
 ## Coming and going
 
-- **Disconnecting keeps your seat.** Your tracks, scores, hearts and guesses
+- **Disconnecting keeps your seat.** Your tracks, scores, ratings and guesses
   survive a refresh, a closed tab, a dead train tunnel.
 - **Multiple tabs are fine.** You show as present until the last one closes.
 - **Leaving is deliberate.** Press Leave and your seat is released: your

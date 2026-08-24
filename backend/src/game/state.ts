@@ -7,7 +7,15 @@
  * different from the public shape is deliberate: it makes an accidental leak a
  * type error rather than a subtle bug.
  */
-import type { GameSettings, PlayerId, Presence, Reaction, Scores, TrackId } from '@secret-dj/common';
+import type {
+    Answer,
+    AnswerRecord,
+    GameSettings,
+    PlayerId,
+    Presence,
+    TrackClaim,
+    TrackId,
+} from '@secret-dj/common';
 
 export interface TrackState {
     id: TrackId;
@@ -20,6 +28,8 @@ export interface TrackState {
     artist?: string;
     artwork?: string;
     metadata: 'pending' | 'ready' | 'failed';
+    /** The DJ's bet on this track. Every track has one; the default is safe. */
+    claim: TrackClaim;
     addedAt: number;
 }
 
@@ -39,13 +49,8 @@ export interface PlayerState {
     /** When `presence` last became 'offline'; used for the host grace period. */
     offlineSince: number | null;
     trackIds: TrackId[];
-    scores: Scores;
-    /** Hearts still available for the rest of the night. */
-    heartsLeft: number;
-    /** Total hearts they were granted, kept so the UI can show "3 of 5 left". */
-    heartBudget: number;
-    /** Each player gets exactly one anthem per game. */
-    anthemSpent: boolean;
+    /** One number: what your tracks did to the room, plus your decoy hits. */
+    score: number;
 }
 
 export interface RoundState {
@@ -55,8 +60,8 @@ export interface RoundState {
     djId: PlayerId;
     startedAt: number;
     votes: Map<PlayerId, PlayerId>;
-    /** Listener -> what they spent. Never holds 'none'; absence means nothing spent. */
-    reactions: Map<PlayerId, Exclude<Reaction, 'none'>>;
+    /** Listener -> what they said. An entry without a `like` has not answered. */
+    answers: Map<PlayerId, Answer>;
     /** Who the DJ wants the room to blame. Set during their own round. */
     decoyId: PlayerId | null;
 }
@@ -65,8 +70,9 @@ export interface PlayedRound {
     number: number;
     trackId: TrackId;
     djId: PlayerId;
-    heartedBy: PlayerId[];
-    anthemBy: PlayerId[];
+    answers: AnswerRecord[];
+    /** Listeners entitled to answer, answered or not. The scoring scales to it. */
+    listenerCount: number;
     decoyId?: PlayerId;
     votes: Array<{ voterId: PlayerId; guessId: PlayerId; correct: boolean; fooled: boolean }>;
 }

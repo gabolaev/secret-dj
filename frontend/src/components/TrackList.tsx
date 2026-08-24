@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { PublicTrack, TrackId } from '@secret-dj/common';
 import { serviceBadgeByName } from '../lib/serviceLogos';
 import { trackLabel } from '../lib/format';
@@ -10,9 +11,11 @@ interface TrackListProps {
     playedIds?: ReadonlySet<TrackId>;
     onRemove?: (trackId: TrackId) => void;
     emptyMessage?: string;
+    /** Rendered under each row. The lobby hangs the claim picker here. */
+    slot?: (track: PublicTrack) => ReactNode;
 }
 
-export function TrackList({ tracks, nowPlayingId, playedIds, onRemove, emptyMessage }: TrackListProps) {
+export function TrackList({ tracks, nowPlayingId, playedIds, onRemove, emptyMessage, slot }: TrackListProps) {
     const t = useT();
     if (tracks.length === 0) return <p className="muted">{emptyMessage ?? t.common.nothingYet}</p>;
 
@@ -59,6 +62,7 @@ export function TrackList({ tracks, nowPlayingId, playedIds, onRemove, emptyMess
                                 ✕
                             </button>
                         )}
+                        {slot?.(track)}
                     </li>
                 );
             })}

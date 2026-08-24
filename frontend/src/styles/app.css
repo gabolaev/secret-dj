@@ -361,7 +361,7 @@
 }
 
 .roster__status--dj {
-    color: var(--heart);
+    color: var(--love);
 }
 
 .roster__scores {
@@ -379,7 +379,7 @@
 }
 
 .roster__score--selector.is-top {
-    color: var(--heart);
+    color: var(--love);
 }
 
 .roster__score--detective.is-top {
@@ -446,17 +446,13 @@
     font-style: normal;
 }
 
-.stat--heart {
-    color: var(--heart);
-}
-
-.stat--anthem {
-    color: var(--accent);
+.stat--rated {
+    color: var(--love);
 }
 
 .stat--mine {
     background: rgb(255 96 152 / 18%);
-    color: var(--heart);
+    color: var(--love);
     text-transform: uppercase;
     letter-spacing: 0.05em;
 }
@@ -543,85 +539,326 @@
     border-top: 0;
 }
 
-/* ---------------------------------------------------------------- reaction */
+/* ------------------------------------------------------------------ rating */
 
-.react {
+.rate {
     display: inline-flex;
+    align-items: flex-start;
     gap: var(--sp-4);
 }
 
-.react__slot {
+.rate__slot {
     display: inline-flex;
     flex-direction: column;
     align-items: center;
     gap: var(--sp-2);
 }
 
-.react__knob--heart.is-active {
+/* The five stars sit tight against each other so they read as one control
+   rather than as five buttons that happen to be next to each other. */
+.rate__stars {
+    display: inline-flex;
+    gap: 2px;
+}
+
+.rate__knob--like {
+    color: var(--faint);
+    font-variant-numeric: tabular-nums;
+}
+
+.rate__knob--like.is-lit {
+    color: var(--love);
+}
+
+.rate__knob--like.is-active {
     border-color: transparent;
     background: rgb(255 96 152 / 18%);
-    color: var(--heart);
+    color: var(--love);
     box-shadow: 0 0 0 1px rgb(255 96 152 / 45%);
 }
 
-.react__knob--anthem.is-active {
-    border-color: transparent;
-    background: rgb(255 181 69 / 18%);
-    color: var(--accent);
-    box-shadow: 0 0 0 1px rgb(255 181 69 / 45%);
-}
-
-.react__knob--none.is-active {
+.rate__knob--none.is-active {
     background: var(--surface-3);
     color: var(--text);
 }
 
-.react__caption {
+.rate__caption {
     font-size: var(--fs-micro);
     font-weight: 500;
     color: var(--faint);
+    white-space: nowrap;
 }
 
-.react__slot:has(.is-active) .react__caption {
+.rate__slot:has(.is-active) .rate__caption {
     color: var(--muted);
 }
 
-/* Wallet: pips first, so what is left reads before the sentence does. */
-.wallet {
+/* ------------------------------------------------------------------ claims */
+
+/* The bet on a queued track: a badge until you open it, because five claims
+   across three tracks is a wall rather than a decision.
+   `flex-basis: 100%` is load-bearing — the track row is a flex line, so without
+   it the claim sits *beside* the title instead of under it. */
+.claim {
+    flex-basis: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--sp-2);
+    margin-top: var(--sp-1);
+}
+
+.claim__badge {
+    align-self: flex-start;
     display: inline-flex;
     align-items: center;
-    gap: var(--sp-3);
-    margin-left: auto;
-    padding: 0.4rem 0.8rem;
-    border: 1px solid var(--line);
+    gap: 0.4rem;
+    padding: 0.2rem 0.7rem;
+    border: 1px dashed var(--line);
     border-radius: var(--r-pill);
+    background: none;
+    color: var(--muted);
+    font: inherit;
+    font-size: var(--fs-micro);
+    cursor: pointer;
+}
+
+.claim__badge:hover {
+    border-color: var(--muted);
+    color: var(--text);
+}
+
+.claim.is-open .claim__badge {
+    border-style: solid;
+    border-color: transparent;
+    background: rgb(255 181 69 / 16%);
+    color: var(--accent);
+}
+
+.claim__deck {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+    padding: var(--sp-3);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    background: var(--surface-2);
+}
+
+.claim__option {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    padding: var(--sp-2) var(--sp-3);
+    border: 1px solid transparent;
+    border-radius: var(--r-md);
+    background: none;
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.claim__option:hover:not(:disabled) {
+    background: var(--surface-3);
+}
+
+.claim__option.is-active {
+    border-color: var(--accent);
+    background: rgb(255 181 69 / 12%);
+}
+
+.claim__option:disabled {
+    color: var(--faint);
+    cursor: not-allowed;
+}
+
+.claim__name {
+    font-size: var(--fs-base);
+    font-weight: 600;
+}
+
+.claim__blurb {
     font-size: var(--fs-micro);
     color: var(--faint);
 }
 
-.wallet__pips {
-    display: inline-flex;
-    gap: 3px;
-}
-
-.wallet__pips i {
-    font-style: normal;
-    font-size: var(--fs-base);
-    line-height: 1;
-    color: var(--surface-3);
-}
-
-.wallet__pips i.is-full {
-    color: var(--heart);
-}
-
-.wallet__anthem {
-    color: var(--surface-3);
+/* The claim, announced to the room while the DJ stays hidden. */
+.banner {
+    display: flex;
+    align-items: baseline;
+    gap: var(--sp-2);
+    flex-wrap: wrap;
+    margin-top: var(--sp-3);
+    padding: var(--sp-2) var(--sp-3);
+    border-left: 2px solid var(--accent);
+    border-radius: 0 var(--r-md) var(--r-md) 0;
+    background: var(--surface-2);
     font-size: var(--fs-base);
 }
 
-.wallet__anthem.is-left {
+.banner__blurb {
+    color: var(--faint);
+    font-size: var(--fs-micro);
+}
+
+.banner--none {
+    border-left-color: var(--line);
+}
+
+.banner--never-heard {
+    border-left-color: var(--accent);
+}
+
+.banner--unanimous {
+    border-left-color: var(--love);
+}
+
+.banner--emotional {
+    border-left-color: var(--love);
+}
+
+.banner--so-me {
+    border-left-color: var(--accent);
+}
+
+.banner--divisive {
+    border-left-color: var(--muted);
+}
+
+.ledger__claim--none,
+.ledger__claim--never-heard,
+.ledger__claim--unanimous,
+.ledger__claim--emotional,
+.ledger__claim--so-me,
+.ledger__claim--divisive {
+    background: var(--surface-2);
+}
+
+/* The three answers that are not the number. */
+.bets {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    flex-wrap: wrap;
+}
+
+.chip__count {
+    margin-left: 0.35rem;
+    color: var(--faint);
+    font-variant-numeric: tabular-nums;
+}
+
+.reveal__pts.is-down {
+    color: var(--muted);
+}
+
+/* ----------------------------------------------------------------- answers */
+
+/* The reveal prints every answer with a name on it. That attribution is the
+   only thing holding the honesty rule up, so it is laid out to be read, not
+   tucked behind a hover. */
+.answers {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+}
+
+.answers__row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+
+.answers__name {
+    font-size: var(--fs-micro);
+    color: var(--muted);
+}
+
+.answers__like {
+    min-width: 1.4rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: var(--r-pill);
+    background: var(--surface-2);
+    color: var(--love);
+    font-size: var(--fs-micro);
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+}
+
+.tag {
+    padding: 0.1rem 0.5rem;
+    border-radius: var(--r-pill);
+    background: var(--surface-2);
+    color: var(--faint);
+    font-size: var(--fs-micro);
+}
+
+.tag--heard {
+    color: var(--muted);
+}
+
+.tag--popular {
+    background: rgb(255 181 69 / 14%);
     color: var(--accent);
+}
+
+.tag--moved {
+    background: rgb(255 96 152 / 14%);
+    color: var(--love);
+}
+
+/* The score, showing its working: what the room gave, what obviousness took
+   back, what the claim did to the remainder. */
+.ledger {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    margin: var(--sp-3) 0;
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    overflow: hidden;
+    list-style: none;
+}
+
+.ledger li {
+    display: flex;
+    align-items: baseline;
+    gap: var(--sp-2);
+    flex-wrap: wrap;
+    padding: var(--sp-2) var(--sp-3);
+    background: var(--surface-2);
+}
+
+.ledger__label {
+    font-size: var(--fs-micro);
+    font-weight: 600;
+}
+
+.ledger__detail {
+    flex: 1;
+    color: var(--faint);
+    font-size: var(--fs-micro);
+}
+
+.ledger__claim {
+    border-top: 1px solid var(--line);
+}
+
+.chip--answer.is-active {
+    border-color: var(--love);
+    color: var(--love);
+}
+
+.sheet__oath {
+    margin-bottom: var(--sp-4);
+    padding: var(--sp-3);
+    border-left: 2px solid var(--accent);
+    border-radius: 0 var(--r-md) var(--r-md) 0;
+    background: var(--surface-2);
+    font-size: var(--fs-base);
 }
 
 /* ------------------------------------------------------------------- picks */
@@ -644,6 +881,7 @@
 }
 
 .chip {
+    font-variant-emoji: text;
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
@@ -820,15 +1058,6 @@
     font-variant-numeric: tabular-nums;
 }
 
-.reveal__hearts {
-    display: flex;
-    align-items: center;
-    gap: var(--sp-2);
-    flex-wrap: wrap;
-    color: var(--muted);
-    font-size: var(--fs-base);
-}
-
 .who {
     display: inline-flex;
     align-items: center;
@@ -837,11 +1066,6 @@
     border-radius: var(--r-pill);
     background: var(--surface-2);
     font-size: var(--fs-micro);
-}
-
-.who--anthem {
-    background: rgb(255 181 69 / 16%);
-    color: var(--accent);
 }
 
 /* ------------------------------------------------------------- track lists */
@@ -854,6 +1078,7 @@
 
 .track {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: var(--sp-2);
     padding: 0.4rem 0.55rem;
@@ -922,8 +1147,8 @@
     font-variant-numeric: tabular-nums;
 }
 
-.track__meta--heart {
-    color: var(--heart);
+.track__meta--score {
+    color: var(--love);
 }
 
 /* ------------------------------------------------------------------- lobby */
@@ -1170,7 +1395,7 @@
 }
 
 .board--selector .is-winner .scores__pts {
-    color: var(--heart);
+    color: var(--love);
 }
 
 .board--detective .is-winner .scores__pts {
@@ -1196,11 +1421,13 @@
 }
 
 .award__glyph {
+    font-variant-emoji: text;
     font-size: var(--fs-lg);
     color: var(--accent);
 }
 
 .award--detective .award__glyph {
+    font-variant-emoji: text;
     color: var(--detective);
 }
 
@@ -1280,6 +1507,10 @@
     flex-shrink: 0;
     color: var(--muted);
     font-size: var(--fs-micro);
+}
+
+.final-list--takeaway .final-list__title {
+    font-weight: 500;
 }
 
 .final-list--ghost li {
@@ -1427,7 +1658,7 @@
         display: none;
     }
 
-    .react {
+    .rate {
         width: 100%;
         justify-content: space-around;
     }
@@ -1450,7 +1681,7 @@
     color: var(--muted);
 }
 
-.react__knob {
+.rate__knob {
     font-size: var(--fs-lg);
 }
 

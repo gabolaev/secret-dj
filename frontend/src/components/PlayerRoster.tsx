@@ -30,16 +30,9 @@ function statusFor(player: PublicPlayer, view: GameView, t: Messages): { label: 
 export function PlayerRoster({ view }: PlayerRosterProps) {
     const t = useT();
     const showScores = view.phase !== 'lobby';
-    const showDetective = showScores && view.settings.guessingEnabled;
 
-    const roster = [...view.players].sort(
-        (a, b) =>
-            b.scores.selector + b.scores.detective - (a.scores.selector + a.scores.detective) ||
-            a.name.localeCompare(b.name),
-    );
-
-    const topSelector = Math.max(0, ...roster.map(player => player.scores.selector));
-    const topDetective = Math.max(0, ...roster.map(player => player.scores.detective));
+    const roster = [...view.players].sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
+    const top = Math.max(0, ...roster.map(player => player.score));
 
     return (
         <ul className="roster">
@@ -66,24 +59,13 @@ export function PlayerRoster({ view }: PlayerRosterProps) {
                             <span className="roster__scores">
                                 <span
                                     className={`roster__score roster__score--selector${
-                                        player.scores.selector > 0 && player.scores.selector === topSelector ? ' is-top' : ''
+                                        player.score > 0 && player.score === top ? ' is-top' : ''
                                     }`}
-                                    title={t.roster.selectorTitle}
+                                    title={t.roster.scoreTitle}
                                 >
-                                    <i aria-hidden="true">♥</i>
-                                    {player.scores.selector}
+                                    <i aria-hidden="true">★</i>
+                                    {player.score}
                                 </span>
-                                {showDetective && (
-                                    <span
-                                        className={`roster__score roster__score--detective${
-                                            player.scores.detective > 0 && player.scores.detective === topDetective ? ' is-top' : ''
-                                        }`}
-                                        title={t.roster.detectiveTitle}
-                                    >
-                                        <i aria-hidden="true">◎</i>
-                                        {player.scores.detective}
-                                    </span>
-                                )}
                             </span>
                         )}
                     </li>

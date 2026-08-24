@@ -1,4 +1,11 @@
-import { AWARDS_BY_ID, trackScore, type GameView, type Scores } from '@secret-dj/common';
+import {
+    AWARDS_BY_ID,
+    LOVED_AT,
+    trackScore,
+    trackVerdict,
+    type GameView,
+    type PlayedTrack,
+} from '@secret-dj/common';
 import { AwardCard } from '../components/AwardCard';
 import { Avatar } from '../components/Avatar';
 import { Window } from '../components/Window';
@@ -14,19 +21,30 @@ interface FinaleScreenProps {
 export function FinaleScreen({ view, onLeave }: FinaleScreenProps) {
     const t = useT();
     const awards = view.awards ?? [];
-    const totalPoints = view.history.reduce((sum, played) => sum + trackScore(played), 0);
+    const totalPoints = view.history.reduce((sum, played) => sum + trackVerdict(played), 0);
 
-    const copyPlaylist = async () => {
-        const lines = view.history.map(
-            played => `${played.number}. ${trackLabel(played.track)} — ${nameOf(view.players, played.djId)}\n   ${played.track.url}`,
+    // The night's setlist is nobody's playlist. What you actually want to walk
+    // out with is the handful of tracks *you* liked — so that is its own list,
+    // above the record of what happened.
+    const takeaway = view.history.filter(played => {
+        const mine = played.answers.find(answer => answer.listenerId === view.you.id);
+        return mine !== undefined && mine.like >= LOVED_AT;
+    });
+
+    const copy = async (header: string, tracks: readonly PlayedTrack[]) => {
+        const lines = tracks.map(
+            played => `${trackLabel(played.track)} — ${nameOf(view.players, played.djId)}\n   ${played.track.url}`,
         );
-        const text = `${t.finale.copyHeader(view.id)}\n\n${lines.join('\n')}`;
+        const text = `${header}\n\n${lines.join('\n')}`;
         try {
             await navigator.clipboard.writeText(text);
         } catch {
             window.prompt(t.finale.copyPrompt, text);
         }
     };
+
+    const copyPlaylist = () => copy(t.finale.copyHeader(view.id), view.history);
+    const copyTakeaway = () => copy(t.finale.copyTakeawayHeader(view.id), takeaway);
 
     return (
         <div className="stage">
@@ -35,23 +53,73 @@ export function FinaleScreen({ view, onLeave }: FinaleScreenProps) {
                 <p className="stage__sub">{t.finale.sub}</p>
             </header>
 
-            <div className="boards">
-                <Board view={view} board="selector" title={t.finale.selectorBoard} blurb={t.finale.selectorBlurb} />
-                {view.settings.guessingEnabled && (
-                    <Board view={view} board="detective" title={t.finale.detectiveBoard} blurb={t.finale.detectiveBlurb} />
+            <Window
+                title={t.finale.takeaway}
+                actions={
+                    takeaway.length > 0 ? (
+                        <button
+                            type="button"
+                            className="win__btn"
+                            onClick={() => void copyTakeaway()}
+                            title={t.finale.copyTakeaway}
+                        >
+                            ⧉
+                        </button>
+                    ) : undefined
+                }
+            >
+                <p className="board__blurb">{t.finale.takeawayBlurb}</p>
+                {takeaway.length === 0 ? (
+                    <p className="muted">{t.finale.takeawayEmpty}</p>
+                ) : (
+                    <ol className="final-list final-list--takeaway">
+                        {takeaway.map(played => {
+                            const badge = serviceBadgeByName(played.track.service);
+                            const mine = played.answers.find(answer => answer.listenerId === view.you.id)!;
+                            return (
+                                <li key={played.track.id}>
+                                    <span className="final-list__n">{played.number}</span>
+                                    {badge?.logo ? (
+                                        <img className="track__logo" src={badge.logo} alt="" aria-hidden="true" />
+                                    ) : (
+                                        <span className="track__logo track__logo--generic" aria-hidden="true">
+                                            ♪
+                                        </span>
+                                    )}
+                                    <a
+                                        className="final-list__title"
+                                        href={played.track.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        {trackLabel(played.track)}
+                                    </a>
+                                    <span className="final-list__dj">
+                                        <Avatar id={played.djId} name={nameOf(view.players, played.djId)} size="sm" />
+                                        {nameOf(view.players, played.djId)}
+                                    </span>
+                                    <span className="track__meta track__meta--score">★{mine.like}</span>
+                                </li>
+                            );
+                        })}
+                    </ol>
                 )}
+            </Window>
+
+            <div className="boards">
+                <Board view={view} title={t.finale.board} blurb={t.finale.boardBlurb} />
             </div>
 
             {awards.length > 0 && (
                 <Window title={t.finale.awards}>
                     <div className="awards">
                         {awards
-                            // Keep each board's trophies together, Selector first.
+                            // Keep each kind of trophy together, the music ones first.
                             .slice()
                             .sort((a, b) =>
-                                AWARDS_BY_ID[a.id].board === AWARDS_BY_ID[b.id].board
+                                AWARDS_BY_ID[a.id].group === AWARDS_BY_ID[b.id].group
                                     ? 0
-                                    : AWARDS_BY_ID[a.id].board === 'selector'
+                                    : AWARDS_BY_ID[a.id].group === 'music'
                                       ? -1
                                       : 1,
                             )
@@ -96,9 +164,8 @@ export function FinaleScreen({ view, onLeave }: FinaleScreenProps) {
                                     <Avatar id={played.djId} name={nameOf(view.players, played.djId)} size="sm" />
                                     {nameOf(view.players, played.djId)}
                                 </span>
-                                <span className={`track__meta${score > 0 ? ' track__meta--heart' : ''}`}>
-                                    {played.anthemBy.length > 0 && '★'}
-                                    {score > 0 ? `♥${score}` : ''}
+                                <span className={`track__meta${score > 0 ? ' track__meta--score' : ''}`}>
+                                    {score > 0 ? `★${score}` : ''}
                                 </span>
                             </li>
                         );
@@ -151,26 +218,23 @@ export function FinaleScreen({ view, onLeave }: FinaleScreenProps) {
 
 interface BoardProps {
     view: GameView;
-    board: keyof Scores;
     title: string;
     blurb: string;
 }
 
-function Board({ view, board, title, blurb }: BoardProps) {
-    const ranked = [...view.players].sort(
-        (a, b) => b.scores[board] - a.scores[board] || a.name.localeCompare(b.name),
-    );
+function Board({ view, title, blurb }: BoardProps) {
+    const ranked = [...view.players].sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
 
     return (
-        <Window title={title} className={`board board--${board}`}>
+        <Window title={title} className="board board--selector">
             <p className="board__blurb">{blurb}</p>
             <ol className="scores">
                 {ranked.map((player, index) => (
-                    <li key={player.id} className={index === 0 && player.scores[board] > 0 ? 'is-winner' : undefined}>
+                    <li key={player.id} className={index === 0 && player.score > 0 ? 'is-winner' : undefined}>
                         <span className="scores__rank">{index + 1}</span>
                         <Avatar id={player.id} name={player.name} size="sm" />
                         <span className="scores__name">{player.name}</span>
-                        <span className="scores__pts">{player.scores[board]}</span>
+                        <span className="scores__pts">{player.score}</span>
                     </li>
                 ))}
             </ol>

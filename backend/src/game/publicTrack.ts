@@ -15,5 +15,6 @@ export function toPublicTrack(track: TrackState): PublicTrack {
         artwork: track.artwork,
         service: track.serviceName,
         metadata: track.metadata,
+        claim: track.claim,
     };
 }

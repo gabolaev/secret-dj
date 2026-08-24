@@ -27,12 +27,14 @@ export type ErrorCode =
     | 'TRACK_UNSUPPORTED'
     | 'TRACK_URL_INVALID'
     | 'TRACK_NOT_FOUND'
+    | 'CLAIM_INVALID'
+    | 'CLAIM_SPENT'
+    | 'CLAIM_UNAVAILABLE'
     | 'VOTE_NOT_ALLOWED'
     | 'VOTE_OWN_TRACK'
     | 'VOTE_INVALID_TARGET'
-    | 'REACT_OWN_TRACK'
-    | 'OUT_OF_HEARTS'
-    | 'ANTHEM_SPENT'
+    | 'ANSWER_OWN_TRACK'
+    | 'RATING_INVALID'
     | 'DECOY_NOT_DJ'
     | 'DECOY_INVALID_TARGET'
     | 'RATE_LIMITED'
@@ -56,12 +58,14 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
     TRACK_UNSUPPORTED: 'That link is not from a music service we can play.',
     TRACK_URL_INVALID: 'That is not a usable link.',
     TRACK_NOT_FOUND: 'That track is not in your queue.',
+    CLAIM_INVALID: 'That is not a claim you can make.',
+    CLAIM_SPENT: 'You have already played that claim tonight.',
+    CLAIM_UNAVAILABLE: 'That claim needs a bigger table, or guessing switched on.',
     VOTE_NOT_ALLOWED: 'You cannot vote in this round.',
     VOTE_OWN_TRACK: 'It is your track. Sit this one out and enjoy it.',
     VOTE_INVALID_TARGET: 'That is not someone you can vote for.',
-    REACT_OWN_TRACK: 'Hearting your own track is cheating, and a little sad.',
-    OUT_OF_HEARTS: 'You are out of hearts for tonight. Spend them wisely.',
-    ANTHEM_SPENT: 'You only get one anthem a night, and yours is gone.',
+    ANSWER_OWN_TRACK: 'Answering about your own track is cheating, and a little sad.',
+    RATING_INVALID: 'A like is a whole number from zero to five.',
     DECOY_NOT_DJ: 'Only the DJ can set a decoy.',
     DECOY_INVALID_TARGET: 'Pick someone else in the room to be mistaken for.',
     RATE_LIMITED: 'Slow down a moment.',

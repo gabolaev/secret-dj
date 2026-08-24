@@ -12,15 +12,15 @@ const view: GameView = {
   id: 'K7QM2', phase: 'listening',
   settings: { tracksPerPlayer: 3, tracksPlayedPerPlayer: 2, guessingEnabled: true },
   players: [
-    { id: 'p1', name: 'Ana', isHost: true, presence: 'online', submitted: 3, ready: true, scores: { selector: 2, detective: 1 } },
-    { id: 'p2', name: 'Bo', isHost: false, presence: 'online', submitted: 3, ready: true, scores: { selector: 0, detective: 0 } },
+    { id: 'p1', name: 'Ana', isHost: true, presence: 'online', submitted: 3, ready: true, score: 12 },
+    { id: 'p2', name: 'Bo', isHost: false, presence: 'online', submitted: 3, ready: true, score: 0 },
   ],
-  you: { id: 'p1', name: 'Ana', isHost: true, tracks: [], wallet: { heartsLeft: 2, heartBudget: 3, anthemSpent: false } },
+  you: { id: 'p1', name: 'Ana', isHost: true, tracks: [] },
   round: {
     number: 3, total: 6,
-    track: { id: 't', url: 'https://open.spotify.com/track/abc', title: 'X', service: 'Spotify', metadata: 'ready' },
-    isMine: false, myReaction: 'heart', heartCount: 2, anthemCount: 1,
-    votesIn: 1, votersExpected: 2, canVote: true, canReact: true,
+    track: { id: 't', url: 'https://open.spotify.com/track/abc', title: 'X', service: 'Spotify', metadata: 'ready', claim: { id: 'none' } },
+    isMine: false, myAnswer: { like: 4, heard: false, popular: false, moved: false },
+    answersIn: 2, votesIn: 1, votersExpected: 2, canVote: true, canAnswer: true,
   },
   history: [], setlistLength: 6, now: Date.now(),
 };
@@ -32,8 +32,7 @@ describe('deck markup', () => {
     // The round is one card; the header is where the context lives.
     const bar = container.querySelector('.win__bar')!;
     expect(bar.querySelector('.win__title')!.textContent).toBe('Track 3 of 6');
-    expect(bar.querySelector('.stat--heart')!.textContent).toContain('2');
-    expect(bar.querySelector('.stat--anthem')!.textContent).toContain('1');
+    expect(bar.querySelector('.stat--rated')!.textContent).toContain('2');
     expect(bar.querySelector('.stats')!.textContent).toContain('1/2');
 
     // The player, with nothing dressed up around it.
@@ -42,8 +41,14 @@ describe('deck markup', () => {
     // No leftovers from the skeuomorphic pass.
     expect(container.querySelector('.matrix, .display, .spectrum, .slider, .digits')).toBeNull();
 
-    // Active reaction, and every control row in a rack rather than its own card.
-    expect(container.querySelector('.react__knob--heart')!.className).toContain('is-active');
+    // Zero through five, lit up to the answer, and every control row in a rack
+    // rather than a card of its own.
+    const likes = [...container.querySelectorAll('.rate__knob--like')];
+    expect(likes).toHaveLength(6);
+    expect(likes.map(button => button.className.includes('is-lit'))).toEqual([
+      false, true, true, true, true, false,
+    ]);
+    expect(likes[4].className).toContain('is-active');
     expect(container.querySelectorAll('.rack').length).toBeGreaterThanOrEqual(2);
   });
 });

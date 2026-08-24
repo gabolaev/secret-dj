@@ -46,7 +46,7 @@ const PAIRS: Array<[string, string, number, string]> = [
     ...SURFACES.map(s => ['muted', s, 4.5, 'secondary text'] as [string, string, number, string]),
     ...SURFACES.map(s => ['faint', s, 3, 'captions and meta'] as [string, string, number, string]),
     ['accent', 'surface', 4.5, 'accent text and figures'],
-    ['heart', 'surface', 4.5, 'heart counts'],
+    ['love', 'surface', 4.5, 'rating stars'],
     ['detective', 'surface', 4.5, 'detective scores'],
     ['good', 'surface', 4.5, 'correct guesses'],
     ['bad', 'surface', 4.5, 'errors'],

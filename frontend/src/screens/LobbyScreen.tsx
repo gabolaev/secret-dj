@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { LIMITS, type GameView } from '@secret-dj/common';
 import type { SecretDj } from '../hooks/useSecretDj';
+import { ClaimPicker, spentClaims } from '../components/ClaimPicker';
 import { UrlField } from '../components/UrlField';
 import { TrackList } from '../components/TrackList';
 import { Window } from '../components/Window';
@@ -15,6 +16,7 @@ export function LobbyScreen({ view, game }: LobbyScreenProps) {
     const t = useT();
     const [url, setUrl] = useState('');
     const [busy, setBusy] = useState(false);
+    const [openClaim, setOpenClaim] = useState<string | null>(null);
 
     const { tracksPerPlayer, tracksPlayedPerPlayer, guessingEnabled } = view.settings;
     const mine = view.you.tracks;
@@ -68,7 +70,21 @@ export function LobbyScreen({ view, game }: LobbyScreenProps) {
                         tracks={mine}
                         onRemove={trackId => void game.removeTrack(trackId)}
                         emptyMessage={t.lobby.emptyQueue}
+                        slot={track => (
+                            <ClaimPicker
+                                track={track}
+                                view={view}
+                                spent={spentClaims(mine, track.id)}
+                                open={openClaim === track.id}
+                                onToggle={() => setOpenClaim(openClaim === track.id ? null : track.id)}
+                                onPick={claim => {
+                                    void game.setClaim(track.id, claim);
+                                    setOpenClaim(null);
+                                }}
+                            />
+                        )}
                     />
+                    {mine.length > 0 && <p className="muted">{t.claims.hint}</p>}
                 </div>
             </Window>
 

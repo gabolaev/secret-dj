@@ -1,28 +1,55 @@
 import { describe, expect, it } from 'vitest';
-import { computeAwards, computeRoundPoints, heartBudget, trackScore, type PlayedTrack } from '@secret-dj/common';
+import {
+    DEFAULT_CLAIM,
+    EMOTION_BONUS,
+    NOVELTY_BONUS,
+    computeAwards,
+    computeRoundPoints,
+    obviousnessDrag,
+    roomVerdict,
+    trackScore,
+    trackVerdict,
+    type AnswerRecord,
+    type ClaimId,
+    type PlayedTrack,
+    type Rating,
+} from '@secret-dj/common';
 
-const track = (id: string): PlayedTrack['track'] => ({
+const track = (id: string, claim: ClaimId = 'none'): PlayedTrack['track'] => ({
     id,
     url: `https://open.spotify.com/track/${id}`,
     title: `Track ${id}`,
     metadata: 'ready',
+    claim: { id: claim },
 });
+
+type Said = [listener: string, like: Rating, flags?: Partial<Omit<AnswerRecord, 'listenerId' | 'like'>>];
 
 interface RoundSpec {
     dj: string;
-    hearts?: string[];
-    anthems?: string[];
+    said?: Said[];
+    /** Defaults to however many actually answered. */
+    listeners?: number;
+    claim?: ClaimId;
     decoy?: string;
     votes?: Array<[voter: string, guess: string]>;
 }
 
 function played(number: number, spec: RoundSpec): PlayedTrack {
+    const answers: AnswerRecord[] = (spec.said ?? []).map(([listenerId, like, flags]) => ({
+        listenerId,
+        like,
+        heard: false,
+        popular: false,
+        moved: false,
+        ...flags,
+    }));
     return {
         number,
-        track: track(`t${number}`),
+        track: track(`t${number}`, spec.claim),
         djId: spec.dj,
-        heartedBy: spec.hearts ?? [],
-        anthemBy: spec.anthems ?? [],
+        answers,
+        listenerCount: spec.listeners ?? answers.length,
         decoyId: spec.decoy,
         votes: (spec.votes ?? []).map(([voterId, guessId]) => ({
             voterId,
@@ -33,62 +60,154 @@ function played(number: number, spec: RoundSpec): PlayedTrack {
     };
 }
 
-describe('heartBudget', () => {
-    it('scales with how many tracks you will actually hear', () => {
-        // 12-track night, you DJ 2 of them, so you listen to 10 -> 4 hearts.
-        expect(heartBudget(12, 2)).toBe(4);
-        expect(heartBudget(20, 2)).toBe(8);
+describe('what one listener is worth', () => {
+    it('is their like, plus a nudge for novelty and more for being moved', () => {
+        const base = played(1, { dj: 'ana', said: [['bo', 3, { heard: true }]] });
+        expect(roomVerdict(base)).toBe(3);
+
+        const fresh = played(1, { dj: 'ana', said: [['bo', 3]] });
+        expect(roomVerdict(fresh)).toBe(3 + NOVELTY_BONUS);
+
+        const moving = played(1, { dj: 'ana', said: [['bo', 3, { heard: true, moved: true }]] });
+        expect(roomVerdict(moving)).toBe(3 + EMOTION_BONUS);
     });
 
-    it('always leaves at least one heart to spend', () => {
-        expect(heartBudget(2, 2)).toBe(1);
-        expect(heartBudget(0, 0)).toBe(1);
-    });
-
-    it('is scarce enough to force a choice', () => {
-        // The whole mechanic depends on the budget being well under the number
-        // of tracks you hear; otherwise "heart everything" comes back.
-        const setlist = 15;
-        const listened = setlist - 3;
-        expect(heartBudget(setlist, 3)).toBeLessThan(listened / 2 + 1);
+    it('scores a track that moved people even though nobody liked it', () => {
+        // Getting to someone is the rarer and better thing, so it survives a
+        // room of zeroes. This is the case the like-only model could not see.
+        const gutting = played(1, {
+            dj: 'ana',
+            said: [['bo', 0, { heard: true, moved: true }], ['cy', 0, { heard: true, moved: true }]],
+        });
+        expect(roomVerdict(gutting)).toBe(2 * EMOTION_BONUS);
     });
 });
 
-describe('trackScore', () => {
-    it('counts an anthem as three hearts', () => {
-        expect(trackScore({ heartedBy: ['a', 'b'], anthemBy: [] })).toBe(2);
-        expect(trackScore({ heartedBy: [], anthemBy: ['a'] })).toBe(3);
-        expect(trackScore({ heartedBy: ['a', 'b'], anthemBy: ['c'] })).toBe(5);
+describe('staying quiet is neutral', () => {
+    it('scales the average up to the table, so silence neither helps nor hurts', () => {
+        // The one lever the honesty rule could not reach: deflating a rival by
+        // saying nothing. Averaging and rescaling closes it.
+        const everyone = played(1, { dj: 'ana', said: [['bo', 4, { heard: true }], ['cy', 4, { heard: true }]] });
+        const oneQuiet = played(1, { dj: 'ana', said: [['bo', 4, { heard: true }]], listeners: 2 });
+        expect(roomVerdict(oneQuiet)).toBe(roomVerdict(everyone));
+    });
+
+    it('makes a round played to a half-empty room comparable with a full one', () => {
+        const busy = played(1, { dj: 'ana', said: [['bo', 3, { heard: true }], ['cy', 3, { heard: true }]] });
+        const teaBreak = played(2, { dj: 'ana', said: [['bo', 3, { heard: true }]], listeners: 2 });
+        expect(trackVerdict(teaBreak)).toBe(trackVerdict(busy));
+    });
+
+    it('is zero when nobody answered at all', () => {
+        expect(roomVerdict(played(1, { dj: 'ana', listeners: 4 }))).toBe(0);
+    });
+});
+
+describe('the tax on the obvious', () => {
+    it('takes nothing when nobody calls it a hit, and half when everybody does', () => {
+        expect(obviousnessDrag([])).toBe(1);
+        expect(obviousnessDrag(played(1, { dj: 'ana', said: [['bo', 5]] }).answers)).toBe(1);
+        expect(
+            obviousnessDrag(played(1, { dj: 'ana', said: [['bo', 5, { popular: true }]] }).answers),
+        ).toBe(0.5);
+    });
+
+    it('scales with the share, so one voice is never a cliff', () => {
+        const half = played(1, {
+            dj: 'ana',
+            said: [['bo', 4, { popular: true }], ['cy', 4]],
+        });
+        expect(obviousnessDrag(half.answers)).toBe(0.75);
+    });
+
+    it('never takes a track all the way to nothing', () => {
+        // A beloved classic that everybody knows should still be worth playing.
+        const famous = played(1, {
+            dj: 'ana',
+            said: [['bo', 5, { heard: true, popular: true }], ['cy', 5, { heard: true, popular: true }]],
+        });
+        expect(trackVerdict(famous)).toBe(5);
     });
 });
 
 describe('computeRoundPoints', () => {
-    it('splits points across the two boards and never mixes them', () => {
+    it('shows its working: the room, the tax, then the claim', () => {
         const points = computeRoundPoints({
             djId: 'ana',
+            claim: { id: 'never-heard' },
+            votes: [],
+            listenerCount: 2,
+            answers: [
+                { listenerId: 'bo', like: 4, heard: false, popular: true, moved: false },
+                { listenerId: 'cy', like: 4, heard: false, popular: false, moved: false },
+            ],
+        });
+
+        // 5 + 5 from the room, a quarter off for being half-obvious, and a
+        // claim that landed in full on top of what is left.
+        expect(points).toContainEqual({ playerId: 'ana', points: 10, reason: 'room-verdict' });
+        expect(points).toContainEqual({ playerId: 'ana', points: -2, reason: 'obviousness' });
+        expect(points).toContainEqual({ playerId: 'ana', points: 3, reason: 'claim-landed' });
+    });
+
+    it('takes points back off a claim that missed', () => {
+        const points = computeRoundPoints({
+            djId: 'ana',
+            claim: { id: 'never-heard' },
+            votes: [],
+            listenerCount: 2,
+            answers: [
+                { listenerId: 'bo', like: 5, heard: true, popular: false, moved: false },
+                { listenerId: 'cy', like: 5, heard: true, popular: false, moved: false },
+            ],
+        });
+        expect(points).toContainEqual({ playerId: 'ana', points: 10, reason: 'room-verdict' });
+        expect(points).toContainEqual({ playerId: 'ana', points: -5, reason: 'claim-landed' });
+    });
+
+    it('leaves the safe claim alone entirely', () => {
+        const points = computeRoundPoints({
+            djId: 'ana',
+            claim: DEFAULT_CLAIM,
+            votes: [],
+            listenerCount: 1,
+            answers: [{ listenerId: 'bo', like: 4, heard: true, popular: false, moved: false }],
+        });
+        expect(points.some(delta => delta.reason === 'claim-landed')).toBe(false);
+        expect(points.some(delta => delta.reason === 'obviousness')).toBe(false);
+    });
+
+    it('pays the DJ for decoys and nobody for guessing', () => {
+        const points = computeRoundPoints({
+            djId: 'ana',
+            claim: DEFAULT_CLAIM,
+            listenerCount: 2,
+            answers: [],
             votes: [
                 { voterId: 'bo', correct: true, fooled: false },
                 { voterId: 'cy', correct: false, fooled: true },
-                { voterId: 'di', correct: false, fooled: true },
             ],
-            heartedBy: ['bo', 'cy'],
-            anthemBy: ['di'],
         });
-
-        expect(points).toEqual([
-            { playerId: 'bo', points: 1, reason: 'correct-guess', board: 'detective' },
-            { playerId: 'ana', points: 2, reason: 'hearts-received', board: 'selector' },
-            { playerId: 'ana', points: 3, reason: 'anthem-received', board: 'selector' },
-            { playerId: 'ana', points: 2, reason: 'decoy-hit', board: 'detective' },
-        ]);
-
-        // Taste cannot win the deduction game and vice versa.
-        const selector = points.filter(p => p.board === 'selector');
-        expect(selector.every(p => p.reason.endsWith('received'))).toBe(true);
+        expect(points).toEqual([{ playerId: 'ana', points: 1, reason: 'decoy-hit' }]);
     });
 
     it('awards nothing when nothing happened', () => {
-        expect(computeRoundPoints({ djId: 'ana', votes: [], heartedBy: [], anthemBy: [] })).toEqual([]);
+        expect(
+            computeRoundPoints({ djId: 'ana', claim: DEFAULT_CLAIM, votes: [], answers: [], listenerCount: 3 }),
+        ).toEqual([]);
+    });
+});
+
+describe('trackScore', () => {
+    it('is the room, taxed, then put through the bet', () => {
+        const gamble = played(1, {
+            dj: 'ana',
+            claim: 'divisive',
+            said: [['bo', 5, { heard: true }], ['cy', 0, { heard: true }]],
+        });
+        // The room gave 5; the even split paid it at x1.5.
+        expect(trackVerdict(gamble)).toBe(5);
+        expect(trackScore(gamble)).toBe(8);
     });
 });
 
@@ -96,66 +215,80 @@ describe('computeAwards', () => {
     const players = ['ana', 'bo', 'cy'];
 
     it('picks the ghost by identification rate, lower being better', () => {
-        // ana is named 2/2, bo 0/2.
         const history = [
             played(1, { dj: 'ana', votes: [['bo', 'ana'], ['cy', 'ana']] }),
             played(2, { dj: 'bo', votes: [['ana', 'cy'], ['cy', 'ana']] }),
         ];
-
         const ghost = computeAwards(history, players).find(award => award.id === 'ghost');
         expect(ghost?.winners).toEqual(['bo']);
         expect(ghost?.value).toBe(0);
     });
 
-    it('cannot be won just by queueing more tracks', () => {
+    it('still crowns the best guesser, even though guessing pays nothing', () => {
         const history = [
-            played(1, { dj: 'ana', votes: [['bo', 'ana'], ['cy', 'cy']] }),
-            played(2, { dj: 'ana', votes: [['bo', 'cy'], ['cy', 'bo']] }),
-            played(3, { dj: 'bo', votes: [['ana', 'bo']] }),
+            played(1, { dj: 'ana', votes: [['bo', 'ana'], ['cy', 'bo']] }),
+            played(2, { dj: 'cy', votes: [['bo', 'cy'], ['ana', 'bo']] }),
         ];
-
-        const ghost = computeAwards(history, players).find(award => award.id === 'ghost');
-        expect(ghost?.winners).toEqual(['ana']);
-        expect(ghost?.value).toBe(25);
+        const shazam = computeAwards(history, players).find(award => award.id === 'human-shazam');
+        expect(shazam?.winners).toEqual(['bo']);
+        expect(shazam?.value).toBe(2);
     });
 
-    it('weights the crowd favourite by anthems, not just heart count', () => {
-        // bo gets three plain hearts; ana gets one anthem. They tie at 3.
-        const history = [played(1, { dj: 'ana', anthems: ['cy'] }), played(2, { dj: 'bo', hearts: ['ana', 'cy', 'di'] })];
-        const favourite = computeAwards(history, [...players, 'di']).find(award => award.id === 'crowd-favourite');
-        expect(favourite?.winners.sort()).toEqual(['ana', 'bo']);
-        expect(favourite?.value).toBe(3);
+    it('gives the deep cut to the track fewest people had heard', () => {
+        const history = [
+            played(1, { dj: 'ana', said: [['bo', 4], ['cy', 4]] }),
+            played(2, { dj: 'bo', said: [['ana', 4, { heard: true }], ['cy', 4]] }),
+        ];
+        const deep = computeAwards(history, players).find(award => award.id === 'deep-cut');
+        expect(deep?.winners).toEqual(['ana']);
+        expect(deep?.value).toBe(100);
+        expect(deep?.detail).toBe('Track t1');
+    });
+
+    it('will not call an obscure track nobody liked a deep cut', () => {
+        const history = [played(1, { dj: 'ana', said: [['bo', 0], ['cy', 0]] })];
+        // Two zeroes still carry the novelty bonus, so it has to be truly dead.
+        const dead = [played(1, { dj: 'ana', said: [['bo', 0, { heard: true }], ['cy', 0, { heard: true }]] })];
+        expect(computeAwards(dead, players).find(award => award.id === 'deep-cut')).toBeUndefined();
+        expect(computeAwards(history, players).find(award => award.id === 'deep-cut')).toBeDefined();
+    });
+
+    it('gives the gut punch to the track that moved the most people', () => {
+        const history = [
+            played(1, { dj: 'ana', said: [['bo', 1, { moved: true }], ['cy', 1, { moved: true }]] }),
+            played(2, { dj: 'bo', said: [['ana', 5], ['cy', 5]] }),
+        ];
+        const punch = computeAwards(history, players).find(award => award.id === 'gut-punch');
+        expect(punch?.winners).toEqual(['ana']);
+        expect(punch?.value).toBe(2);
+    });
+
+    it('ranks tracks against each other by the room, not by a lucky claim', () => {
+        const history = [
+            // bo's claim lands and banks more, but the room liked ana's track more.
+            played(1, { dj: 'ana', said: [['bo', 5, { heard: true }], ['cy', 5, { heard: true }]] }),
+            played(2, { dj: 'bo', claim: 'never-heard', said: [['ana', 3], ['cy', 3]] }),
+        ];
+        const awards = computeAwards(history, players);
+
+        // The room gave ana's track more (10 against 8)...
+        const best = awards.find(award => award.id === 'track-of-the-night');
+        expect(best?.winners).toEqual(['ana']);
+        expect(best?.detail).toBe('Track t1');
+
+        // ...but bo's bet landed, so bo banked more across the night.
+        const favourite = awards.find(award => award.id === 'crowd-favourite');
+        expect(favourite?.winners).toEqual(['bo']);
+        expect(favourite?.value).toBe(12);
     });
 
     it('shares ties instead of picking by array order', () => {
-        const history = [played(1, { dj: 'ana', hearts: ['bo', 'cy'] }), played(2, { dj: 'bo', hearts: ['ana', 'cy'] })];
+        const history = [
+            played(1, { dj: 'ana', said: [['bo', 4, { heard: true }], ['cy', 1, { heard: true }]] }),
+            played(2, { dj: 'bo', said: [['ana', 2, { heard: true }], ['cy', 3, { heard: true }]] }),
+        ];
         const favourite = computeAwards(history, players).find(award => award.id === 'crowd-favourite');
         expect(favourite?.winners.sort()).toEqual(['ana', 'bo']);
-    });
-
-    it('names the single best track and reports its title', () => {
-        const history = [played(1, { dj: 'ana', hearts: ['bo'] }), played(2, { dj: 'bo', hearts: ['ana', 'cy'] })];
-        const best = computeAwards(history, players).find(award => award.id === 'track-of-the-night');
-        expect(best?.winners).toEqual(['bo']);
-        expect(best?.value).toBe(2);
-        expect(best?.detail).toBe('Track t2');
-    });
-
-    it('gives the golden ear to whoever backed the biggest track', () => {
-        const history = [
-            // cy's anthem lands on a track that ends up worth 3 + 1 = 4.
-            played(1, { dj: 'ana', hearts: ['bo'], anthems: ['cy'] }),
-            // bo's anthem lands on a quiet one, worth 3.
-            played(2, { dj: 'cy', anthems: ['bo'] }),
-        ];
-        const golden = computeAwards(history, players).find(award => award.id === 'golden-ear');
-        expect(golden?.winners).toEqual(['cy']);
-        expect(golden?.value).toBe(4);
-    });
-
-    it('only considers players who actually spent an anthem', () => {
-        const history = [played(1, { dj: 'ana', hearts: ['bo', 'cy'] })];
-        expect(computeAwards(history, players).find(award => award.id === 'golden-ear')).toBeUndefined();
     });
 
     it('crowns the puppet master by decoys that landed', () => {
@@ -164,29 +297,19 @@ describe('computeAwards', () => {
             played(2, { dj: 'bo', decoy: 'ana', votes: [['ana', 'cy'], ['cy', 'ana']] }),
         ];
         const puppet = computeAwards(history, players).find(award => award.id === 'puppet-master');
-        // ana fooled bo; bo fooled cy. One each.
         expect(puppet?.winners.sort()).toEqual(['ana', 'bo']);
         expect(puppet?.value).toBe(1);
     });
 
     it('does not count a decoy that happens to be the right answer', () => {
-        // A "decoy" pointing at the real DJ is just the truth; it scores nothing.
         const history = [played(1, { dj: 'ana', decoy: 'ana', votes: [['bo', 'ana']] })];
-        const awards = computeAwards(history, players);
-        expect(awards.find(award => award.id === 'puppet-master')).toBeUndefined();
-        expect(awards.find(award => award.id === 'human-shazam')?.winners).toEqual(['bo']);
+        expect(computeAwards(history, players).find(award => award.id === 'puppet-master')).toBeUndefined();
     });
 
     it('omits awards nobody earned rather than handing out zeroes', () => {
-        const history = [played(1, { dj: 'ana', votes: [['bo', 'cy']] })];
-        const ids = computeAwards(history, players).map(award => award.id);
-        expect(ids).not.toContain('crowd-favourite');
-        expect(ids).not.toContain('human-shazam');
-        expect(ids).not.toContain('golden-ear');
-        expect(ids).not.toContain('puppet-master');
-    });
-
-    it('returns nothing at all for an empty game', () => {
+        // Nobody voted, nobody answered: an honest empty list beats seven
+        // trophies for zero of everything.
+        expect(computeAwards([played(1, { dj: 'ana' })], players)).toEqual([]);
         expect(computeAwards([], players)).toEqual([]);
     });
 });

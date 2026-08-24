@@ -69,7 +69,7 @@ function player(overrides: Partial<PublicPlayer> & Pick<PublicPlayer, 'id' | 'na
         presence: 'online',
         submitted: 3,
         ready: true,
-        scores: { selector: 0, detective: 0 },
+        score: 0,
         ...overrides,
     };
 }
@@ -84,15 +84,15 @@ function round(overrides: Partial<RoundView> = {}): RoundView {
             title: 'Smalltown Boy',
             service: 'Spotify',
             metadata: 'ready',
+            claim: { id: 'none' },
         },
         isMine: false,
-        myReaction: 'none',
-        heartCount: 3,
-        anthemCount: 0,
+        myAnswer: { heard: false, popular: false, moved: false },
+        answersIn: 3,
         votesIn: 1,
         votersExpected: 2,
         canVote: true,
-        canReact: true,
+        canAnswer: true,
         ...overrides,
     };
 }
@@ -118,9 +118,9 @@ function lobbyView(overrides: Partial<GameView> = {}): GameView {
                     artist: 'New Order',
                     service: 'Spotify',
                     metadata: 'ready',
+                    claim: { id: 'none' },
                 },
             ],
-            wallet: { heartsLeft: 4, heartBudget: 5, anthemSpent: false },
         },
         history: [],
         setlistLength: 0,
@@ -234,31 +234,210 @@ describe('in-game screens', () => {
         expect(screen.getByText(/How many actually play/i)).toBeTruthy();
     });
 
-    it('offers guessing and the heart wallet during a round', async () => {
+    it('offers guessing and the whole answer during a round', async () => {
         await mountWith(lobbyView({ phase: 'listening', setlistLength: 4, round: round() }));
 
         await waitFor(() => expect(screen.getByRole('group', { name: 'Whose is it?' })).toBeTruthy());
         expect(screen.getByText('Track 2 of 4')).toBeTruthy();
         expect(screen.getByRole('button', { name: /Bo/ })).toBeTruthy();
-        // Scarcity has to be visible, or it is not a decision.
-        expect(screen.getByLabelText('4 of 5 hearts left')).toBeTruthy();
-        expect(screen.getByRole('radio', { name: /Anthem/ })).toBeTruthy();
+
+        // Zero through five — zero is a real answer, not an abstention.
+        for (const value of [0, 1, 2, 3, 4, 5]) {
+            expect(screen.getByRole('radio', { name: `${value} out of 5` })).toBeTruthy();
+        }
+        // ...plus the three things no server could ever check.
+        expect(screen.getByRole('button', { name: /Heard it before/ })).toBeTruthy();
+        expect(screen.getByRole('button', { name: /Everyone knows this/ })).toBeTruthy();
+        expect(screen.getByRole('button', { name: /It got to me/ })).toBeTruthy();
     });
 
-    it('blocks the anthem once it is spent', async () => {
+    it('does not count an answer until a number signs it', async () => {
         await mountWith(
             lobbyView({
                 phase: 'listening',
                 setlistLength: 4,
-                round: round(),
-                you: { ...lobbyView().you, wallet: { heartsLeft: 0, heartBudget: 5, anthemSpent: true } },
+                round: round({ myAnswer: { heard: true, popular: false, moved: true } }),
             }),
         );
 
-        await waitFor(() => expect(screen.getByLabelText('0 of 5 hearts left')).toBeTruthy());
-        expect(screen.getByRole('radio', { name: /Anthem/ }).hasAttribute('disabled')).toBe(true);
-        expect(screen.getByRole('radio', { name: /Heart/ }).hasAttribute('disabled')).toBe(true);
-        expect(screen.getByTitle('Anthem already spent')).toBeTruthy();
+        await waitFor(() => expect(screen.getByRole('button', { name: /Heard it before/ })).toBeTruthy());
+        expect(screen.getByRole('button', { name: /Heard it before/ }).getAttribute('aria-pressed')).toBe('true');
+        // The toggles are on and it still says the answer is not in.
+        expect(screen.getByText(/toggles alone do not count/)).toBeTruthy();
+    });
+
+    it('lights the scale up to the number you chose', async () => {
+        await mountWith(
+            lobbyView({
+                phase: 'listening',
+                setlistLength: 4,
+                round: round({ myAnswer: { like: 3, heard: false, popular: false, moved: false } }),
+            }),
+        );
+
+        await waitFor(() => expect(screen.getByRole('radiogroup', { name: 'How much did you like it?' })).toBeTruthy());
+        const lit = [0, 1, 2, 3, 4, 5].map(value =>
+            screen.getByRole('radio', { name: `${value} out of 5` }).className.includes('is-lit'),
+        );
+        expect(lit).toEqual([false, true, true, true, false, false]);
+        // The number alone is ambiguous; the phrase is what makes it a verdict.
+        expect(screen.getByText('Solid')).toBeTruthy();
+    });
+
+    it('hangs a claim picker off every queued track, and opens one at a time', async () => {
+        await mountWith(
+            lobbyView({
+                // Three at the table, so the claims that would give a duo's DJ
+                // away are on offer at all.
+                players: [
+                    player({ id: 'p1', name: 'Ana', isHost: true, submitted: 2, ready: false }),
+                    player({ id: 'p2', name: 'Bo' }),
+                    player({ id: 'p3', name: 'Cy' }),
+                ],
+                you: {
+                    ...lobbyView().you,
+                    tracks: [
+                        { ...lobbyView().you.tracks[0] },
+                        {
+                            id: 't2',
+                            url: 'https://open.spotify.com/track/def',
+                            title: 'Temptation',
+                            service: 'Spotify',
+                            metadata: 'ready',
+                            claim: { id: 'so-me' },
+                        },
+                    ],
+                },
+            }),
+        );
+
+        await waitFor(() => expect(screen.getByText('Blue Monday — New Order')).toBeTruthy());
+        // Each track wears its current bet; the deck stays closed until asked for.
+        expect(screen.getByRole('button', { name: /No claim/ })).toBeTruthy();
+        expect(screen.getByRole('button', { name: /You will know it was me/ })).toBeTruthy();
+        expect(screen.queryByRole('group', { name: 'Your claim' })).toBeNull();
+
+        fireEvent.click(screen.getByRole('button', { name: /No claim/ }));
+        await waitFor(() => expect(screen.getByRole('group', { name: 'Your claim' })).toBeTruthy());
+        expect(document.querySelectorAll('.claim__deck')).toHaveLength(1);
+
+        // "so me" is spent on the other track, so it cannot be taken twice.
+        const deck = document.querySelector('.claim__deck')!;
+        const soMe = [...deck.querySelectorAll('.claim__option')].find(option =>
+            option.textContent?.includes('You will know it was me'),
+        )!;
+        expect(soMe.hasAttribute('disabled')).toBe(true);
+    });
+
+    it('shows no claim banner while the claim is being withheld', async () => {
+        // The server strips it from the payload for everyone but the DJ, so the
+        // banner's job is simply to not exist when it is not there.
+        const { claim, ...anonymous } = round().track;
+        await mountWith(
+            lobbyView({ phase: 'listening', setlistLength: 4, round: round({ track: anonymous }) }),
+        );
+
+        await waitFor(() => expect(screen.getByRole('group', { name: 'Whose is it?' })).toBeTruthy());
+        expect(claim).toBeTruthy();
+        expect(document.querySelector('.banner')).toBeNull();
+    });
+
+    it('shows the DJ their own bet, marked as nobody else\u2019s business', async () => {
+        await mountWith(
+            lobbyView({
+                phase: 'listening',
+                setlistLength: 4,
+                round: round({
+                    isMine: true,
+                    canVote: false,
+                    canAnswer: false,
+                    track: { ...round().track, claim: { id: 'never-heard' } },
+                }),
+            }),
+        );
+
+        await waitFor(() => expect(screen.getByText("You've never heard this")).toBeTruthy());
+        expect(screen.getByText(/nobody else sees it until the reveal/)).toBeTruthy();
+    });
+
+    it('lights the scale up to the number you chose', async () => {
+        await mountWith(
+            lobbyView({
+                phase: 'listening',
+                setlistLength: 4,
+                round: round({ myAnswer: { like: 3, heard: false, popular: false, moved: false } }),
+            }),
+        );
+
+        await waitFor(() => expect(screen.getByRole('radiogroup', { name: 'How much did you like it?' })).toBeTruthy());
+        const lit = [0, 1, 2, 3, 4, 5].map(value =>
+            screen.getByRole('radio', { name: `${value} out of 5` }).className.includes('is-lit'),
+        );
+        expect(lit).toEqual([false, true, true, true, false, false]);
+        // The number alone is ambiguous; the phrase is what makes it a verdict.
+        expect(screen.getByText('Solid')).toBeTruthy();
+    });
+
+    it('hangs a claim picker off every queued track, and opens one at a time', async () => {
+        await mountWith(
+            lobbyView({
+                // Three at the table, so the claims that would give a duo's DJ
+                // away are on offer at all.
+                players: [
+                    player({ id: 'p1', name: 'Ana', isHost: true, submitted: 2, ready: false }),
+                    player({ id: 'p2', name: 'Bo' }),
+                    player({ id: 'p3', name: 'Cy' }),
+                ],
+                you: {
+                    ...lobbyView().you,
+                    tracks: [
+                        { ...lobbyView().you.tracks[0] },
+                        {
+                            id: 't2',
+                            url: 'https://open.spotify.com/track/def',
+                            title: 'Temptation',
+                            service: 'Spotify',
+                            metadata: 'ready',
+                            claim: { id: 'so-me' },
+                        },
+                    ],
+                },
+            }),
+        );
+
+        await waitFor(() => expect(screen.getByText('Blue Monday — New Order')).toBeTruthy());
+        // Each track wears its current bet; the deck stays closed until asked for.
+        expect(screen.getByRole('button', { name: /No claim/ })).toBeTruthy();
+        expect(screen.getByRole('button', { name: /You will know it was me/ })).toBeTruthy();
+        expect(screen.queryByRole('group', { name: 'Your claim' })).toBeNull();
+
+        fireEvent.click(screen.getByRole('button', { name: /No claim/ }));
+        await waitFor(() => expect(screen.getByRole('group', { name: 'Your claim' })).toBeTruthy());
+        expect(document.querySelectorAll('.claim__deck')).toHaveLength(1);
+
+        // "so me" is spent on the other track, so it cannot be taken twice.
+        const deck = document.querySelector('.claim__deck')!;
+        const soMe = [...deck.querySelectorAll('.claim__option')].find(option =>
+            option.textContent?.includes('You will know it was me'),
+        )!;
+        expect(soMe.hasAttribute('disabled')).toBe(true);
+    });
+
+    it('announces the claim to the room without naming the DJ', async () => {
+        await mountWith(
+            lobbyView({
+                phase: 'listening',
+                setlistLength: 4,
+                round: round({
+                    track: { ...round().track, claim: { id: 'never-heard' } },
+                }),
+            }),
+        );
+
+        await waitFor(() => expect(screen.getByText("You've never heard this")).toBeTruthy());
+        const banner = document.querySelector('.banner')!;
+        expect(banner.textContent).not.toContain('Bo');
+        expect(banner.textContent).not.toContain('Ana');
     });
 
     it('never marks another player as done, at any point in the round', async () => {
@@ -297,26 +476,26 @@ describe('in-game screens', () => {
             lobbyView({
                 phase: 'listening',
                 setlistLength: 4,
-                round: round({ isMine: true, canVote: false, canReact: false }),
+                round: round({ isMine: true, canVote: false, canAnswer: false }),
             }),
         );
 
         await waitFor(() => expect(screen.getByRole('group', { name: 'Blame' })).toBeTruthy());
-        // The DJ can no longer be idle: no vote, no hearts, but a decoy to set.
+        // The DJ can no longer be idle: no vote, no answer, but a decoy to set.
         expect(screen.queryByRole('group', { name: 'Whose is it?' })).toBeNull();
-        expect(screen.queryByRole('radio', { name: /Heart/ })).toBeNull();
+        expect(screen.queryByRole('radiogroup', { name: 'How much did you like it?' })).toBeNull();
         expect(screen.getByText(/Yours/)).toBeTruthy();
         expect(screen.getByRole('button', { name: /Bo/ })).toBeTruthy();
     });
 
-    it('renders both scoreboards and the awards at the finale', async () => {
+    it('renders the scoreboard, the awards and your own takeaway at the finale', async () => {
         await mountWith(
             lobbyView({
                 phase: 'finished',
                 setlistLength: 2,
                 players: [
-                    player({ id: 'p1', name: 'Ana', isHost: true, scores: { selector: 1, detective: 4 } }),
-                    player({ id: 'p2', name: 'Bo', scores: { selector: 7, detective: 0 } }),
+                    player({ id: 'p1', name: 'Ana', isHost: true, score: 5 }),
+                    player({ id: 'p2', name: 'Bo', score: 7 }),
                 ],
                 awards: [
                     { id: 'crowd-favourite', winners: ['p2'], value: 7 },
@@ -331,10 +510,11 @@ describe('in-game screens', () => {
                             title: 'Blue Monday',
                             service: 'Spotify',
                             metadata: 'ready',
+                            claim: { id: 'none' },
                         },
                         djId: 'p2',
-                        heartedBy: ['p1'],
-                        anthemBy: [],
+                        answers: [{ listenerId: 'p1', like: 5, heard: false, popular: false, moved: true }],
+                        listenerCount: 1,
                         votes: [{ voterId: 'p1', guessId: 'p2', correct: true, fooled: false }],
                     },
                 ],
@@ -346,6 +526,7 @@ describe('in-game screens', () => {
                             title: 'Temptation',
                             service: 'Spotify',
                             metadata: 'ready',
+                            claim: { id: 'none' },
                         },
                         djId: 'p1',
                     },
@@ -357,11 +538,13 @@ describe('in-game screens', () => {
         expect(screen.getByText('7 points')).toBeTruthy();
         expect(screen.getByText('Puppet Master')).toBeTruthy();
 
-        // Each board ranks by its own number, not a merged total.
-        const selector = screen.getByText('Selector').closest('section')!;
-        expect(within(selector).getAllByRole('listitem')[0].textContent).toContain('Bo');
-        const detective = screen.getByText('Detective').closest('section')!;
-        expect(within(detective).getAllByRole('listitem')[0].textContent).toContain('Ana');
+        // One board now, ranked by the single score.
+        const board = screen.getByText('The night').closest('section')!;
+        expect(within(board).getAllByRole('listitem')[0].textContent).toContain('Bo');
+
+        // And the thing you actually walk out with: what *you* rated 4 or more.
+        const takeaway = screen.getByText('Your takeaway').closest('section')!;
+        expect(within(takeaway).getAllByRole('listitem')[0].textContent).toContain('Blue Monday');
 
         // Queueing more than plays only pays off if you find out what you sat on.
         expect(screen.getByText('The ones that got away')).toBeTruthy();

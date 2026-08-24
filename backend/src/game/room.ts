@@ -11,25 +11,30 @@
  */
 import { randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import {
+    CLAIMS_BY_ID,
+    DEFAULT_CLAIM,
     canonicalKey,
+    claimAvailable,
     cleanUrl,
     computeAwards,
     computeRoundPoints,
     detectService,
-    emptyScores,
-    heartBudget,
+    emptyAnswer,
+    isRating,
     GameError,
     LIMITS,
     NAME_PATTERN,
     buildSetlist,
     shuffle,
+    type Answer,
+    type AnswerRecord,
     type Award,
+    type ClaimId,
     type FeedEvent,
     type GamePhase,
     type GameSettings,
     type PlayedTrack,
     type PlayerId,
-    type Reaction,
     type Rng,
     type TrackId,
     type UnplayedTrack,
@@ -143,10 +148,7 @@ export class GameRoom {
             connections: 0,
             offlineSince: this.now(),
             trackIds: [],
-            scores: emptyScores(),
-            heartsLeft: 0,
-            heartBudget: 0,
-            anthemSpent: false,
+            score: 0,
         };
         this.players.set(player.id, player);
         this.touch();
@@ -214,6 +216,8 @@ export class GameRoom {
         // A decoy pointing at someone who walked out would be unguessable.
         if (this.round?.decoyId === player.id) this.round.decoyId = null;
 
+        this.pruneClaims();
+
         const feed: FeedEvent[] = [{ kind: 'player-left', playerId: player.id, name: player.name }];
         feed.push(...this.reassignHostIfNeeded());
         feed.push(...this.maybeCloseVoting());
@@ -269,6 +273,7 @@ export class GameRoom {
             canonical,
             serviceName: service.name,
             metadata: 'pending',
+            claim: DEFAULT_CLAIM,
             addedAt: this.now(),
         };
 
@@ -290,6 +295,60 @@ export class GameRoom {
         this.tracks.delete(trackId);
         this.canonicalIndex.delete(track.canonical);
         this.touch();
+    }
+
+    /**
+     * Attach a claim to one of your own queued tracks.
+     *
+     * Lobby only, and deliberately so: the claim is a bet made before you know
+     * anything about the night — the running order, the room's mood, or what
+     * anyone else brought. Letting it move later would turn a bet into a read.
+     */
+    setClaim(playerId: PlayerId, trackId: TrackId, claimId: ClaimId): void {
+        const player = this.requirePlayer(playerId);
+        this.requirePhase('lobby');
+
+        const track = this.tracks.get(trackId);
+        if (!track || track.ownerId !== player.id) throw new GameError('TRACK_NOT_FOUND');
+
+        const definition = CLAIMS_BY_ID[claimId];
+        if (!definition) throw new GameError('CLAIM_INVALID');
+
+        const table = { players: this.activePlayers.length, guessingEnabled: this.settings.guessingEnabled };
+        if (!claimAvailable(definition, table)) throw new GameError('CLAIM_UNAVAILABLE');
+
+        // Limited claims are one apiece: the whole decision is which of your
+        // tracks deserves which bet, and that only bites if you cannot repeat.
+        if (definition.limit !== null) {
+            const spent = player.trackIds.filter(id => {
+                const other = this.tracks.get(id);
+                return other !== undefined && other.id !== track.id && other.claim.id === claimId;
+            }).length;
+            if (spent >= definition.limit) throw new GameError('CLAIM_SPENT');
+        }
+
+        track.claim = { id: claimId };
+        this.touch();
+    }
+
+    /**
+     * Drops claims that a change of table has made illegal.
+     *
+     * Players leave and the host flips guessing off, either of which can strand
+     * a claim that was legal when it was made. Rather than reject those changes,
+     * the affected tracks fall back to the safe claim — the alternative is a
+     * lobby you cannot get out of.
+     */
+    private pruneClaims(): void {
+        if (this.phase !== 'lobby') return;
+        const table = { players: this.activePlayers.length, guessingEnabled: this.settings.guessingEnabled };
+
+        for (const track of this.tracks.values()) {
+            const claim = track.claim;
+            if (claim.id === DEFAULT_CLAIM.id) continue;
+
+            if (!claimAvailable(CLAIMS_BY_ID[claim.id], table)) track.claim = DEFAULT_CLAIM;
+        }
     }
 
     /** Applied out-of-band once the metadata service has an answer. */
@@ -317,6 +376,7 @@ export class GameRoom {
         this.requireHost(playerId);
         this.requirePhase('lobby');
         this.settings = normaliseSettings({ ...this.settings, ...patch });
+        this.pruneClaims();
         this.touch();
     }
 
@@ -343,14 +403,7 @@ export class GameRoom {
         this.setlist = buildSetlist(entries, this.rng);
         this.roundIndex = -1;
 
-        // Hearts are scarce, and the budget depends on how long the night is, so
-        // it can only be handed out once the setlist exists.
-        const budget = heartBudget(this.setlist.length, this.settings.tracksPlayedPerPlayer);
-        for (const player of players) {
-            player.heartBudget = budget;
-            player.heartsLeft = budget;
-            player.anthemSpent = false;
-        }
+        for (const player of players) player.score = 0;
 
         this.touch();
         return this.openRound(0);
@@ -368,7 +421,7 @@ export class GameRoom {
             djId: track.ownerId,
             startedAt: this.now(),
             votes: new Map(),
-            reactions: new Map(),
+            answers: new Map(),
             decoyId: null,
         };
         this.phase = 'listening';
@@ -417,58 +470,53 @@ export class GameRoom {
     }
 
     /**
-     * Spend nothing, a heart, or your one anthem on the current track.
+     * Say something about the current track: how much you liked it, whether you
+     * had heard it, whether you reckon everyone has, whether it got to you.
      *
-     * Idempotent and atomic: switching between reactions refunds the old one and
-     * charges the new one in a single step, so the wallet can never drift.
+     * A patch rather than a whole answer, so the four controls never overwrite
+     * each other, and idempotent, so a double tap is not a toggle. Three of the
+     * four are self-reports no server can verify — the game asks people not to
+     * lie, and the reveal is what holds them to it.
      */
-    react(playerId: PlayerId, reaction: Reaction): FeedEvent[] {
+    answer(playerId: PlayerId, patch: Partial<Answer>): FeedEvent[] {
         const player = this.requirePlayer(playerId);
         this.requirePhase('listening', 'tallying');
         const round = this.requireRound();
-        if (player.id === round.djId) throw new GameError('REACT_OWN_TRACK');
+        if (player.id === round.djId) throw new GameError('ANSWER_OWN_TRACK');
+        if (patch.like !== undefined && !isRating(patch.like)) throw new GameError('RATING_INVALID');
 
-        const current = round.reactions.get(player.id);
-        if (current === reaction || (!current && reaction === 'none')) return [];
-
-        // Refund first: switching heart -> anthem must not fail for being broke.
-        if (current === 'heart') player.heartsLeft += 1;
-        if (current === 'anthem') player.anthemSpent = false;
-
-        try {
-            if (reaction === 'heart') {
-                if (player.heartsLeft <= 0) throw new GameError('OUT_OF_HEARTS');
-                player.heartsLeft -= 1;
-                round.reactions.set(player.id, 'heart');
-            } else if (reaction === 'anthem') {
-                if (player.anthemSpent) throw new GameError('ANTHEM_SPENT');
-                player.anthemSpent = true;
-                round.reactions.set(player.id, 'anthem');
-            } else {
-                round.reactions.delete(player.id);
-            }
-        } catch (error) {
-            // Put the refund back if the new reaction was rejected.
-            if (current === 'heart') player.heartsLeft -= 1;
-            if (current === 'anthem') player.anthemSpent = true;
-            throw error;
-        }
+        const current = round.answers.get(player.id) ?? emptyAnswer();
+        const next: Answer = {
+            like: patch.like ?? current.like,
+            heard: patch.heard ?? current.heard,
+            popular: patch.popular ?? current.popular,
+            moved: patch.moved ?? current.moved,
+        };
+        round.answers.set(player.id, next);
 
         this.touch();
-        const counts = this.reactionCounts();
-        const feed: FeedEvent[] = [{ kind: 'track-hearted', heartCount: counts.hearts }];
-        if (reaction === 'anthem') feed.push({ kind: 'anthem-spent' });
-        return feed;
+        return [{ kind: 'track-answered', answersIn: this.answersIn() }];
     }
 
-    reactionCounts(): { hearts: number; anthems: number } {
-        let hearts = 0;
-        let anthems = 0;
-        for (const reaction of this.round?.reactions.values() ?? []) {
-            if (reaction === 'anthem') anthems += 1;
-            else hearts += 1;
+    /**
+     * Listeners who have signed their answer with a like.
+     *
+     * The like is what makes an answer count: the toggles alone say nothing, and
+     * every share in the scoring divides by this number, so there is exactly one
+     * denominator in the game rather than one per statistic.
+     */
+    answersIn(): number {
+        let count = 0;
+        for (const answer of this.round?.answers.values() ?? []) {
+            if (answer.like !== undefined) count += 1;
         }
-        return { hearts, anthems };
+        return count;
+    }
+
+    /** Listeners entitled to answer the current round, whether they did or not. */
+    listenerCount(): number {
+        if (!this.round) return 0;
+        return this.activePlayers.filter(player => player.id !== this.round!.djId).length;
     }
 
     /**
@@ -510,24 +558,27 @@ export class GameRoom {
             fooled: decoyId !== undefined && guessId === decoyId && guessId !== round.djId,
         }));
 
-        const heartedBy: PlayerId[] = [];
-        const anthemBy: PlayerId[] = [];
-        for (const [listenerId, reaction] of round.reactions) {
-            if (reaction === 'anthem') anthemBy.push(listenerId);
-            else heartedBy.push(listenerId);
-        }
+        // Only signed answers count, best-liked first: the reveal reads as a
+        // chart, not as a join order.
+        const answers: AnswerRecord[] = [...round.answers.entries()]
+            .flatMap(([listenerId, answer]) =>
+                answer.like === undefined ? [] : [{ listenerId, ...answer, like: answer.like }],
+            )
+            .sort((a, b) => b.like - a.like);
+        const listenerCount = this.listenerCount();
+        const claim = this.tracks.get(round.trackId)?.claim ?? DEFAULT_CLAIM;
 
-        for (const delta of computeRoundPoints({ djId: round.djId, votes, heartedBy, anthemBy })) {
+        for (const delta of computeRoundPoints({ djId: round.djId, claim, votes, answers, listenerCount })) {
             const player = this.players.get(delta.playerId);
-            if (player) player.scores[delta.board] += delta.points;
+            if (player) player.score += delta.points;
         }
 
         this.history.push({
             number: round.index + 1,
             trackId: round.trackId,
             djId: round.djId,
-            heartedBy,
-            anthemBy,
+            answers,
+            listenerCount,
             decoyId,
             votes,
         });
@@ -572,8 +623,8 @@ export class GameRoom {
                     number: entry.number,
                     track: toPublicTrack(track),
                     djId: entry.djId,
-                    heartedBy: entry.heartedBy,
-                    anthemBy: entry.anthemBy,
+                    answers: entry.answers,
+                    listenerCount: entry.listenerCount,
                     decoyId: entry.decoyId,
                     votes: entry.votes,
                 },

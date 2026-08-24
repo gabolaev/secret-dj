@@ -1,66 +1,103 @@
 /**
  * Scoring and end-of-night awards. Pure functions, no game state, fully tested.
  *
- * The scoring model exists to make three decisions matter:
- *  - hearts are **scarce**, so spending one is a real choice with a cost;
- *  - the **anthem** is a single, once-a-night bet worth three times a heart;
+ * One number per player, and everything you score, you score as a DJ. The model
+ * exists to make three decisions matter:
+ *  - the **answer** is a verdict, not a like: how much you liked it, whether it
+ *    was new to you, whether it moved you, and whether you reckon everybody
+ *    already knows it;
+ *  - the **claim** is the DJ's own bet, made blind in the lobby, and it is what
+ *    stops "queue what they will all mildly enjoy" from being the best line;
  *  - the **decoy** gives the DJ something to play for during their own round.
  *
- * Points land on two separate boards. Nothing crosses over: your taste cannot
- * win you the deduction game, and reading the room cannot win you the music one.
+ * Reading the room is still played — guessing feeds the DJ's `so-me` claim and
+ * still wins trophies — but it no longer pays points.
  */
-import type {
-    Award,
-    AwardId,
-    PlayedTrack,
-    PlayerId,
-    PointDelta,
-    Reaction,
-    Scores,
+import { DEFAULT_CLAIM, claimMultiplier } from './claims.js';
+import {
+    type AnswerRecord,
+    type Award,
+    type ClaimId,
+    type AwardId,
+    type PlayedTrack,
+    type PlayerId,
+    type PointDelta,
 } from './types.js';
 
 export const POINTS = {
-    /** For naming the DJ behind a track. */
-    correctGuess: 1,
-    /** To the DJ, per heart their track collects. */
-    heart: 1,
-    /** To the DJ, for the one anthem a listener can spend all night. */
-    anthem: 3,
     /** To the DJ, per listener who fell for their decoy. */
     decoyHit: 1,
 } as const;
 
 /**
- * Share of the tracks you will actually hear that you can afford to heart.
- * Low enough that you must pass on things you liked, which is the entire point.
+ * Added per listener the track was new to.
+ *
+ * Small on purpose: bringing something unheard is worth a nudge on every track,
+ * and worth a great deal more if you actually claimed it.
  */
-export const HEART_BUDGET_RATIO = 0.4;
+export const NOVELTY_BONUS = 1;
 
 /**
- * Every player is DJ for exactly `playedPerPlayer` rounds, so everybody listens
- * to the same number of tracks and everybody gets the same budget.
+ * Added per listener the track moved. Worth more than novelty, because getting
+ * to somebody is the rarer and better thing — and it is deliberately independent
+ * of whether they liked it.
  */
-export function heartBudget(setlistLength: number, playedPerPlayer: number): number {
-    const asListener = Math.max(0, setlistLength - playedPerPlayer);
-    return Math.max(1, Math.ceil(asListener * HEART_BUDGET_RATIO));
+export const EMOTION_BONUS = 2;
+
+/**
+ * How much of a track's score a unanimously "we all know this one" verdict takes
+ * away. The tax on the obvious: it is what stops a famous banger from being the
+ * safe winning move, without taking a beloved classic all the way to nothing.
+ */
+export const OBVIOUSNESS_DRAG = 0.5;
+
+/** One listener's contribution: what they gave, plus what they brought. */
+export function answerValue(answer: AnswerRecord): number {
+    return answer.like + (answer.heard ? 0 : NOVELTY_BONUS) + (answer.moved ? EMOTION_BONUS : 0);
 }
 
-export function reactionPoints(reaction: Reaction): number {
-    if (reaction === 'anthem') return POINTS.anthem;
-    if (reaction === 'heart') return POINTS.heart;
-    return 0;
+/**
+ * What the room gave, scaled to the size of the table.
+ *
+ * The average is taken over whoever actually answered and then scaled back up to
+ * everyone who could have, which makes **staying quiet neutral**. Summing
+ * instead would leave silence as a way to deflate a rival's track without having
+ * to say anything you would be embarrassed by at the reveal — the one lever the
+ * honesty rule could not reach.
+ */
+export function roomVerdict(played: { answers: readonly AnswerRecord[]; listenerCount: number }): number {
+    if (played.answers.length === 0) return 0;
+    const average = played.answers.reduce((sum, answer) => sum + answerValue(answer), 0) / played.answers.length;
+    return average * played.listenerCount;
 }
 
-export function emptyScores(): Scores {
-    return { selector: 0, detective: 0 };
+/** The tax on the obvious, as a multiplier between 0.5 and 1. */
+export function obviousnessDrag(answers: readonly AnswerRecord[]): number {
+    if (answers.length === 0) return 1;
+    const share = answers.filter(answer => answer.popular).length / answers.length;
+    return 1 - OBVIOUSNESS_DRAG * share;
+}
+
+/** What the room gave, after the tax but before the DJ's bet. */
+export function trackVerdict(played: { answers: readonly AnswerRecord[]; listenerCount: number }): number {
+    return Math.round(roomVerdict(played) * obviousnessDrag(played.answers));
+}
+
+/** What the DJ actually banked: the room's verdict, put through their claim. */
+export function trackScore(played: PlayedTrack): number {
+    // A played track always carries its claim; the fallback is only here because
+    // the type allows it to be withheld while the track is still on the decks.
+    const claim = played.track.claim ?? DEFAULT_CLAIM;
+    const raw = roomVerdict(played) * obviousnessDrag(played.answers);
+    return Math.round(raw * claimMultiplier({ claim, answers: played.answers, votes: played.votes }));
 }
 
 export interface AwardDefinition {
     id: AwardId;
-    /** Which scoreboard this award belongs to. */
-    board: keyof Scores;
+    /** Display grouping only. There is one score; these are just trophies. */
+    group: 'music' | 'people';
     /** Rendering hint: how to format `Award.value`. */
-    unit: 'points' | 'hearts' | 'guesses' | 'percent' | 'listeners';
+    unit: 'points' | 'percent' | 'guesses' | 'listeners';
     /** True when a *smaller* value wins. */
     lowerIsBetter: boolean;
 }
@@ -70,12 +107,13 @@ export interface AwardDefinition {
  * catalogue so they can be translated without touching the rules.
  */
 export const AWARDS: readonly AwardDefinition[] = [
-    { id: 'crowd-favourite', board: 'selector', unit: 'points', lowerIsBetter: false },
-    { id: 'track-of-the-night', board: 'selector', unit: 'points', lowerIsBetter: false },
-    { id: 'golden-ear', board: 'selector', unit: 'points', lowerIsBetter: false },
-    { id: 'human-shazam', board: 'detective', unit: 'guesses', lowerIsBetter: false },
-    { id: 'ghost', board: 'detective', unit: 'percent', lowerIsBetter: true },
-    { id: 'puppet-master', board: 'detective', unit: 'listeners', lowerIsBetter: false },
+    { id: 'crowd-favourite', group: 'music', unit: 'points', lowerIsBetter: false },
+    { id: 'track-of-the-night', group: 'music', unit: 'points', lowerIsBetter: false },
+    { id: 'deep-cut', group: 'music', unit: 'percent', lowerIsBetter: false },
+    { id: 'gut-punch', group: 'music', unit: 'listeners', lowerIsBetter: false },
+    { id: 'human-shazam', group: 'people', unit: 'guesses', lowerIsBetter: false },
+    { id: 'ghost', group: 'people', unit: 'percent', lowerIsBetter: true },
+    { id: 'puppet-master', group: 'people', unit: 'listeners', lowerIsBetter: false },
 ];
 
 export const AWARDS_BY_ID: Record<AwardId, AwardDefinition> = Object.fromEntries(
@@ -84,86 +122,73 @@ export const AWARDS_BY_ID: Record<AwardId, AwardDefinition> = Object.fromEntries
 
 export interface RoundOutcome {
     djId: PlayerId;
+    claim: { id: ClaimId };
     votes: Array<{ voterId: PlayerId; correct: boolean; fooled: boolean }>;
-    heartedBy: PlayerId[];
-    anthemBy: PlayerId[];
+    answers: readonly AnswerRecord[];
+    listenerCount: number;
 }
 
-/** Points earned by a single round, as a flat list the UI can animate. */
+/**
+ * Points earned by a single round, as a flat list the UI can animate.
+ *
+ * Split into three so the reveal can show its working: what the room gave, what
+ * calling it obvious took back, and what the claim did to the remainder.
+ */
 export function computeRoundPoints(round: RoundOutcome): PointDelta[] {
     const deltas: PointDelta[] = [];
 
-    for (const vote of round.votes) {
-        if (vote.correct) {
-            deltas.push({
-                playerId: vote.voterId,
-                points: POINTS.correctGuess,
-                reason: 'correct-guess',
-                board: 'detective',
-            });
-        }
+    const verdict = roomVerdict(round);
+    const drag = obviousnessDrag(round.answers);
+    const taxed = verdict * drag;
+    const claimed = taxed * claimMultiplier(round);
+
+    if (Math.round(verdict) !== 0) {
+        deltas.push({ playerId: round.djId, points: Math.round(verdict), reason: 'room-verdict' });
     }
 
-    if (round.heartedBy.length > 0) {
-        deltas.push({
-            playerId: round.djId,
-            points: round.heartedBy.length * POINTS.heart,
-            reason: 'hearts-received',
-            board: 'selector',
-        });
+    const taxPaid = Math.round(taxed) - Math.round(verdict);
+    if (taxPaid !== 0) {
+        deltas.push({ playerId: round.djId, points: taxPaid, reason: 'obviousness' });
     }
 
-    if (round.anthemBy.length > 0) {
-        deltas.push({
-            playerId: round.djId,
-            points: round.anthemBy.length * POINTS.anthem,
-            reason: 'anthem-received',
-            board: 'selector',
-        });
+    const swing = Math.round(claimed) - Math.round(taxed);
+    if (swing !== 0) {
+        deltas.push({ playerId: round.djId, points: swing, reason: 'claim-landed' });
     }
 
     const fooled = round.votes.filter(vote => vote.fooled).length;
     if (fooled > 0) {
-        deltas.push({
-            playerId: round.djId,
-            points: fooled * POINTS.decoyHit,
-            reason: 'decoy-hit',
-            board: 'detective',
-        });
+        deltas.push({ playerId: round.djId, points: fooled * POINTS.decoyHit, reason: 'decoy-hit' });
     }
 
     return deltas;
-}
-
-/** Total heart-points a played track collected. */
-export function trackScore(played: Pick<PlayedTrack, 'heartedBy' | 'anthemBy'>): number {
-    return played.heartedBy.length * POINTS.heart + played.anthemBy.length * POINTS.anthem;
 }
 
 interface Tally {
     pointsReceived: number;
     bestTrackPoints: number;
     bestTrackTitle?: string;
+    /** Share of the room the DJ's freshest track was new to, as a percentage. */
+    deepestCut: number;
+    deepestCutTitle?: string;
+    mostMoved: number;
+    mostMovedTitle?: string;
     correctGuesses: number;
     guessesAgainst: number;
     identifications: number;
     decoyHits: number;
-    /** Points collected by whichever track this player spent their anthem on. */
-    anthemTargetPoints: number;
-    anthemTargetTitle?: string;
-    anthemSpent: boolean;
 }
 
 function emptyTally(): Tally {
     return {
         pointsReceived: 0,
         bestTrackPoints: 0,
+        deepestCut: 0,
+        mostMoved: 0,
         correctGuesses: 0,
         guessesAgainst: 0,
         identifications: 0,
         decoyHits: 0,
-        anthemTargetPoints: 0,
-        anthemSpent: false,
     };
 }
 
@@ -180,20 +205,34 @@ export function tallyHistory(history: readonly PlayedTrack[], playerIds: readonl
 
     for (const played of history) {
         const dj = ensure(played.djId);
-        const points = trackScore(played);
         const title = played.track.title ?? played.track.url;
+        // Banked points are what you won; the room's verdict is what ranks
+        // tracks against each other, so a lucky claim cannot crown a track the
+        // room liked less than another.
+        const verdict = trackVerdict(played);
 
-        dj.pointsReceived += points;
-        if (points > dj.bestTrackPoints) {
-            dj.bestTrackPoints = points;
+        dj.pointsReceived += trackScore(played);
+        if (verdict > dj.bestTrackPoints) {
+            dj.bestTrackPoints = verdict;
             dj.bestTrackTitle = title;
         }
 
-        for (const listener of played.anthemBy) {
-            const tally = ensure(listener);
-            tally.anthemSpent = true;
-            tally.anthemTargetPoints = points;
-            tally.anthemTargetTitle = title;
+        // A deep cut nobody liked is just an obscure track, so it has to have
+        // landed before its novelty counts for anything.
+        if (played.answers.length > 0 && verdict > 0) {
+            const unheard = Math.round(
+                (played.answers.filter(answer => !answer.heard).length / played.answers.length) * 100,
+            );
+            if (unheard > dj.deepestCut) {
+                dj.deepestCut = unheard;
+                dj.deepestCutTitle = title;
+            }
+        }
+
+        const moved = played.answers.filter(answer => answer.moved).length;
+        if (moved > dj.mostMoved) {
+            dj.mostMoved = moved;
+            dj.mostMovedTitle = title;
         }
 
         for (const vote of played.votes) {
@@ -238,9 +277,9 @@ function pickWinners(
 }
 
 /**
- * Awards for the end of the night, three per scoreboard. Only awards that
- * actually happened are returned, so a quiet game shows a short, honest list
- * rather than six trophies for zero of everything.
+ * Awards for the end of the night. Only awards that actually happened are
+ * returned, so a quiet game shows a short, honest list rather than seven
+ * trophies for zero of everything.
  */
 export function computeAwards(history: readonly PlayedTrack[], playerIds: readonly PlayerId[]): Award[] {
     const tallies = tallyHistory(history, playerIds);
@@ -274,16 +313,26 @@ export function computeAwards(history: readonly PlayedTrack[], playerIds: readon
     );
 
     add(
-        'golden-ear',
+        'deep-cut',
         pickWinners(
-            // Only players who actually spent their one anthem are in the running.
-            entries
-                .filter(([, tally]) => tally.anthemSpent)
-                .map(([playerId, tally]) => ({
-                    playerId,
-                    value: tally.anthemTargetPoints,
-                    detail: tally.anthemTargetTitle,
-                })),
+            entries.map(([playerId, tally]) => ({
+                playerId,
+                value: tally.deepestCut,
+                detail: tally.deepestCutTitle,
+            })),
+            false,
+            best => best > 0,
+        ),
+    );
+
+    add(
+        'gut-punch',
+        pickWinners(
+            entries.map(([playerId, tally]) => ({
+                playerId,
+                value: tally.mostMoved,
+                detail: tally.mostMovedTitle,
+            })),
             false,
             best => best > 0,
         ),

@@ -6,7 +6,8 @@ import { useT } from '../i18n';
 const GLYPHS: Record<Award['id'], string> = {
     'crowd-favourite': '♥',
     'track-of-the-night': '★',
-    'golden-ear': '◈',
+    'deep-cut': '☄︎',
+    'gut-punch': '⚡︎',
     'human-shazam': '◎',
     ghost: '☾',
     'puppet-master': '⌘',
@@ -25,7 +26,7 @@ export function AwardCard({ award, players, index }: AwardCardProps) {
     const copy = t.awards[award.id];
 
     return (
-        <article className={`award award--${definition.board}`} style={{ ['--delay' as string]: `${index * 120}ms` }}>
+        <article className={`award award--${definition.group}`} style={{ ['--delay' as string]: `${index * 120}ms` }}>
             <span className="award__glyph" aria-hidden="true">
                 {GLYPHS[award.id]}
             </span>

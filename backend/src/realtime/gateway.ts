@@ -18,7 +18,11 @@ import {
     type GameSettings,
     type JoinGameRequest,
     type PlayerId,
-    type Reaction,
+    isRating,
+    CLAIMS_BY_ID,
+    type Answer,
+    type ClaimId,
+    type TrackId,
     type ResumeRequest,
     type ServerToClientEvents,
     type Session,
@@ -247,13 +251,26 @@ export function attachGateway({ io, store, metadata }: GatewayDeps): () => void 
             return {};
         });
 
-        bind<{ reaction: Reaction }, Record<string, never>>(socket, 'round:react', req => {
+        bind<{ trackId: TrackId; claim: unknown }, Record<string, never>>(socket, 'track:claim', req => {
             const { room, playerId } = context(socket);
-            const reaction = req?.reaction;
-            if (reaction !== 'none' && reaction !== 'heart' && reaction !== 'anthem') {
-                throw new GameError('BAD_REQUEST');
+            const claim = req?.claim;
+            if (typeof claim !== 'string' || !(claim in CLAIMS_BY_ID)) throw new GameError('CLAIM_INVALID');
+            room.setClaim(playerId, req?.trackId ?? '', claim as ClaimId);
+            publish(room, []);
+            return {};
+        });
+
+        bind<Partial<Answer>, Record<string, never>>(socket, 'round:answer', req => {
+            const { room, playerId } = context(socket);
+            const patch: Partial<Answer> = {};
+            if (req?.like !== undefined) {
+                if (!isRating(req.like)) throw new GameError('RATING_INVALID');
+                patch.like = req.like;
             }
-            publish(room, room.react(playerId, reaction));
+            for (const key of ['heard', 'popular', 'moved'] as const) {
+                if (typeof req?.[key] === 'boolean') patch[key] = req[key];
+            }
+            publish(room, room.answer(playerId, patch));
             return {};
         });
 

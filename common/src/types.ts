@@ -20,7 +20,7 @@ export type TrackId = string;
  *                                                   ▼
  *                        ┌──────────────────────▶ reveal
  *                        │                          │
- *                    more tracks ◀──host advances───┤
+ *                    more tracks ◀───host advances──┤
  *                                                   ▼
  *                                                finished
  */
@@ -29,11 +29,75 @@ export type GamePhase = 'lobby' | 'listening' | 'tallying' | 'reveal' | 'finishe
 export type Presence = 'online' | 'offline' | 'left';
 
 /**
- * What a listener chose to spend on a track. Exactly one of the three, so
- * switching between them is a single idempotent command rather than a pair of
- * toggles that can disagree.
+ * How much a listener liked a track: nothing at all, up to five.
+ *
+ * Zero is a real answer — "this did nothing for me" — not an abstention. Having
+ * said nothing yet is the *absence* of a rating, which is why `Answer.like` is
+ * optional rather than defaulting to zero.
  */
-export type Reaction = 'none' | 'heart' | 'anthem';
+export type Rating = 0 | 1 | 2 | 3 | 4 | 5;
+
+export const RATING_MIN = 0;
+export const RATING_MAX = 5;
+
+export function isRating(value: unknown): value is Rating {
+    if (typeof value !== 'number' || !Number.isInteger(value)) return false;
+    return value >= RATING_MIN && value <= RATING_MAX;
+}
+
+/**
+ * Everything one listener says about one track.
+ *
+ * Three of these four answers are things no server could ever check — whether
+ * you had heard it, whether it moved you, whether you reckon it is well known.
+ * The game rests on people answering honestly; what the code can do is make a
+ * lie visible at the reveal and barely worth telling, which is why every
+ * statistic below is a share of the room rather than a threshold.
+ *
+ * The like is the **signature on the whole answer**: until it is given, the
+ * three toggles count for nothing. That is what lets every share in the game
+ * divide by the same number — the listeners who actually answered — instead of
+ * each statistic inventing its own denominator.
+ */
+export interface Answer {
+    /** Absent until they answer. Zero means "nothing"; absent means "nothing yet". */
+    like?: Rating;
+    /** They had heard this track before tonight. */
+    heard: boolean;
+    /** They reckon this is a well-known track, whatever they think of it. */
+    popular: boolean;
+    /** It got to them, one way or the other. Liking it is a separate question. */
+    moved: boolean;
+}
+
+/** A completed answer, as the reveal publishes it — attributed, on purpose. */
+export interface AnswerRecord {
+    listenerId: PlayerId;
+    like: Rating;
+    heard: boolean;
+    popular: boolean;
+    moved: boolean;
+}
+
+export function emptyAnswer(): Answer {
+    return { heard: false, popular: false, moved: false };
+}
+
+/**
+ * What the DJ claims this track will do to the room.
+ *
+ * The claim is what turns queueing into a decision: it is announced when the
+ * track starts — the DJ's name is not — and it multiplies whatever the room
+ * gives them. `none` is the floor and the default, the play that asks nothing
+ * of the music; every other claim pays more only if the track really is new to
+ * them, really does land with all of them, really moves them, really is
+ * recognisably yours, or really does split them.
+ */
+export type ClaimId = 'none' | 'never-heard' | 'unanimous' | 'emotional' | 'so-me' | 'divisive';
+
+export interface TrackClaim {
+    id: ClaimId;
+}
 
 export interface GameSettings {
     /** How many tracks each player queues up before the game can start. */
@@ -46,7 +110,7 @@ export interface GameSettings {
     tracksPlayedPerPlayer: number;
     /**
      * When false the game becomes a pure listening party: no guessing, no
-     * decoys, no Detective scoreboard. Just tracks and hearts.
+     * decoys, no identification claims. Just tracks and what people made of them.
      */
     guessingEnabled: boolean;
 }
@@ -61,18 +125,14 @@ export interface PublicTrack {
     service?: string;
     /** Whether the server has finished (or given up on) metadata lookup. */
     metadata: 'pending' | 'ready' | 'failed';
-}
-
-/**
- * Two scoreboards, because the game serves two people: the one who wants to
- * share music they love, and the one who wants to read the room. Forcing both
- * onto one number served neither.
- */
-export interface Scores {
-    /** Hearts and anthems your tracks earned. */
-    selector: number;
-    /** Correct guesses, plus listeners your decoys fooled. */
-    detective: number;
+    /**
+     * The DJ's bet. **Withheld from listeners while the track is playing** and
+     * sent only to the DJ themself until the reveal, for two reasons: each claim
+     * is one a night, so a claim on screen is elimination information; and
+     * announcing it biases the very answers it is scored on. Present everywhere
+     * after the reveal, and on your own queued tracks in the lobby.
+     */
+    claim?: TrackClaim;
 }
 
 export interface PublicPlayer {
@@ -83,7 +143,12 @@ export interface PublicPlayer {
     /** Number of tracks queued. */
     submitted: number;
     ready: boolean;
-    scores: Scores;
+    /**
+     * One number. Everything you score, you score as a DJ: what your tracks did
+     * to the room, and the decoys you got away with. Reading the room is still
+     * played and still wins trophies — it no longer pays.
+     */
+    score: number;
     // Deliberately absent: any per-player "has voted" flag identifies the DJ.
     // Mark the DJ as not-voted and they are the only one still pending once
     // everyone else has answered; mark them as voted and they are the only one
@@ -100,23 +165,33 @@ export interface VoteRecord {
     fooled: boolean;
 }
 
-export type PointReason = 'correct-guess' | 'hearts-received' | 'anthem-received' | 'decoy-hit';
+export type PointReason =
+    /** What the room gave: likes, plus the novelty and emotion bonuses. */
+    | 'room-verdict'
+    /** What calling it obvious took back off. Never positive. */
+    | 'obviousness'
+    /** The swing from the DJ's claim. Negative when the claim did not land. */
+    | 'claim-landed'
+    | 'decoy-hit';
 
 export interface PointDelta {
     playerId: PlayerId;
     points: number;
     reason: PointReason;
-    /** Which scoreboard the points land on. */
-    board: keyof Scores;
 }
 
 /** Revealed round information. Only ever present once the phase is `reveal`. */
 export interface RoundReveal {
     djId: PlayerId;
-    heartedBy: PlayerId[];
-    /** At most one player per round can spend their single anthem here. */
-    anthemBy: PlayerId[];
+    /** Every completed answer, best-liked first, with a name on each one. */
+    answers: AnswerRecord[];
     votes: VoteRecord[];
+    /** How many listeners were entitled to answer, answered or not. */
+    listenerCount: number;
+    /** What the DJ's claim turned out to be worth, e.g. 1.4. */
+    claimMultiplier: number;
+    /** What calling it obvious cost, as a multiplier, e.g. 0.75. */
+    obviousnessDrag: number;
     /** Who the DJ tried to be mistaken for, if they named anyone. */
     decoyId?: PlayerId;
     points: PointDelta[];
@@ -132,17 +207,20 @@ export interface RoundView {
     isMine: boolean;
     /** The viewer's own guess, if any. Never leaks other players' guesses. */
     myGuess?: PlayerId;
-    /** The viewer's own reaction. Other people's stay sealed until the reveal. */
-    myReaction: Reaction;
-    /** Anonymous running totals — dramatic, but they name nobody. */
-    heartCount: number;
-    anthemCount: number;
+    /** The viewer's own answer. Other people's stay sealed until the reveal. */
+    myAnswer: Answer;
+    /**
+     * How many listeners have answered — a count, never a total. Publishing the
+     * running score would anchor everyone still deciding, and with two answers
+     * in it would give away what the first one was.
+     */
+    answersIn: number;
     votesIn: number;
     votersExpected: number;
     /** False for the DJ, and when guessing is disabled. */
     canVote: boolean;
-    /** False for the DJ, who cannot react to their own track. */
-    canReact: boolean;
+    /** False for the DJ, who cannot answer on their own track. */
+    canAnswer: boolean;
     /** Only ever set for the DJ, and only before the reveal. */
     myDecoy?: PlayerId;
     reveal?: RoundReveal;
@@ -152,9 +230,15 @@ export interface PlayedTrack {
     number: number;
     track: PublicTrack;
     djId: PlayerId;
-    heartedBy: PlayerId[];
-    anthemBy: PlayerId[];
+    answers: AnswerRecord[];
     votes: VoteRecord[];
+    /**
+     * Listeners entitled to answer this round. The scoring divides by whoever
+     * actually did and then scales back up to this, so staying quiet neither
+     * helps nor hurts a DJ — and a round that happened while two people were
+     * making tea is still comparable with every other round.
+     */
+    listenerCount: number;
     decoyId?: PlayerId;
 }
 
@@ -165,11 +249,12 @@ export interface UnplayedTrack {
 }
 
 export type AwardId =
-    // Selector: what your taste did to the room.
+    // What your taste did to the room.
     | 'crowd-favourite'
     | 'track-of-the-night'
-    | 'golden-ear'
-    // Detective: what you did to the people.
+    | 'deep-cut'
+    | 'gut-punch'
+    // What you did to the people. These pay in trophies, never in points.
     | 'human-shazam'
     | 'ghost'
     | 'puppet-master';
@@ -184,13 +269,6 @@ export interface Award {
     detail?: string;
 }
 
-/** What the viewer has left to spend for the rest of the night. */
-export interface Wallet {
-    heartsLeft: number;
-    heartBudget: number;
-    anthemSpent: boolean;
-}
-
 /** Everything one specific viewer is allowed to see, at one moment in time. */
 export interface GameView {
     id: GameId;
@@ -202,7 +280,6 @@ export interface GameView {
         name: string;
         isHost: boolean;
         tracks: PublicTrack[];
-        wallet: Wallet;
     };
     round?: RoundView;
     history: PlayedTrack[];

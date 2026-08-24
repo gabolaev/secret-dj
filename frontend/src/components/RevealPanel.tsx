@@ -1,4 +1,4 @@
-import type { GameView, PointReason } from '@secret-dj/common';
+import { DEFAULT_CLAIM, type GameView, type PointReason } from '@secret-dj/common';
 import { Avatar } from './Avatar';
 import { nameOf } from '../lib/format';
 import { useT } from '../i18n';
@@ -7,10 +7,19 @@ interface RevealPanelProps {
     view: GameView;
 }
 
+/** Trims trailing zeroes so a flat multiplier reads "×1", not "×1.00". */
+function multiplier(value: number): string {
+    return value.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
+}
+
 /**
- * The payoff. Kept as one block inside the deck rather than two side-by-side
- * cards, so the reveal reads top to bottom: who it was, what the decoy did,
- * who guessed what, who spent what.
+ * The payoff, and the only thing holding the honesty rule up.
+ *
+ * Three of the four answers are self-reports no server can check, so this panel
+ * prints **every answer with a name on it**. That is the enforcement: not a
+ * validation rule, but having to sit next to someone who watched you call their
+ * obscure B-side obvious. Which is also why the toggles are rendered as plain
+ * tags rather than tucked behind a hover.
  */
 export function RevealPanel({ view }: RevealPanelProps) {
     const t = useT();
@@ -20,9 +29,20 @@ export function RevealPanel({ view }: RevealPanelProps) {
     const djName = nameOf(view.players, reveal.djId);
     const correct = reveal.votes.filter(vote => vote.correct);
     const fooled = reveal.votes.filter(vote => vote.fooled);
-    const points = new Map(reveal.points.map(delta => [`${delta.playerId}:${delta.reason}` as const, delta.points]));
-    const pointsFor = (playerId: string, reason: PointReason) => points.get(`${playerId}:${reason}`);
-    const djLove = (pointsFor(reveal.djId, 'hearts-received') ?? 0) + (pointsFor(reveal.djId, 'anthem-received') ?? 0);
+    const points = new Map(reveal.points.map(delta => [delta.reason, delta.points]));
+    const pointsFor = (reason: PointReason) => points.get(reason);
+
+    // The reveal is exactly when the claim stops being withheld.
+    const claim = view.round?.track.claim ?? DEFAULT_CLAIM;
+    const heard = reveal.answers.filter(answer => answer.heard).length;
+    const moved = reveal.answers.filter(answer => answer.moved).length;
+    const silent = Math.max(0, reveal.listenerCount - reveal.answers.length);
+
+    const line = (reason: PointReason) => {
+        const value = pointsFor(reason);
+        if (value === undefined) return null;
+        return <span className={`reveal__pts${value < 0 ? ' is-down' : ''}`}>{t.reveal.points(value)}</span>;
+    };
 
     return (
         <div className="reveal">
@@ -39,13 +59,40 @@ export function RevealPanel({ view }: RevealPanelProps) {
                 </div>
             </div>
 
+            {/* What the room gave, what calling it obvious took back, and what
+                the DJ's bet did to the remainder — in that order, so the score
+                shows its working rather than arriving as one number. */}
+            <ul className="ledger">
+                <li>
+                    <span className="ledger__label">{t.reveal.verdictLabel}</span>
+                    <span className="ledger__detail">
+                        {heard === 0 ? t.reveal.knewNobody : t.reveal.knewCount(heard, reveal.answers.length)} ·{' '}
+                        {t.reveal.movedCount(moved)}
+                        {silent > 0 && ` · ${t.reveal.silent(silent)}`}
+                    </span>
+                    {line('room-verdict')}
+                </li>
+                <li>
+                    <span className="ledger__label">{t.reveal.obviousLabel}</span>
+                    <span className="ledger__detail">
+                        {reveal.obviousnessDrag === 1
+                            ? t.reveal.noDrag
+                            : t.reveal.dragResult(multiplier(reveal.obviousnessDrag))}
+                    </span>
+                    {line('obviousness')}
+                </li>
+                <li className={`ledger__claim ledger__claim--${claim.id}`}>
+                    <span className="ledger__label">{t.claims[claim.id].title}</span>
+                    <span className="ledger__detail">{t.reveal.claimResult(multiplier(reveal.claimMultiplier))}</span>
+                    {line('claim-landed')}
+                </li>
+            </ul>
+
             {reveal.decoyId && (
                 <p className="reveal__decoy">
                     <span aria-hidden="true">⌘</span>
                     {t.reveal.decoyWas(nameOf(view.players, reveal.decoyId))} · {t.reveal.decoyHits(fooled.length)}
-                    {pointsFor(reveal.djId, 'decoy-hit') !== undefined && (
-                        <span className="reveal__pts">{t.reveal.points(pointsFor(reveal.djId, 'decoy-hit')!)}</span>
-                    )}
+                    {line('decoy-hit')}
                 </p>
             )}
 
@@ -59,9 +106,6 @@ export function RevealPanel({ view }: RevealPanelProps) {
                                 →
                             </span>
                             <span className="reveal__guess">{nameOf(view.players, vote.guessId)}</span>
-                            {pointsFor(vote.voterId, 'correct-guess') !== undefined && (
-                                <span className="reveal__pts">{t.reveal.points(pointsFor(vote.voterId, 'correct-guess')!)}</span>
-                            )}
                             <span
                                 className="reveal__mark"
                                 aria-label={vote.correct ? t.reveal.correct : vote.fooled ? t.reveal.fooled : t.reveal.wrong}
@@ -73,22 +117,22 @@ export function RevealPanel({ view }: RevealPanelProps) {
                 </ul>
             )}
 
-            <div className="reveal__hearts">
-                <span className="label">{t.reveal.heartsTitle}</span>
-                {reveal.anthemBy.length + reveal.heartedBy.length === 0 && <span>{t.reveal.toughCrowd}</span>}
-                {reveal.anthemBy.map(playerId => (
-                    <span key={playerId} className="who who--anthem" title={t.reveal.anthemFrom(nameOf(view.players, playerId))}>
-                        <Avatar id={playerId} name={nameOf(view.players, playerId)} size="sm" />
-                        {nameOf(view.players, playerId)} ★
-                    </span>
-                ))}
-                {reveal.heartedBy.map(playerId => (
-                    <span key={playerId} className="who">
-                        <Avatar id={playerId} name={nameOf(view.players, playerId)} size="sm" />
-                        {nameOf(view.players, playerId)}
-                    </span>
-                ))}
-                {djLove > 0 && <span className="reveal__pts">{`${djName} ${t.reveal.points(djLove)}`}</span>}
+            <div className="answers">
+                <span className="label">{t.reveal.answersTitle}</span>
+                {reveal.answers.length === 0 && <span className="muted">{t.reveal.toughCrowd}</span>}
+                {reveal.answers.map(answer => {
+                    const name = nameOf(view.players, answer.listenerId);
+                    return (
+                        <span key={answer.listenerId} className="answers__row">
+                            <Avatar id={answer.listenerId} name={name} size="sm" />
+                            <span className="answers__name">{name}</span>
+                            <b className="answers__like">{answer.like}</b>
+                            {answer.heard && <span className="tag tag--heard">{t.reveal.heardTag}</span>}
+                            {answer.popular && <span className="tag tag--popular">{t.reveal.popularTag}</span>}
+                            {answer.moved && <span className="tag tag--moved">{t.reveal.movedTag}</span>}
+                        </span>
+                    );
+                })}
             </div>
         </div>
     );

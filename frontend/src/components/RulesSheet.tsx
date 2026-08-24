@@ -42,6 +42,11 @@ export function RulesSheet({ open, onClose }: RulesSheetProps) {
                     </div>
                 </header>
 
+                {/* Rule zero, above the numbered list: nothing else in the game
+                    works if the answers are not true, and no server can check
+                    them. It gets its own frame rather than a bullet. */}
+                <p className="sheet__oath">{t.rules.oath}</p>
+
                 <ol className="sheet__list">
                     {t.rules.items.map((item, index) => (
                         <li key={item.head}>

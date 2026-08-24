@@ -38,9 +38,6 @@ function Game() {
             case 'host-changed':
                 notify('info', t.feed.hostChanged(lastFeed.name));
                 break;
-            case 'anthem-spent':
-                notify('success', t.feed.anthemSpent);
-                break;
             case 'game-finished':
                 notify('success', t.feed.finished);
                 break;
