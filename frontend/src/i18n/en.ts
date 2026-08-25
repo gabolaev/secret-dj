@@ -98,7 +98,7 @@ export const en = {
         },
         evidenceSpread: (percent: number) => `${percent}% as far apart as the room can get`,
         spent: 'Already played tonight',
-        handLabel: 'Your hand — one use each, tonight only',
+        handLabel: 'Your hand',
         left: (n: number) => `${n} left`,
         spentOn: (n: number) => `spent on track ${n}`,
         // An empty slot is a legitimate finished state. It must never nag.
@@ -191,7 +191,6 @@ export const en = {
 
         whoPutThisOn: 'Who put this on',
         sealedDj: (n: number) => `One of the ${n} of you`,
-        opensOnLastDone: 'Opens on the last Done',
         putOn: (title: string) => `Put on — ${title}`,
         namedBy: 'Named by',
 
@@ -205,28 +204,24 @@ export const en = {
         // Counts, never names: the DJ is the one person who cannot answer, so
         // naming who has would name them by omission.
         answersSealed: (n: number, of: number) => `Answers sealed — ${n} of ${of}`,
-        countsOnly: 'counts only',
         answerSlot: (n: number) => `Answer ${String(n).padStart(2, '0')}`,
         stillOut: (n: number) => `${en2(n, 'answer', 'answers')} still out`,
-        noNamesEitherSide: 'no names on either side',
 
         yourAnswer: 'Your answer',
-        signed: 'signed, and read out at the reveal',
 
         yoursEyebrow: 'This one is yours',
         yoursLead: 'Nothing to do but watch them work it out.',
-        yoursBody: "You can't answer and you can't guess. The whole room is on the other side of the bar.",
         findingTrack: 'Finding the track…',
         openIn: (service: string) => `Open in ${service} ↗`,
         openLink: 'Open the link',
         done: 'Done',
         undone: 'Not done yet',
-        doneCount: (n: number, total: number) => `${n} of ${total} finished. The reveal happens on its own once everybody has.`,
+        doneCount: (n: number, total: number) => `${n} of ${total} done`,
         timeLeft: 'Time left in this round',
         hostReveal: 'Reveal the DJ',
         hostNext: 'Next track',
         hostFinish: 'Close out the night',
-        hostWaiting: 'Waiting for the room to finish. Anyone who has actually left drops out on their own.',
+        hostWaiting: 'Waiting for the room to finish.',
         waitingForNext: 'Waiting for the host to cue the next track…',
         waitingForReveal: 'Everyone has voted. Waiting for the host to reveal…',
     },
@@ -245,7 +240,6 @@ export const en = {
         moved: 'It got to me',
         movedHint: 'Did it move you? Whether you liked it is a separate question.',
         unsigned: 'Pick a number for your answer to count.',
-        honesty: 'House rule: answer honestly. Nothing here can be checked, and the game is nothing if it is not true.',
     },
 
     guess: {
@@ -264,7 +258,7 @@ export const en = {
         nothingToScale: 'nothing to scale',
         dragWorking: (n: number, of: number) => `${n} of ${of} called it popular`,
         timesWorking: (m: string) => `multiplied by ${m}`,
-        noClaim: 'no claim, so nothing changes',
+        noClaim: 'no claim',
         unchanged: 'unchanged',
         totalLabel: (name: string) => `${name} banks`,
         rowWorking: (name: string) => `${name}: their rating, plus a point if it was new to them, plus two if it moved them`,
@@ -281,24 +275,16 @@ export const en = {
         answeredSummary: (answered: number, silent: number) =>
             `${answered} answered · ${silent} said nothing`,
         djCouldNotAnswer: (name: string) => `${name} couldn't answer`,
-        costsNothing: 'costs them nothing',
         namedTheDj: 'named the DJ',
-        guessWorth: '+1 to them · worth no points to the DJ',
+        guessWorth: '+1 to them',
 
         // The working, stepped one row at a time.
         theWorking: 'The working',
-        stepStamp: (n: number, of: number) => `step ${n} of ${of}`,
-        stepOn: 'Next step',
-        stepDone: 'That was all of it',
-        paceNote: 'One row per press, never a cascade — sit on a row as long as the room wants to argue about it.',
         claimLabel: 'The claim',
-        claimWorking: (name: string) => `what ${name} bet, applied to the number above`,
 
         // ♥ and ★ never share a column, and only ♥ ever ranks anything.
         roomGave: '♥ What the room gave',
-        roomGaveBlurb: 'Likes, novelty, emotion. This is the number the finale ranks tracks by.',
         djBanked: '★ What the DJ banked',
-        djBankedBlurb: 'The same figure after the tax and the gamble. It ranks nothing.',
         // Claims can go backwards, so the sign has to come from the number.
     },
 
@@ -306,16 +292,15 @@ export const en = {
         thatWasTheNight: 'That was the night.',
         roomSummary: (tracks: number, players: number) =>
             `${en2(tracks, 'track', 'tracks')} · ${players} of you`,
-        noWinner: 'no winner',
-        rankedBy: 'Ranked by what the room gave — ♥',
-        starRanksNothing: '★ is what the DJ banked, and it ranks nothing',
+        rankedBy: 'Tracks',
+        starRanksNothing: '♥ room · ★ DJ',
         played: (n: number) => `played ${String(n).padStart(2, '0')}`,
         notGiven: 'Not given',
-        youGaveIt: (dj: string, like: number) => `${dj} · you gave it ${like}`,
-        copyAll: (n: number) => `copy all ${n} links`,
+        youGaveIt: (dj: string, like: number) => `${dj} · ${like}`,
+        copyAll: (n: number) => `copy (${n})`,
 
-        awards: 'Five awards — about a track or a knack, never a total',
-        takeaway: "What you're taking home — everything you gave a 4 or a 5",
+        awards: 'Awards',
+        takeaway: 'What you keep',
         takeawayEmpty:
             "You didn't give anything a 4 tonight. Honest is honest; there's always next week.",
         copyTakeaway: 'Copy your playlist',
@@ -331,29 +316,24 @@ export const en = {
         'track-of-the-night': {
             title: 'Track of the Night',
             blurb: 'The single track that moved the most people',
-            notGiven: 'nothing pulled far enough ahead of the rest',
         },
         'deep-cut': {
             title: 'Deep Cut',
             blurb: 'Brought the track fewest people had heard — and it landed',
-            notGiven: 'everybody had heard everything. no digging done tonight.',
         },
         'gut-punch': {
             title: 'Gut Punch',
             blurb: 'Played the track that got to the most people',
-            notGiven: 'nothing got to anybody. it happens.',
         },
         'human-shazam': {
             title: 'Human Shazam',
             blurb: 'Named the most DJs correctly',
-            notGiven: 'nobody named a single DJ right all night',
         },
         ghost: {
             title: 'The Ghost',
             blurb: 'Slipped past the room unrecognised',
-            notGiven: "everybody hid equally well. that's a fact about tonight, not a trophy.",
         },
-    } satisfies Record<AwardId, { title: string; blurb: string; notGiven: string }>,
+    } satisfies Record<AwardId, { title: string; blurb: string }>,
 
     awardValue: {
         points: (n: number) => en2(n, 'point', 'points'),

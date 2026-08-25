@@ -34,12 +34,7 @@ export function DjBand({ view }: DjBandProps) {
     const correct = reveal ? reveal.votes.filter(vote => vote.correct).length : 0;
 
     return (
-        <Redacted
-            open={revealed}
-            legend={t.round.sealedDj(inTheRoom)}
-            endLegend={t.round.opensOnLastDone}
-            className="band ink"
-        >
+        <Redacted open={revealed} legend={t.round.sealedDj(inTheRoom)} className="band ink">
             <div className="band__row">
                 {reveal ? (
                     <Avatar id={reveal.djId} name={nameOf(view.players, reveal.djId)} size="lg" signal />

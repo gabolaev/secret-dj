@@ -753,10 +753,6 @@
     text-transform: uppercase;
 }
 
-.answers__foot-end {
-    margin-left: auto;
-}
-
 /* ------------------------------------------------------------- your answer */
 
 .answer-card {
@@ -979,21 +975,6 @@
     font-size: 34px;
     font-weight: 600;
     letter-spacing: 0.02em;
-}
-
-.ledger__pace {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    flex-wrap: wrap;
-    padding-top: var(--sp-1);
-}
-
-.ledger__pace .muted {
-    flex: 1;
-    min-width: 260px;
-    font-size: var(--fs-micro);
-    line-height: 1.6;
 }
 
 /* ----------------------------------------------------------------- tallies */
@@ -1568,10 +1549,20 @@
     background: var(--paper);
 }
 
-/* One award leads, in ink. The rest are a grid of equals — there is no
-   leaderboard here and the layout must not imply one. */
+/*
+ * One award leads, in ink. The rest are a grid of equals — there is no
+ * leaderboard here and the layout must not imply one.
+ *
+ * The fill is declared here rather than left to the `.ink` utility on the
+ * element: `.award` sets its own background, and app.css loads after
+ * theme.css, so the utility lost and the card stayed on paper — with the
+ * reversed text colours still applied. That is how it ended up printing
+ * `--on-ink-2` on `--paper`, at about 2:1.
+ */
 .award--lead {
     border-color: var(--ink);
+    background: var(--ink);
+    color: var(--on-ink);
 }
 
 /* Not given, with the reason. Never omitted: the explanation is more
@@ -1606,14 +1597,21 @@
     color: var(--ink-2);
 }
 
+.award__detail,
 .award__value {
-    margin-top: auto;
-    padding-top: 3px;
     color: var(--ink-2);
     font-size: var(--fs-micro);
     line-height: 1.45;
 }
 
+/* Pinned to the bottom, so the figures line up across a row of cards however
+   long the titles above them run. */
+.award__value {
+    margin-top: auto;
+    padding-top: 3px;
+}
+
+.award--lead .award__detail,
 .award--lead .award__value {
     color: var(--on-ink-2);
 }

@@ -53,16 +53,18 @@ export function AwardCard({ id, award, players, lead }: AwardCardProps) {
                             </span>
                         ))}
                     </span>
-                    <span className="award__value num">
-                        {award.detail ? `${award.detail} · ` : ''}
-                        {t.awardValue[definition.unit](award.value)}
-                    </span>
+                    {/* The track a trophy is about is often a long title, and
+                        it is already printed in full in the chart above. One
+                        clipped line here names it without turning a row of
+                        cards into a wall. */}
+                    {award.detail && <span className="award__detail num clip">{award.detail}</span>}
+                    <span className="award__value num">{t.awardValue[definition.unit](award.value)}</span>
                 </>
             ) : (
-                <>
-                    <span className="award__winners award__winners--none">{t.finale.notGiven}</span>
-                    <span className="award__value num">{copy.notGiven}</span>
-                </>
+                // No reason printed. "Not given" is the whole fact, and five
+                // cards each explaining themselves is what made the finale
+                // read as an essay.
+                <span className="award__winners award__winners--none">{t.finale.notGiven}</span>
             )}
         </article>
     );

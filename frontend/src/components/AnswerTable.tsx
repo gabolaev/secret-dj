@@ -44,10 +44,7 @@ export function AnswerTable({ view }: AnswerTableProps) {
         const sealed = round.answersIn;
         const out = Math.max(0, round.answersExpected - sealed);
         return (
-            <Block
-                label={t.round.answersSealed(sealed, round.answersExpected)}
-                count={<span className="stamp">{t.round.countsOnly}</span>}
-            >
+            <Block label={t.round.answersSealed(sealed, round.answersExpected)}>
                 <div className="answers list">
                     {Array.from({ length: sealed }, (_, index) => (
                         <Redacted
@@ -64,10 +61,7 @@ export function AnswerTable({ view }: AnswerTableProps) {
                             <Placeholder width="12ch" size="micro" />
                         </Redacted>
                     ))}
-                    <p className="answers__foot num">
-                        <span>{t.round.stillOut(out)}</span>
-                        <span className="answers__foot-end">{t.round.noNamesEitherSide}</span>
-                    </p>
+                    <p className="answers__foot num">{t.round.stillOut(out)}</p>
                 </div>
             </Block>
         );
@@ -145,8 +139,7 @@ export function AnswerTable({ view }: AnswerTableProps) {
                 })}
 
                 <p className="answers__foot num">
-                    <span>{t.reveal.djCouldNotAnswer(nameOf(view.players, reveal.djId))}</span>
-                    <span className="answers__foot-end">{t.reveal.costsNothing}</span>
+                    {t.reveal.djCouldNotAnswer(nameOf(view.players, reveal.djId))}
                 </p>
             </div>
 

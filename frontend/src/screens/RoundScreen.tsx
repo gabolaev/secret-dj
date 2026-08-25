@@ -74,7 +74,6 @@ export function RoundScreen({ view, game }: RoundScreenProps) {
                 <Block className="yours">
                     <span className="yours__eyebrow num">{t.round.yoursEyebrow}</span>
                     <p className="yours__lead">{t.round.yoursLead}</p>
-                    <p className="muted">{t.round.yoursBody}</p>
                 </Block>
             )}
 
@@ -87,7 +86,7 @@ export function RoundScreen({ view, game }: RoundScreenProps) {
             <AnswerTable view={view} />
 
             {!revealed && round.canAnswer && (
-                <Block label={t.round.yourAnswer} count={<span className="stamp">{t.round.signed}</span>}>
+                <Block label={t.round.yourAnswer}>
                     <div className="card answer-card">
                         <AnswerBar answer={round.myAnswer} onAnswer={patch => void game.answer(patch)} />
 

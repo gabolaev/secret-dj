@@ -94,7 +94,7 @@ export const ru: Messages = {
         },
         evidenceSpread: (percent: number) => `разброс ${percent}% от максимально возможного`,
         spent: 'Уже поставлена на другой трек',
-        handLabel: 'Ваши карты — каждая один раз, только сегодня',
+        handLabel: 'Ваши карты',
         left: (n: number) => `осталось: ${n}`,
         spentOn: (n: number) => `потрачена на трек ${n}`,
         dropCard: 'Положите сюда карту',
@@ -166,8 +166,7 @@ export const ru: Messages = {
         lookupFailed: 'Не удалось прочитать ссылку. Попробуем ещё раз до начала.',
 
         whoPutThisOn: 'Кто это поставил',
-        sealedDj: (n: number) => `Один из вас ${n}`,
-        opensOnLastDone: 'Откроется на последнем «Готово»',
+        sealedDj: (n: number) => `Один из ${n}`,
         putOn: (title: string) => `Поставил — ${title}`,
         namedBy: 'Угадали',
 
@@ -181,28 +180,24 @@ export const ru: Messages = {
         // Только счётчики, никаких имён: диджей — единственный, кто не может
         // ответить, поэтому список ответивших назвал бы его по отсутствию.
         answersSealed: (n: number, of: number) => `Ответы запечатаны — ${n} из ${of}`,
-        countsOnly: 'только счёт',
         answerSlot: (n: number) => `Ответ ${String(n).padStart(2, '0')}`,
         stillOut: (n: number) => `ещё не ответили: ${n}`,
-        noNamesEitherSide: 'имён нет ни с той, ни с другой стороны',
 
         yourAnswer: 'Ваш ответ',
-        signed: 'с подписью — его зачитают на раскрытии',
 
         yoursEyebrow: 'Этот — ваш',
         yoursLead: 'Остаётся только смотреть, как они разбираются.',
-        yoursBody: 'Вы не можете ни ответить, ни угадывать. Вся комната по ту сторону полосы.',
         findingTrack: 'Ищем трек…',
         openIn: (service: string) => `Открыть в ${service} ↗`,
         openLink: 'Открыть ссылку',
         done: 'Готово',
         undone: 'Ещё не готов',
-        doneCount: (n: number, total: number) => `Готовы ${n} из ${total}. Когда будут все, раскрытие произойдёт само.`,
+        doneCount: (n: number, total: number) => `Готовы ${n} из ${total}`,
         timeLeft: 'Сколько осталось на раунд',
         hostReveal: 'Раскрыть диджея',
         hostNext: 'Следующий трек',
         hostFinish: 'Завершить вечер',
-        hostWaiting: 'Ждём, пока комната закончит. Кто действительно ушёл — отвалится сам.',
+        hostWaiting: 'Ждём, пока комната закончит.',
         waitingForNext: 'Ждём, когда ведущий поставит следующий трек…',
         waitingForReveal: 'Все проголосовали. Ждём раскрытия ведущим…',
     },
@@ -221,7 +216,6 @@ export const ru: Messages = {
         moved: 'Зацепило',
         movedHint: 'Трек вас пробрал? Понравился он вам или нет — неважно.',
         unsigned: 'Поставьте оценку, чтобы ответ засчитался.',
-        honesty: 'Отвечайте честно — на раскрытии все увидят, кто что ответил.',
     },
 
     guess: {
@@ -240,7 +234,7 @@ export const ru: Messages = {
         nothingToScale: 'нечего пересчитывать',
         dragWorking: (n: number, of: number) => `${n} из ${of} назвали популярным`,
         timesWorking: (m: string) => `умножено на ${m}`,
-        noClaim: 'заявки не было, ничего не меняется',
+        noClaim: 'заявки не было',
         unchanged: 'без изменений',
         totalLabel: (name: string) => `${name} получает`,
         rowWorking: (name: string) => `${name}: оценка, плюс очко за новинку, плюс два, если зацепило`,
@@ -257,22 +251,14 @@ export const ru: Messages = {
         answeredSummary: (answered: number, silent: number) =>
             `ответили: ${answered} · промолчали: ${silent}`,
         djCouldNotAnswer: (name: string) => `${name} не мог отвечать`,
-        costsNothing: 'это ничего не стоит',
         namedTheDj: 'угадал диджея',
-        guessWorth: '+1 ему · диджею это не стоит ничего',
+        guessWorth: '+1 ему',
 
         theWorking: 'Как это посчитано',
-        stepStamp: (n: number, of: number) => `шаг ${n} из ${of}`,
-        stepOn: 'Следующий шаг',
-        stepDone: 'Это всё',
-        paceNote: 'По строке на нажатие, без автопрокрутки — можно сидеть на строке столько, сколько комната готова спорить.',
         claimLabel: 'Заявка',
-        claimWorking: (name: string) => `ставка ${name} — применена к числу выше`,
 
         roomGave: '♥ Сколько дала комната',
-        roomGaveBlurb: 'Оценки, новизна, эмоция. Именно по этому числу финал ранжирует треки.',
         djBanked: '★ Сколько забрал диджей',
-        djBankedBlurb: 'То же число после налога и ставки. Оно не ранжирует ничего.',
         // Заявки умеют уходить в минус, поэтому знак берём из числа.
     },
 
@@ -280,16 +266,15 @@ export const ru: Messages = {
         thatWasTheNight: 'Вот и всё.',
         roomSummary: (tracks: number, players: number) =>
             `${ru3(tracks, 'трек', 'трека', 'треков')} · вас было ${players}`,
-        noWinner: 'победителя нет',
-        rankedBy: 'По тому, сколько дала комната — ♥',
-        starRanksNothing: '★ — сколько забрал диджей, и это не ранжирует ничего',
+        rankedBy: 'Треки',
+        starRanksNothing: '♥ комната · ★ диджей',
         played: (n: number) => `играл ${String(n).padStart(2, '0')}`,
         notGiven: 'Не вручена',
-        youGaveIt: (dj: string, like: number) => `${dj} · вы поставили ${like}`,
-        copyAll: (n: number) => `скопировать все ссылки (${n})`,
+        youGaveIt: (dj: string, like: number) => `${dj} · ${like}`,
+        copyAll: (n: number) => `скопировать (${n})`,
 
-        awards: 'Пять наград — за трек или за чутьё, но не за сумму',
-        takeaway: 'Что вы уносите — всё, чему поставили 4 или 5',
+        awards: 'Награды',
+        takeaway: 'Что вы уносите',
         takeawayEmpty: 'Сегодня вы никому не поставили 4. Честно — значит честно; будет ещё вечер.',
         copyTakeaway: 'Скопировать свой плейлист',
         copyTakeawayHeader: (room: string) => `Secret DJ — мой улов из комнаты ${room}`,
@@ -304,27 +289,22 @@ export const ru: Messages = {
         'track-of-the-night': {
             title: 'Трек вечера',
             blurb: 'Трек, который комната оценила выше всех',
-            notGiven: 'никто не оторвался от остальных',
         },
         'deep-cut': {
             title: 'Находка',
             blurb: 'Принёс трек, который почти никто не слышал, — и он зашёл',
-            notGiven: 'все всё уже слышали. сегодня никто не копал.',
         },
         'gut-punch': {
             title: 'Под дых',
             blurb: 'Поставил трек, который зацепил больше всех',
-            notGiven: 'никого ничто не зацепило. бывает.',
         },
         'human-shazam': {
             title: 'Живой Shazam',
             blurb: 'Чаще всех угадывал диджея',
-            notGiven: 'за весь вечер никто не угадал ни одного диджея',
         },
         ghost: {
             title: 'Призрак',
             blurb: 'Его почти ни разу не угадали',
-            notGiven: 'все прятались одинаково хорошо. это факт о вечере, а не награда.',
         },
     },
 

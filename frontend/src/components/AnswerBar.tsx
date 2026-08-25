@@ -83,7 +83,10 @@ export function AnswerBar({ answer, disabled, onAnswer }: AnswerBarProps) {
                 })}
             </div>
 
-            <p className="answer__note">{like === undefined ? t.answer.unsigned : t.answer.honesty}</p>
+            {/* Only says something while something is missing. The house rule
+                about answering honestly lives in Rules; repeating it under
+                every track turns it into wallpaper. */}
+            {like === undefined && <p className="answer__note">{t.answer.unsigned}</p>}
         </div>
     );
 }

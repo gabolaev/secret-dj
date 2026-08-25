@@ -746,9 +746,9 @@ describe('in-game screens', () => {
         const ledger = () => document.querySelector('.ledger')!.textContent!;
         const rows = () => [...document.querySelectorAll('.ledger__row')];
 
-        // Five steps in a fixed order, and every one of them starts covered:
-        // the working *steps*, one row per press, rather than arriving as a
-        // finished block nobody read.
+        // Four steps in a fixed order, and every one of them starts covered:
+        // the working runs itself down a row at a time rather than arriving as
+        // a finished block that gets read as a total.
         expect(rows()).toHaveLength(4);
         for (const row of rows()) {
             expect(row.getAttribute('data-open')).toBe('false');
@@ -756,11 +756,12 @@ describe('in-game screens', () => {
         // The total is withheld until the working that produced it has been.
         expect(document.querySelector('.ledger__banked')!.textContent).toBe('—');
 
-        // Host-paced, never a timed cascade: a room that wants to argue about a
-        // row can sit on it.
-        const step = screen.getByRole('button', { name: /next step/i });
-        for (let press = 0; press < 4; press++) fireEvent.click(step);
-        await waitFor(() => expect(rows().every(row => row.getAttribute('data-open') === 'true')).toBe(true));
+        // Nobody drives it, and there is no control to press.
+        expect(screen.queryByRole('button', { name: /step/i })).toBeNull();
+        await waitFor(
+            () => expect(rows().every(row => row.getAttribute('data-open') === 'true')).toBe(true),
+            { timeout: 4000 },
+        );
 
         // Each listener's own sum, then how those become the room's verdict.
         expect(ledger()).toContain('7 + 3');
@@ -848,15 +849,15 @@ describe('in-game screens', () => {
         // the value of every other card in the row.
         expect(ghost.lastElementChild!.className).toContain('award__value');
 
-        // Every award has a card, whether or not anybody won it. A trophy
-        // nobody earned is printed as "Not given" *with the reason on it* —
-        // omitting it would leave a hole the reader has to explain to
-        // themselves, and the explanation is the interesting part.
+        // Every award has a card, whether or not anybody won it: omitting one
+        // leaves a hole the reader has to explain to themselves. "Not given" is
+        // the whole fact, and it is all the card says — five trophies each
+        // justifying their own absence is what made the finale read as prose.
         expect(cards).toHaveLength(5);
         const shazam = cards.find(card => card.textContent?.includes('Human Shazam'))!;
         expect(shazam.className).toContain('award--none');
         expect(shazam.textContent).toContain('Not given');
-        expect(shazam.textContent).toContain('nobody named a single DJ right');
+        expect(shazam.querySelector('.award__value')).toBeNull();
     });
 
     it('renders the awards, the chart and your own takeaway at the finale', async () => {
@@ -934,12 +935,12 @@ describe('in-game screens', () => {
         expect(document.querySelector('.scores')).toBeNull();
 
         // What you actually walk out with: what *you* rated 4 or more.
-        const takeaway = screen.getByText(/What you're taking home/).closest('section')!;
+        const takeaway = screen.getByText(/What you keep/).closest('section')!;
         expect(within(takeaway).getAllByRole('listitem')[0].textContent).toContain('Blue Monday');
 
         // The chart is ranked by the room, not by the running order: the track
         // the room rated higher comes first.
-        const chart = screen.getByText(/Ranked by what the room gave/).closest('section')!;
+        const chart = screen.getByText(/^Tracks$/).closest('section')!;
         const rows = within(chart).getAllByRole('listitem');
         expect(rows[0].textContent).toContain('Blue Monday');
         expect(rows[1].textContent).toContain('Ceremony');

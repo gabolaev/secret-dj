@@ -77,9 +77,7 @@ export function FinaleScreen({ view, onLeave }: FinaleScreenProps) {
         <div className="stage">
             <header className="finale__head">
                 <h2 className="finale__title">{t.finale.thatWasTheNight}</h2>
-                <p className="finale__summary num">
-                    {t.finale.roomSummary(view.history.length, present)} · {t.finale.noWinner}
-                </p>
+                <p className="finale__summary num">{t.finale.roomSummary(view.history.length, present)}</p>
             </header>
 
             <Block label={t.finale.rankedBy} count={t.finale.starRanksNothing}>

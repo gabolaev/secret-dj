@@ -15,6 +15,12 @@ interface RevealPanelProps {
     view: GameView;
 }
 
+/** Sum, average and scale, popularity, claim. The order is the story. */
+const LEDGER_STEPS = 4;
+
+/** One wipe, so each row is fully open before the next one starts. */
+const STEP_MS = 420;
+
 /**
  * Trims trailing zeroes so a flat multiplier reads "×1", not "×1.00", and uses
  * the reader's decimal separator — the Russian copy writes ×1,5 everywhere else.
@@ -33,10 +39,12 @@ function multiplier(value: number, locale: string): string {
  * table, popularity tax, claim — because the order the arithmetic happens in
  * is the story of the round.
  *
- * It **steps** rather than appearing. One row per press, never a timed cascade:
- * a room that wants to argue about a row can sit on it, and a reveal that dumps
- * five rows at once teaches nobody the game. Under reduced motion each press
- * cuts instead of wiping and the pacing survives untouched.
+ * It **runs down** rather than appearing. The rows uncover themselves one after
+ * another, a wipe apart, because the order the arithmetic happens in is the
+ * story of the round and a block that lands all at once gets read as a total.
+ * Nobody has to drive it. Under reduced motion the whole receipt is there from
+ * the first frame — a cascade of cuts is still four things arriving in
+ * sequence, which is the thing that preference is asking us not to do.
  *
  * ♥ and ★ are kept apart at the bottom, always. ♥ is what the room gave — likes,
  * novelty, emotion, before the tax and before the gamble — and it is the number
@@ -52,10 +60,24 @@ export function RevealPanel({ view }: RevealPanelProps) {
     const reveal = view.round?.reveal;
 
     // How many ledger rows have had their cover lifted. Resets per track, so a
-    // new round always starts the working from the top.
+    // new round always starts the working from the top and runs itself down.
     const [shown, setShown] = useState(0);
     const trackId = view.round?.track.id;
-    useEffect(() => setShown(0), [trackId]);
+
+    // Somebody who has asked for less movement gets the finished receipt, not a
+    // sequence of cuts: a cascade under reduced motion is still four things
+    // arriving one after another.
+    const atOnce =
+        typeof window !== 'undefined' &&
+        window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
+
+    useEffect(() => setShown(atOnce ? LEDGER_STEPS : 0), [trackId, atOnce]);
+
+    useEffect(() => {
+        if (shown >= LEDGER_STEPS) return;
+        const timer = window.setTimeout(() => setShown(value => value + 1), STEP_MS);
+        return () => window.clearTimeout(timer);
+    }, [shown]);
 
     if (!reveal) return null;
 
@@ -105,7 +127,10 @@ export function RevealPanel({ view }: RevealPanelProps) {
         },
         {
             label: t.reveal.claimLabel,
-            detail: afterTax === afterClaim ? t.reveal.noClaim : t.reveal.claimWorking(djName),
+            // What the claim was and whether it landed is already on the claim
+            // card above, in the claim's own terms. This row only owes the
+            // number it moved.
+            detail: afterTax === afterClaim ? t.reveal.noClaim : '',
             change: afterTax === afterClaim ? t.reveal.unchanged : `${afterTax} → ${afterClaim}`,
             title:
                 afterTax !== afterClaim
@@ -118,10 +143,7 @@ export function RevealPanel({ view }: RevealPanelProps) {
 
     return (
         <>
-            <Block
-                label={t.reveal.theWorking}
-                count={<span className="stamp stamp--open">{t.reveal.stepStamp(Math.min(shown, rows.length), rows.length)}</span>}
-            >
+            <Block label={t.reveal.theWorking}>
                 <div className="ledger list list--strong">
                     {rows.map((row, index) => (
                         <Redacted key={row.label} open={index < shown} className="ledger__row">
@@ -140,18 +162,6 @@ export function RevealPanel({ view }: RevealPanelProps) {
                         <span className="ledger__banked num">{allShown ? banked : '—'}</span>
                     </p>
                 </div>
-
-                <div className="ledger__pace">
-                    <button
-                        type="button"
-                        className="button"
-                        disabled={allShown}
-                        onClick={() => setShown(value => Math.min(rows.length, value + 1))}
-                    >
-                        {allShown ? t.reveal.stepDone : t.reveal.stepOn}
-                    </button>
-                    <p className="muted">{t.reveal.paceNote}</p>
-                </div>
             </Block>
 
             {/* Two numbers, two weights. ♥ is set solid because it decides the
@@ -162,12 +172,10 @@ export function RevealPanel({ view }: RevealPanelProps) {
                 <div className="tally">
                     <span className="tally__label num">{t.reveal.roomGave}</span>
                     <span className="tally__value num">{verdict}</span>
-                    <span className="tally__blurb">{t.reveal.roomGaveBlurb}</span>
                 </div>
                 <div className="tally tally--quiet">
                     <span className="tally__label num">{t.reveal.djBanked}</span>
                     <span className="tally__value num">{banked}</span>
-                    <span className="tally__blurb">{t.reveal.djBankedBlurb}</span>
                 </div>
             </div>
         </>
