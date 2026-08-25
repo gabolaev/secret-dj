@@ -14,32 +14,46 @@
 
 /* -------------------------------------------------------------------- logo */
 
+/* The name *is* the mark: stamped the way a case is, not drawn. */
 .logo {
     display: inline-flex;
-    align-items: center;
-    gap: 0.55em;
+    align-items: baseline;
+    gap: 0.34em;
     color: var(--text);
-}
-
-.logo__mark {
-    flex-shrink: 0;
-}
-
-.logo__word {
-    font-size: calc(var(--logo-size) * 0.46);
-    font-weight: 700;
-    letter-spacing: -0.02em;
+    font-weight: 500;
+    letter-spacing: var(--track-code);
+    /* Tracking pads the last letter too; without this the wordmark sits left of
+       where it looks like it should. */
+    text-indent: var(--track-code);
+    text-transform: uppercase;
+    line-height: 1;
     white-space: nowrap;
 }
 
-.logo__word em {
+.logo em {
     font-style: normal;
-    color: var(--accent);
+    font-weight: 700;
+    color: var(--accent-text);
+}
+
+.logo--bar {
+    font-size: var(--fs-base);
+}
+
+/* The one place the name is a title rather than a label. At `--fs-lg` it sat
+   three points above the sentence under it, which is not a hierarchy. */
+.logo--hero {
+    font-size: var(--fs-hero);
+    letter-spacing: 0.1em;
+    text-indent: 0.1em;
 }
 
 /* -------------------------------------------------------------------- join */
 
+/* The card floats above the bench; the bench is the desk it sits on. */
 .join {
+    position: relative;
+    z-index: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -50,6 +64,7 @@
 }
 
 .join__win {
+    position: relative;
     width: min(400px, 100%);
     animation: rise var(--dur) var(--ease) both;
 }
@@ -58,7 +73,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: var(--sp-3);
+    gap: var(--sp-2);
     padding-bottom: var(--sp-5);
     text-align: center;
 }
@@ -67,10 +82,14 @@
     display: flex;
 }
 
+/* Balanced, so a centred sentence does not break after a preposition and leave
+   one word stranded on the second line. */
 .join__tagline {
-    max-width: 30ch;
-    color: var(--muted);
+    max-width: 26ch;
+    color: var(--faint);
     font-size: var(--fs-base);
+    line-height: 1.45;
+    text-wrap: balance;
 }
 
 .join__form {
@@ -89,10 +108,10 @@
 .join__error {
     margin-top: var(--sp-4);
     padding: var(--sp-3);
-    border: 1px solid rgb(255 107 107 / 35%);
+    border: 1px solid rgb(192 38 27 / 35%);
     border-radius: var(--r-md);
-    background: rgb(255 107 107 / 10%);
-    color: #ffc0c0;
+    background: rgb(192 38 27 / 10%);
+    color: var(--bad);
     font-size: var(--fs-base);
     text-align: center;
 }
@@ -115,15 +134,24 @@
 
 .join__services {
     max-width: 42ch;
+    padding: var(--sp-2) var(--sp-3);
+    border-radius: var(--r-2);
+    color: var(--accent-ink);
     text-align: center;
-    color: var(--faint);
     font-size: var(--fs-micro);
     line-height: 1.6;
+    mix-blend-mode: overlay;
 }
 
 /* ------------------------------------------------------------------- shell */
 
+/* Positioned, so the whole app is one layer above the cables. This has to live
+   here rather than on the inner columns: those are static, and a positioned
+   element outranks static content whatever the DOM order says — which is
+   exactly how the cables ended up lying over the settings panel. */
 .shell {
+    position: relative;
+    z-index: 1;
     display: flex;
     flex-direction: column;
     min-height: 100dvh;
@@ -139,7 +167,7 @@
     height: var(--header-h);
     padding: 0 var(--sp-4);
     border-bottom: 1px solid var(--line);
-    background: rgb(10 12 17 / 88%);
+    background: rgb(228 228 226 / 88%);
     backdrop-filter: blur(14px);
 }
 
@@ -151,67 +179,81 @@
     flex: 1;
 }
 
-/* Room code: the one string people read out loud, so it stays on the bar. */
+/* Room code: the one string people read out loud, so it stays on the bar — and
+   it is where the connection shows, glowing at its edge rather than through a
+   separate dot that had to be explained. */
 .shell__code {
     display: inline-flex;
     align-items: center;
-    gap: var(--sp-2);
-    padding: 5px 12px;
-    border: 1px solid var(--line);
-    border-radius: var(--r-pill);
-    background: transparent;
+    padding: 5px 14px;
+    border: 1px solid rgb(0 0 0 / 55%);
+    border-radius: var(--r-sm);
+    background: var(--screen);
     cursor: pointer;
     transition:
-        border-color var(--dur-fast) var(--ease),
+        border-color var(--dur) var(--ease),
+        box-shadow var(--dur) var(--ease),
         background var(--dur-fast) var(--ease);
 }
 
 .shell__code:hover {
-    border-color: var(--line-strong);
-    background: var(--surface-2);
+    background: var(--screen-2);
 }
 
-.shell__code-label {
-    font-size: var(--fs-micro);
-    font-weight: 600;
-    letter-spacing: 0.07em;
-    text-transform: uppercase;
-    color: var(--faint);
+.shell__code--online {
+    border-color: rgb(85 221 138 / 55%);
+    box-shadow:
+        0 0 0 1px rgb(85 221 138 / 25%),
+        0 0 14px rgb(85 221 138 / 30%);
+}
+
+.shell__code--offline {
+    border-color: rgb(192 38 27 / 60%);
+    box-shadow:
+        0 0 0 1px rgb(192 38 27 / 30%),
+        0 0 14px rgb(192 38 27 / 35%);
+}
+
+/* Breathing, because "connecting" is a state that is going somewhere. The
+   resting glow is on the rule itself, not only in the keyframes: the global
+   reduced-motion rule stops the animation, and without this the state would
+   lose its colour entirely for anyone who has that switched on. */
+.shell__code--connecting {
+    border-color: rgb(209 60 0 / 55%);
+    box-shadow:
+        0 0 0 1px rgb(209 60 0 / 28%),
+        0 0 12px rgb(209 60 0 / 30%);
+    animation: reaching 1.4s ease-in-out infinite;
+}
+
+@keyframes reaching {
+
+    0%,
+    100% {
+        box-shadow:
+            0 0 0 1px rgb(209 60 0 / 18%),
+            0 0 6px rgb(209 60 0 / 18%);
+    }
+
+    50% {
+        box-shadow:
+            0 0 0 1px rgb(209 60 0 / 38%),
+            0 0 16px rgb(209 60 0 / 40%);
+    }
 }
 
 .shell__code-value {
-    font-family: var(--font-display);
-    font-variation-settings: var(--matrix-axes);
-    font-size: var(--fs-lg);
+    color: var(--screen-ink);
+    font-size: var(--fs-base);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
     line-height: 1;
-    letter-spacing: 0.16em;
-    color: var(--accent);
+    letter-spacing: var(--track-code);
+    text-indent: var(--track-code);
 }
 
 .shell__leave:hover {
-    color: #ffc0c0;
-}
-
-.dot {
-    width: 7px;
-    height: 7px;
-    flex-shrink: 0;
-    border-radius: 50%;
-    background: var(--faint);
-}
-
-.dot--online {
-    background: var(--good);
-    box-shadow: 0 0 8px var(--good);
-}
-
-.dot--connecting {
-    background: var(--accent);
-    animation: pulse 1s ease-in-out infinite;
-}
-
-.dot--offline {
-    background: var(--bad);
+    color: var(--bad);
 }
 
 .shell__body {
@@ -235,12 +277,28 @@
 .shell__side {
     position: sticky;
     top: calc(var(--header-h) + var(--sp-4));
+    /* Two panels stacked now: the playlist and the machine under it. */
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-4);
 }
 
 /* ---------------------------------------------------------------- playlist */
 
+/* The playlist's tabs run edge to edge on purpose. Anything else in the column
+   needs its margins back. */
 .side .win__body {
     padding: 0;
+}
+
+.side--inset .win__body {
+    padding: var(--sp-3);
+}
+
+/* Folded away, the panel is its own title bar and nothing else — an empty body
+   would still be a padded blank strip under it. */
+.side--inset .win__body:empty {
+    display: none;
 }
 
 .tabs {
@@ -343,7 +401,7 @@
 }
 
 .roster__host {
-    color: var(--accent);
+    color: var(--accent-text);
     font-size: var(--fs-micro);
 }
 
@@ -357,7 +415,7 @@
 }
 
 .roster__status--waiting {
-    color: var(--accent);
+    color: var(--accent-text);
 }
 
 .roster__status--dj {
@@ -394,9 +452,10 @@
     flex-shrink: 0;
     width: 26px;
     height: 26px;
-    border-radius: 50%;
-    background: hsl(var(--hue) 45% 42%);
-    color: #fff;
+    /* Square with a moulded corner, like everything else that is a part. */
+    border-radius: var(--r-sm);
+    background: hsl(0 0% var(--tone));
+    color: var(--accent-ink);
     font-size: var(--fs-micro);
     font-weight: 700;
 }
@@ -446,12 +505,47 @@
     font-style: normal;
 }
 
+/* The round clock, as a readout: light figures on the one black panel in the
+   interface. It is the only thing on screen that is running out, and it keeps
+   running once it has. */
+.timer {
+    padding: 0.2rem 0.55rem;
+    border-radius: var(--r-sm);
+    background: var(--screen);
+    color: var(--screen-ink);
+    font-size: var(--fs-base);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.08em;
+}
+
+.timer--over {
+    background: var(--accent);
+    color: var(--accent-ink);
+    animation: overtime 1s steps(1, end) infinite;
+}
+
+@keyframes overtime {
+    50% {
+        background: var(--screen);
+        color: var(--accent-text);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    /* Still unmistakable, just not flashing at anybody. */
+    .timer--over {
+        animation: none;
+    }
+}
+
 .stat--rated {
     color: var(--love);
 }
 
 .stat--mine {
-    background: rgb(255 96 152 / 18%);
+    background: rgb(209 60 0 / 18%);
     color: var(--love);
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -459,7 +553,7 @@
 
 .screen {
     border-radius: var(--r-md);
-    background: #000;
+    background: var(--screen);
     overflow: hidden;
 }
 
@@ -533,7 +627,7 @@
     gap: var(--sp-3);
 }
 
-.win__body > .rack:first-child {
+.win__body>.rack:first-child {
     margin-top: 0;
     padding-top: 0;
     border-top: 0;
@@ -557,10 +651,12 @@
     gap: var(--sp-4);
 }
 
+/* Left, like the toggles and the note under it. Centring the caption left it
+   floating in the middle of a block that is otherwise flush to the edge. */
 .rate__slot {
     display: inline-flex;
     flex-direction: column;
-    align-items: center;
+    align-items: flex-start;
     gap: var(--sp-2);
 }
 
@@ -572,19 +668,25 @@
 }
 
 .rate__knob--like {
-    color: var(--faint);
+    color: var(--muted);
     font-variant-numeric: tabular-nums;
 }
 
+/* Everything up to your answer is inked in, so the row reads as a level rather
+   than as six separate buttons. */
 .rate__knob--like.is-lit {
-    color: var(--love);
+    background: var(--text);
+    border-color: var(--text);
+    color: var(--surface-3);
 }
 
 .rate__knob--like.is-active {
-    border-color: transparent;
-    background: rgb(255 96 152 / 18%);
-    color: var(--love);
-    box-shadow: 0 0 0 1px rgb(255 96 152 / 45%);
+    background: var(--accent);
+    border-color: rgb(0 0 0 / 30%);
+    color: var(--accent-ink);
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 25%),
+        0 1px 0 rgb(0 0 0 / 25%);
 }
 
 .rate__knob--none.is-active {
@@ -592,15 +694,14 @@
     color: var(--text);
 }
 
+/* Reserves its line whether or not there is a verdict to show, so picking a
+   number does not shunt the toggles down. */
 .rate__caption {
+    min-height: 1.2em;
     font-size: var(--fs-micro);
     font-weight: 500;
-    color: var(--faint);
-    white-space: nowrap;
-}
-
-.rate__slot:has(.is-active) .rate__caption {
     color: var(--muted);
+    white-space: nowrap;
 }
 
 /* ------------------------------------------------------------------ claims */
@@ -641,8 +742,8 @@
 .claim.is-open .claim__badge {
     border-style: solid;
     border-color: transparent;
-    background: rgb(255 181 69 / 16%);
-    color: var(--accent);
+    background: rgb(209 60 0 / 16%);
+    color: var(--accent-text);
 }
 
 .claim__deck {
@@ -676,7 +777,7 @@
 
 .claim__option.is-active {
     border-color: var(--accent);
-    background: rgb(255 181 69 / 12%);
+    background: rgb(209 60 0 / 12%);
 }
 
 .claim__option:disabled {
@@ -793,6 +894,39 @@
     color: var(--muted);
 }
 
+/* The guess, inline with everything else that person did. */
+.answers__guess {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    color: var(--faint);
+    font-size: var(--fs-micro);
+}
+
+.answers__guess.is-correct {
+    color: var(--text);
+    font-weight: 600;
+}
+
+.answers__guess i {
+    font-style: normal;
+}
+
+.answers__guess b {
+    font-weight: 700;
+}
+
+.answers__guess em {
+    color: var(--accent-text);
+    font-style: normal;
+    font-weight: 600;
+}
+
+.answers__silent {
+    color: var(--faint);
+    font-size: var(--fs-micro);
+}
+
 .answers__like {
     min-width: 2.4rem;
     padding: 0.1rem 0.4rem;
@@ -804,12 +938,19 @@
     text-align: center;
 }
 
+/* Silkscreened, not a coloured badge: uppercase, tracked, and only the one
+   that matters is filled. */
 .tag {
-    padding: 0.1rem 0.5rem;
-    border-radius: var(--r-pill);
-    background: var(--surface-2);
-    color: var(--faint);
+    padding: 0.05rem 0.4rem;
+    border: 1px solid transparent;
+    border-radius: var(--r-sm);
+    background: var(--surface);
+    color: var(--muted);
     font-size: var(--fs-micro);
+    font-weight: 600;
+    letter-spacing: var(--track-label);
+    text-indent: var(--track-label);
+    text-transform: uppercase;
 }
 
 .tag--heard {
@@ -817,13 +958,13 @@
 }
 
 .tag--popular {
-    background: rgb(255 181 69 / 14%);
-    color: var(--accent);
+    background: var(--accent);
+    color: var(--accent-ink);
 }
 
 .tag--moved {
-    background: rgb(255 96 152 / 14%);
-    color: var(--love);
+    background: var(--text);
+    color: var(--surface-3);
 }
 
 /* The score, showing its working: what the room gave, what obviousness took
@@ -905,8 +1046,8 @@
 }
 
 .tag--new {
-    background: rgb(255 181 69 / 14%);
-    color: var(--accent);
+    border-color: var(--line-strong);
+    background: transparent;
 }
 
 /* `.chip` keeps a narrow left pad for the avatar a guess chip carries. These
@@ -915,9 +1056,13 @@
     padding-left: 0.75rem;
 }
 
+/* Pressed in, like a latching switch. An outline alone was invisible against a
+   near-white key. */
 .chip--answer.is-active {
-    border-color: var(--love);
-    color: var(--love);
+    background: var(--text);
+    border-color: var(--text);
+    color: var(--surface-3);
+    box-shadow: inset 0 1px 3px rgb(0 0 0 / 40%);
 }
 
 .rules-claims {
@@ -949,7 +1094,7 @@
 }
 
 .rules-claims em {
-    color: var(--accent);
+    color: var(--accent-text);
     font-size: var(--fs-micro);
     font-style: normal;
 }
@@ -994,7 +1139,7 @@
 .scoring__row dd {
     margin: 0;
     flex-shrink: 0;
-    color: var(--accent);
+    color: var(--accent-text);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
     text-align: right;
@@ -1016,6 +1161,373 @@
     border-radius: 0 var(--r-md) var(--r-md) 0;
     background: var(--surface-2);
     font-size: var(--fs-base);
+}
+
+/* Behind everything, touching nothing: it must never intercept a click or add
+   a scrollbar. Drawn in viewport pixels from wherever the machine is. */
+.cables {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* The bench behind the join card. Quiet on purpose: it is the backdrop to a
+   form somebody has to read and type into. */
+.bench {
+    opacity: 0.3;
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.bench__body {
+    fill: #bcbcb9;
+    stroke: rgb(0 0 0 / 12%);
+}
+
+.bench__screen {
+    fill: #6f6f74;
+}
+
+.bench__key {
+    fill: #8e8e93;
+}
+
+.bench__key--hot {
+    fill: var(--accent);
+    opacity: 0.85;
+}
+
+.bench__knob,
+.bench__cap {
+    fill: #d3d3d0;
+}
+
+/* Keys are the one shape that says "music" before anything is read, so they
+   keep more of their own contrast than the rest of the bench. */
+.bench__whitekey {
+    fill: #e8e8e5;
+}
+
+.bench__blackkey {
+    fill: #4a4a50;
+}
+
+/* The record deck. It gets the most tonal separation on the bench, because a
+   platter reads as a platter only if the record is darker than the plinth. */
+.bench__platter {
+    fill: #bcbcb9;
+}
+
+.bench__record {
+    fill: #2a2a30;
+}
+
+.bench__groove {
+    fill: none;
+    stroke: rgb(255 255 255 / 7%);
+    stroke-width: 1;
+}
+
+.bench__label {
+    fill: #b8542f;
+}
+
+.bench__spindle {
+    fill: #e8e8e5;
+}
+
+.bench__arm {
+    fill: none;
+    stroke: #cfcfcc;
+    stroke-width: 6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.bench__headshell {
+    fill: #55555d;
+}
+
+.bench__brick {
+    fill: #a9a9a6;
+    stroke: rgb(0 0 0 / 12%);
+}
+
+.bench__slot {
+    fill: #8e8e93;
+}
+
+.bench__cables,
+.bench__plugs {
+    opacity: 0.82;
+}
+
+/* The socket in the case, and the connector sitting in it. Drawn so a lead
+   plainly ends *in* something rather than near it. */
+.bench__jack {
+    fill: #55555c;
+}
+
+.bench__plug {
+    fill: #3a3a40;
+}
+
+/* Far enough back that the card always wins, and the whole thing fades toward
+   the middle where the reading happens. */
+.bench__unit {
+    opacity: 0.7;
+}
+
+/* ----------------------------------------------------------- drum machine */
+
+.dm {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-3);
+}
+
+.dm__bar {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+}
+
+.dm__transport,
+.dm__clear,
+.dm__bpm {
+    padding: 0.25rem 0.5rem;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-sm);
+    background: var(--surface-3);
+    color: var(--muted);
+    font: inherit;
+    font-size: var(--fs-micro);
+    font-weight: 600;
+    letter-spacing: var(--track-label);
+    text-indent: var(--track-label);
+    text-transform: uppercase;
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 95%),
+        0 1px 0 rgb(0 0 0 / 22%);
+    cursor: pointer;
+    transition:
+        transform var(--dur-fast) var(--ease),
+        box-shadow var(--dur-fast) var(--ease),
+        background var(--dur-fast) var(--ease);
+}
+
+.dm__transport.is-running {
+    background: var(--accent);
+    border-color: rgb(0 0 0 / 30%);
+    color: var(--accent-ink);
+}
+
+/* Pushed right when the row fits, and simply last when it wraps. `auto` on its
+   own left it hanging over the edge instead of moving down. */
+.dm__clear {
+    margin-left: auto;
+}
+
+.dm__tempo {
+    display: inline-flex;
+    flex-shrink: 0;
+    gap: 2px;
+}
+
+.dm__bpm {
+    min-width: 30px;
+    padding: 0.25rem 0.4rem;
+    font-size: var(--fs-base);
+    line-height: 1;
+    letter-spacing: 0;
+    text-indent: 0;
+}
+
+.dm__bpm:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.dm__grid {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.dm__row {
+    display: grid;
+    grid-template-columns: 3.2rem repeat(8, minmax(0, 1fr));
+    align-items: center;
+    gap: 3px;
+}
+
+.dm__voice {
+    color: var(--faint);
+    font-size: var(--fs-micro);
+    font-weight: 600;
+    letter-spacing: var(--track-label);
+}
+
+/* A moulded black keycap, the dominant part on the panel. Dark keys on a light
+   body is the whole look, and it is where the value contrast in this interface
+   finally comes from. */
+.dm__pad {
+    aspect-ratio: 1;
+    min-height: 26px;
+    padding: 0;
+    border: 1px solid rgb(0 0 0 / 55%);
+    border-radius: var(--r-sm);
+    background: #26262a;
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 14%),
+        0 2px 0 rgb(0 0 0 / 30%),
+        0 3px 4px rgb(0 0 0 / 18%);
+    cursor: pointer;
+    /* Snaps down, eases back: a key that returns as fast as it travels feels
+       like a picture of a key rather than a key. */
+    transition:
+        background var(--dur-fast) var(--ease),
+        box-shadow 160ms var(--ease),
+        transform 160ms var(--ease);
+}
+
+.dm__pad:hover {
+    background: #34343a;
+}
+
+/* Travel. The cap sinks onto the panel and its shadow disappears under it. */
+.dm__pad:active {
+    transform: translateY(2px);
+    box-shadow: inset 0 2px 4px rgb(0 0 0 / 45%);
+    transition-duration: 0ms;
+}
+
+/* And the strike itself, which outlives the click so a tap you barely made
+   still registers as something that happened. */
+.dm__pad.is-hit {
+    animation: struck 220ms var(--ease);
+}
+
+@keyframes struck {
+    0% {
+        background: var(--accent);
+        box-shadow:
+            inset 0 1px 0 rgb(255 255 255 / 35%),
+            0 0 16px rgb(209 60 0 / 85%);
+    }
+
+    100% {
+        box-shadow:
+            inset 0 1px 0 rgb(255 255 255 / 14%),
+            0 2px 0 rgb(0 0 0 / 30%);
+    }
+}
+
+/* Armed: a white cap among the black ones. */
+.dm__pad.is-on {
+    background: var(--surface-3);
+    border-color: rgb(0 0 0 / 40%);
+}
+
+/* Under the playhead a black cap only glints; an armed one fires. That
+   difference is the whole illusion of a machine running. */
+.dm__pad.is-now {
+    background: #3d3d44;
+}
+
+.dm__pad.is-on.is-now {
+    background: var(--accent);
+    border-color: rgb(0 0 0 / 45%);
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 30%),
+        0 0 10px rgb(209 60 0 / 60%);
+}
+
+/* The readout: numbers behind glass, not printed on the panel. */
+.dm__display {
+    display: flex;
+    align-items: baseline;
+    gap: var(--sp-2);
+    padding: var(--sp-2) var(--sp-3);
+    border: 1px solid rgb(0 0 0 / 55%);
+    border-radius: var(--r-sm);
+    background: var(--screen);
+    color: var(--screen-ink);
+}
+
+.dm__glyph {
+    color: var(--accent);
+    font-size: var(--fs-micro);
+}
+
+.dm__bpm-read {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.3rem;
+    font-size: var(--fs-lg);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.08em;
+}
+
+.dm__bpm-read i {
+    color: var(--screen-dim);
+    font-size: var(--fs-micro);
+    font-style: normal;
+    font-weight: 600;
+    letter-spacing: var(--track-label);
+}
+
+.dm__bpm-read--dim {
+    color: var(--screen-dim);
+    font-size: var(--fs-base);
+}
+
+.dm__spacer {
+    flex: 1;
+}
+
+/* Indicator lamps: their own parts, sitting above the keys the way they do on
+   the hardware. The blink reads far better when it is not fighting a keycap. */
+.dm__lights {
+    display: grid;
+    grid-template-columns: 3.2rem repeat(8, minmax(0, 1fr));
+    align-items: center;
+    gap: 3px;
+    padding-left: calc(3.2rem + 3px);
+}
+
+.dm__led {
+    justify-self: center;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgb(0 0 0 / 22%);
+    transition: background var(--dur-fast) var(--ease);
+}
+
+.dm__led.is-downbeat {
+    background: rgb(0 0 0 / 38%);
+}
+
+.dm__led.is-lit {
+    background: var(--accent);
+    box-shadow: 0 0 6px rgb(209 60 0 / 70%);
+}
+
+/* The transport and tempo keys travel too, or the grid is the only thing in
+   the panel that answers to a finger. */
+.dm__transport:active,
+.dm__clear:active,
+.dm__bpm:active {
+    transform: translateY(1px);
+    box-shadow: inset 0 1px 3px rgb(0 0 0 / 30%);
 }
 
 /* ------------------------------------------------------------------- picks */
@@ -1046,13 +1558,19 @@
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
-    padding: 0.3rem 0.75rem 0.3rem 0.3rem;
-    border: 1px solid var(--line);
-    border-radius: var(--r-pill);
-    background: transparent;
+    padding: 0.3rem 0.3rem 0.3rem 0.3rem;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-sm);
+    background: var(--surface-3);
     color: var(--muted);
-    font-size: var(--fs-base);
-    font-weight: 500;
+    font-size: var(--fs-micro);
+    font-weight: 600;
+    letter-spacing: var(--track-label);
+    text-indent: var(--track-label);
+    text-transform: uppercase;
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 95%),
+        0 1px 0 rgb(0 0 0 / 18%);
     cursor: pointer;
     transition:
         border-color var(--dur-fast) var(--ease),
@@ -1061,7 +1579,7 @@
 }
 
 .chip--bare {
-    padding: 0.3rem 0.75rem;
+    padding: 0.3rem 0.3rem;
 }
 
 .chip:hover:not(:disabled) {
@@ -1070,10 +1588,12 @@
 }
 
 .chip.is-active {
-    border-color: transparent;
+    border-color: rgb(0 0 0 / 30%);
     background: var(--accent);
     color: var(--accent-ink);
-    font-weight: 600;
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 25%),
+        0 1px 0 rgb(0 0 0 / 25%);
 }
 
 /* ------------------------------------------------------------------- stage */
@@ -1092,8 +1612,19 @@
 }
 
 .stage__title {
+    display: flex;
+    align-items: baseline;
+    gap: var(--sp-3);
     font-size: var(--fs-lg);
     color: var(--text);
+}
+
+.stage__count {
+    margin-left: auto;
+    color: var(--faint);
+    font-size: var(--fs-base);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
 }
 
 .stage__sub {
@@ -1141,7 +1672,7 @@
 .reveal__name {
     font-size: var(--fs-hero);
     line-height: 1.05;
-    color: var(--accent);
+    color: var(--accent-text);
 }
 
 .reveal__sub {
@@ -1149,47 +1680,8 @@
     font-size: var(--fs-base);
 }
 
-.reveal__votes {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-}
-
-.reveal__votes li {
-    display: flex;
-    align-items: center;
-    gap: var(--sp-2);
-    padding: 0.45rem 0.55rem;
-    border-radius: var(--r-sm);
-    font-size: var(--fs-base);
-    color: var(--muted);
-}
-
-.reveal__votes li:nth-child(odd) {
-    background: var(--surface-2);
-}
-
-.reveal__votes li.is-correct {
-    color: var(--good);
-}
-
-.reveal__arrow {
-    color: var(--faint);
-}
-
-.reveal__guess {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.reveal__mark {
-    margin-left: auto;
-    font-weight: 700;
-}
-
 .reveal__pts {
-    color: var(--accent);
+    color: var(--accent-text);
     font-size: var(--fs-micro);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
@@ -1254,7 +1746,7 @@
 }
 
 .track--playing .track__title {
-    color: var(--accent);
+    color: var(--accent-text);
 }
 
 .track__x {
@@ -1273,7 +1765,7 @@
 }
 
 .track__x:hover {
-    background: rgb(255 107 107 / 15%);
+    background: rgb(192 38 27 / 15%);
     color: var(--bad);
 }
 
@@ -1285,7 +1777,7 @@
 }
 
 .track__meta--score {
-    color: var(--accent);
+    color: var(--accent-text);
 }
 
 /* Two numbers per row, so they need to be told apart at a glance rather than
@@ -1332,7 +1824,7 @@
 }
 
 .url__hint--bad {
-    color: #ffb0b0;
+    color: var(--bad);
 }
 
 .url__preview {
@@ -1397,7 +1889,7 @@
     padding: var(--sp-3) 0;
 }
 
-.setting + .setting {
+.setting+.setting {
     border-top: 1px solid var(--line);
 }
 
@@ -1408,12 +1900,10 @@
     color: var(--text);
 }
 
-.setting__hint {
-    display: block;
-    margin-top: 2px;
+.win__note {
     color: var(--faint);
     font-size: var(--fs-micro);
-    line-height: 1.5;
+    font-weight: 500;
 }
 
 .stepper {
@@ -1490,7 +1980,7 @@
 
 .toggle--on {
     border-color: transparent;
-    background: rgb(255 181 69 / 25%);
+    background: rgb(209 60 0 / 25%);
 }
 
 .toggle--on .toggle__thumb {
@@ -1530,7 +2020,7 @@
 .award__glyph {
     font-variant-emoji: text;
     font-size: var(--fs-lg);
-    color: var(--accent);
+    color: var(--accent-text);
 }
 
 .award--people .award__glyph {
@@ -1656,7 +2146,7 @@
     color: var(--text);
     font-size: var(--fs-base);
     cursor: pointer;
-    box-shadow: 0 12px 32px rgb(0 0 0 / 45%);
+    box-shadow: 0 12px 32px rgb(0 0 0 / 22%);
     animation: rise var(--dur) var(--ease) both;
 }
 
@@ -1665,7 +2155,7 @@
 }
 
 .toast--error {
-    color: #ffc0c0;
+    color: var(--bad);
 }
 
 /* ------------------------------------------------------------------- sheet */
@@ -1680,7 +2170,7 @@
 }
 
 .sheet::backdrop {
-    background: rgb(5 6 9 / 78%);
+    background: rgb(20 20 26 / 45%);
     backdrop-filter: blur(4px);
 }
 
@@ -1754,7 +2244,7 @@
 
 .locale__option.is-active {
     background: var(--surface-3);
-    color: var(--accent);
+    color: var(--accent-text);
 }
 
 /* ------------------------------------------------------------- responsive */
@@ -1767,10 +2257,6 @@
 
     .shell__side {
         position: static;
-    }
-
-    .shell__code-label {
-        display: none;
     }
 
     .rate {
@@ -1802,10 +2288,6 @@
 
 .spinner__label {
     color: inherit;
-}
-
-.reveal__votes li.is-wrong {
-    color: var(--faint);
 }
 
 .locale--compact .locale__option {

@@ -49,18 +49,22 @@ export function AppShell({ view, connection, onLeave, onShowRules, sidebar, chil
     return (
         <div className="shell">
             <header className="shell__bar">
-                <Logo size={22} className="shell__logo" />
+                <Logo className="shell__logo" />
 
-                <button type="button" className="shell__code" onClick={copyInvite} title={t.shell.copyInvite}>
-                    <span className="shell__code-label">{t.shell.room}</span>
+                {/* The room block carries the connection itself, rather than a
+                    separate dot beside it: it is already the thing you look at,
+                    and one element saying one thing beats two. */}
+                <button
+                    type="button"
+                    className={`shell__code shell__code--${connection}`}
+                    onClick={copyInvite}
+                    title={t.shell.copyInvite}
+                >
                     <span className="shell__code-value">{copied ? t.shell.copied : view.id}</span>
+                    <span className="visually-hidden" role="status">
+                        {t.shell[connection === 'online' ? 'live' : connection]}
+                    </span>
                 </button>
-
-                <span
-                    className={`dot dot--${connection}`}
-                    role="status"
-                    aria-label={t.shell[connection === 'online' ? 'live' : connection]}
-                />
 
                 <span className="shell__spacer" />
 

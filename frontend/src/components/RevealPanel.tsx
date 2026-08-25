@@ -63,6 +63,19 @@ export function RevealPanel({ view }: RevealPanelProps) {
     const total = contributions.reduce((sum, value) => sum + value, 0);
     const verdict = Math.round(roomVerdict(reveal));
     const drag = obviousnessDrag(reveal.answers);
+    // Everyone who did anything this round, in the order the answers came back
+    // so the best-liked stay at the top; whoever only guessed follows.
+    const listeners = [
+        ...reveal.answers.map(answer => ({
+            id: answer.listenerId,
+            answer,
+            vote: reveal.votes.find(v => v.voterId === answer.listenerId),
+        })),
+        ...reveal.votes
+            .filter(vote => !reveal.answers.some(answer => answer.listenerId === vote.voterId))
+            .map(vote => ({ id: vote.voterId, answer: undefined, vote })),
+    ];
+
     const banked = reveal.points
         .filter(delta => delta.playerId === reveal.djId)
         .reduce((sum, delta) => sum + delta.points, 0);
@@ -152,54 +165,54 @@ export function RevealPanel({ view }: RevealPanelProps) {
                 </li>
             </ul>
 
-            {view.settings.guessingEnabled && reveal.votes.length > 0 && (
-                <ul className="reveal__votes">
-                    {reveal.votes.map(vote => (
-                        <li key={vote.voterId} className={vote.correct ? 'is-correct' : 'is-wrong'}>
-                            <Avatar id={vote.voterId} name={nameOf(view.players, vote.voterId)} size="sm" />
-                            {nameOf(view.players, vote.voterId)}
-                            <span className="reveal__arrow" aria-hidden="true">
-                                →
-                            </span>
-                            <span className="reveal__guess">{nameOf(view.players, vote.guessId)}</span>
-                            {guessPoints.has(vote.voterId) && (
-                                <span className="reveal__pts">{t.reveal.points(1)}</span>
-                            )}
-                            <span
-                                className="reveal__mark"
-                                aria-label={vote.correct ? t.reveal.correct : t.reveal.wrong}
-                            >
-                                {vote.correct ? '✓' : '✗'}
-                            </span>
-                        </li>
-                    ))}
-                </ul>
-            )}
-
+            {/* One row per listener, not two lists of the same people. What
+                somebody guessed and what they made of the track are the same
+                person's turn, and reading them meant looking in two places. */}
             <div className="answers">
                 <span className="label">{t.reveal.answersTitle}</span>
-                {reveal.answers.length === 0 && <span className="muted">{t.reveal.toughCrowd}</span>}
-                {reveal.answers.map(answer => {
-                    const name = nameOf(view.players, answer.listenerId);
+                {listeners.length === 0 && <span className="muted">{t.reveal.toughCrowd}</span>}
+                {listeners.map(({ id, answer, vote }) => {
+                    const name = nameOf(view.players, id);
                     return (
-                        <span key={answer.listenerId} className="answers__row">
-                            <Avatar id={answer.listenerId} name={name} size="sm" />
+                        <span key={id} className="answers__row">
+                            <Avatar id={id} name={name} size="sm" />
                             <span className="answers__name">{name}</span>
-                            {/* "4" on its own reads as points, or a rank, or
-                                anything. The scale has to be on the pill. */}
-                            <b className="answers__like" title={t.reveal.likedIt(name, answer.like)}>
-                                {answer.like}/{RATING_MAX}
-                            </b>
-                            {answer.heard ? (
-                                <span className="tag tag--heard">{t.reveal.heardTag}</span>
-                            ) : (
-                                <span className="tag tag--new">{t.reveal.newTag(NOVELTY_BONUS)}</span>
+
+                            {vote && (
+                                <span
+                                    className={`answers__guess${vote.correct ? ' is-correct' : ''}`}
+                                    title={vote.correct ? t.reveal.correct : t.reveal.wrong}
+                                >
+                                    <i aria-hidden="true">→</i>
+                                    {nameOf(view.players, vote.guessId)}
+                                    <b aria-hidden="true">{vote.correct ? '✓' : '✗'}</b>
+                                    {guessPoints.has(id) && <em>{t.reveal.points(1)}</em>}
+                                </span>
                             )}
-                            {answer.popular && <span className="tag tag--popular">{t.reveal.popularTag}</span>}
-                            {answer.moved && <span className="tag tag--moved">{t.reveal.movedTag(EMOTION_BONUS)}</span>}
-                            <span className="answers__sum" title={t.reveal.rowWorking(name)}>
-                                = {answerValue(answer)}
-                            </span>
+
+                            {answer ? (
+                                <>
+                                    {/* "4" on its own reads as points, or a rank,
+                                        or anything. The scale has to be on it. */}
+                                    <b className="answers__like" title={t.reveal.likedIt(name, answer.like)}>
+                                        {answer.like}/{RATING_MAX}
+                                    </b>
+                                    {answer.heard ? (
+                                        <span className="tag tag--heard">{t.reveal.heardTag}</span>
+                                    ) : (
+                                        <span className="tag tag--new">{t.reveal.newTag(NOVELTY_BONUS)}</span>
+                                    )}
+                                    {answer.popular && <span className="tag tag--popular">{t.reveal.popularTag}</span>}
+                                    {answer.moved && (
+                                        <span className="tag tag--moved">{t.reveal.movedTag(EMOTION_BONUS)}</span>
+                                    )}
+                                    <span className="answers__sum" title={t.reveal.rowWorking(name)}>
+                                        = {answerValue(answer)}
+                                    </span>
+                                </>
+                            ) : (
+                                <span className="answers__silent">{t.reveal.saidNothing}</span>
+                            )}
                         </span>
                     );
                 })}

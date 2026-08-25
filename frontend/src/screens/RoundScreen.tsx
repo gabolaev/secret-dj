@@ -6,6 +6,7 @@ import { RevealPanel } from '../components/RevealPanel';
 import { AnswerBar } from '../components/AnswerBar';
 import { Window } from '../components/Window';
 import { serviceBadgeByName } from '../lib/serviceLogos';
+import { formatCountdown, useCountdown } from '../hooks/useCountdown';
 import { useT } from '../i18n';
 
 interface RoundScreenProps {
@@ -24,6 +25,10 @@ interface RoundScreenProps {
 export function RoundScreen({ view, game }: RoundScreenProps) {
     const t = useT();
     const round = view.round;
+    // Above the early return: a hook cannot be called conditionally, and there
+    // is no round to count down between tracks anyway.
+    const secondsLeft = useCountdown(round?.endsAt ?? 0, view.now);
+    const overtime = secondsLeft < 0;
 
     if (!round) return <p className="muted">{t.round.waitingForNext}</p>;
 
@@ -37,6 +42,15 @@ export function RoundScreen({ view, game }: RoundScreenProps) {
 
     const stats = (
         <span className="stats">
+            {!revealed && (
+                <span
+                    className={`timer${overtime ? ' timer--over' : ''}`}
+                    role="timer"
+                    aria-label={t.round.timeLeft}
+                >
+                    {formatCountdown(secondsLeft)}
+                </span>
+            )}
             {round.isMine && <span className="stat stat--mine">{t.round.titleMine}</span>}
             <span className="stat stat--rated" title={t.round.answered(round.answersIn)}>
                 <i aria-hidden="true">✓</i>
@@ -82,6 +96,17 @@ export function RoundScreen({ view, game }: RoundScreenProps) {
                     </div>
                 )}
 
+                {!revealed && round.canVote && (
+                    <div className="rack">
+                        <ChipPicker
+                            label={t.guess.title}
+                            options={others}
+                            value={round.myGuess}
+                            onSelect={playerId => void game.vote(playerId)}
+                        />
+                    </div>
+                )}
+
                 {!revealed && round.canAnswer && (
                     <div className="rack">
                         {/* The normal way a round ends. The host's own button is
@@ -98,18 +123,6 @@ export function RoundScreen({ view, game }: RoundScreenProps) {
                         <p className="muted">{t.round.doneCount(round.doneIn, round.doneExpected)}</p>
                     </div>
                 )}
-
-                {!revealed && round.canVote && (
-                    <div className="rack">
-                        <ChipPicker
-                            label={t.guess.title}
-                            options={others}
-                            value={round.myGuess}
-                            onSelect={playerId => void game.vote(playerId)}
-                        />
-                    </div>
-                )}
-
 
                 {revealed && <RevealPanel view={view} />}
             </Window>

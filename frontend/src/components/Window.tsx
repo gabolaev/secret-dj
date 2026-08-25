@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
 
 interface WindowProps {
-    title: string;
+    /** Omitted when the body announces itself, as the join card does. */
+    title?: string;
     children: ReactNode;
     /** Small controls docked at the right of the title bar. */
     actions?: ReactNode;
@@ -18,12 +19,14 @@ interface WindowProps {
 export function Window({ title, children, actions, className, flush }: WindowProps) {
     return (
         <section className={`win${className ? ` ${className}` : ''}`}>
-            <header className="win__bar">
-                <span className="win__grip" aria-hidden="true" />
-                <h2 className="win__title">{title}</h2>
-                <span className="win__grip" aria-hidden="true" />
-                {actions}
-            </header>
+            {(title || actions) && (
+                <header className="win__bar">
+                    <span className="win__grip" aria-hidden="true" />
+                    {title && <h2 className="win__title">{title}</h2>}
+                    <span className="win__grip" aria-hidden="true" />
+                    {actions}
+                </header>
+            )}
             <div className="win__body" style={flush ? { padding: 0 } : undefined}>
                 {children}
             </div>

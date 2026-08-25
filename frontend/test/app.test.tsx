@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { CLAIMS } from '@secret-dj/common';
 import type { GameView, PublicPlayer, Result, RoundView, Session } from '@secret-dj/common';
 import { en } from '../src/i18n/en';
+import { PLUG_REACH } from '../src/components/Cables';
 
 /**
  * Screen-selection and localisation tests.
@@ -94,6 +95,7 @@ function round(overrides: Partial<RoundView> = {}): RoundView {
         answersExpected: 3,
         votesIn: 1,
         votersExpected: 2,
+        endsAt: Date.now() + 42_000,
         isReady: false,
         myDone: false,
         doneIn: 0,
@@ -253,6 +255,206 @@ describe('in-game screens', () => {
         expect(screen.getByText(/How many actually play/i)).toBeTruthy();
     });
 
+    it('shows the connection on the room block, not a dot beside it', async () => {
+        await mountWith(lobbyView());
+        await waitFor(() => expect(screen.getByText('K7QM2')).toBeTruthy());
+
+        const code = document.querySelector('.shell__code')!;
+        expect(code.className).toContain('shell__code--online');
+        // The separate indicator is gone, but the state is still announced.
+        expect(document.querySelector('.dot')).toBeNull();
+        expect(within(code as HTMLElement).getByRole('status').textContent).toBe('live');
+    });
+
+    it('hides a silent drum machine behind a button in the sidebar', async () => {
+        vi.useFakeTimers({ shouldAdvanceTime: true });
+        try {
+            await mountWith(lobbyView());
+            await waitFor(() => expect(screen.getByText('Drum machine')).toBeTruthy());
+
+            // Folded away, the panel is its title bar and nothing else.
+            expect(document.querySelector('.dm')).toBeNull();
+            expect(document.querySelector('.side--inset .win__body')!.children).toHaveLength(0);
+
+            fireEvent.click(screen.getByRole('button', { name: 'Drums' }));
+            await waitFor(() => expect(document.querySelector('.dm')).toBeTruthy());
+
+            // Four voices, eight steps, and it opens already running a pattern.
+            expect(document.querySelectorAll('.dm__row')).toHaveLength(4);
+            expect(document.querySelectorAll('.dm__pad')).toHaveLength(32);
+            expect(document.querySelectorAll('.dm__pad.is-on').length).toBeGreaterThan(0);
+
+            // Indicator lamps are their own row, the way the hardware does it.
+            expect(document.querySelectorAll('.dm__led')).toHaveLength(8);
+            expect(document.querySelectorAll('.dm__led.is-lit')).toHaveLength(1);
+            // ...and the readout says what it is doing.
+            expect(document.querySelector('.dm__display')!.textContent).toContain('120');
+
+            // The playhead moves on its own — one lit step, and a different one
+            // a beat later.
+            const lit = () => [...document.querySelectorAll('.dm__pad')].findIndex(pad => pad.className.includes('is-now'));
+            const first = lit();
+            expect(first).toBeGreaterThanOrEqual(0);
+            await act(async () => {
+                vi.advanceTimersByTime(260);
+            });
+            expect(lit()).not.toBe(first);
+
+            // A pad is a switch you can flip...
+            const pad = document.querySelectorAll('.dm__pad')[0];
+            const wasOn = pad.getAttribute('aria-pressed') === 'true';
+            fireEvent.click(pad);
+            expect(pad.getAttribute('aria-pressed')).toBe(String(!wasOn));
+
+            // ...and the hit is an event of its own, so a tap on a stopped
+            // machine still registers as something that happened.
+            expect(pad.className).toContain('is-hit');
+            await act(async () => {
+                vi.advanceTimersByTime(240);
+            });
+            expect(pad.className).not.toContain('is-hit');
+
+            // Cables spill out of it across the page — and must never be able
+            // to swallow a click, add a scrollbar, or draw over the content.
+            const cables = document.querySelector('.cables')!;
+            expect(cables).toBeTruthy();
+            expect(cables.getAttribute('aria-hidden')).toBe('true');
+            expect(cables.tagName.toLowerCase()).toBe('svg');
+            // Portalled straight to the body. Inside the layout it sat in the
+            // sidebar column, where a positioned element paints over static
+            // block content whatever the DOM order says.
+            expect(cables.parentElement).toBe(document.body);
+            expect(cables.closest('.shell')).toBeNull();
+            // Every lead ends in a connector rather than stopping in mid-air.
+            expect(cables.querySelectorAll('g > rect').length).toBeGreaterThan(0);
+
+            // The tempo keys are a pair of nudges rather than four buttons
+            // repeating the number the display already carries.
+            fireEvent.click(screen.getByRole('button', { name: 'Slower' }));
+            expect(document.querySelector('.dm__display')!.textContent).toContain('110');
+
+            // Nothing anywhere in it can make a sound.
+            expect(document.querySelector('audio')).toBeNull();
+
+            // Folding the machine away takes them with it.
+            fireEvent.click(screen.getByRole('button', { name: 'Hide drums' }));
+            await waitFor(() => expect(document.querySelector('.cables')).toBeNull());
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('lays gear out behind the join card without getting in its way', async () => {
+        window.localStorage.clear();
+        const App = await importApp();
+        render(<App />);
+
+        await waitFor(() => expect(document.querySelector('.bench')).toBeTruthy());
+        const bench = document.querySelector('.bench')!;
+        // A backdrop to a form somebody has to read and type into: it must not
+        // be reachable, focusable, or announced.
+        expect(bench.getAttribute('aria-hidden')).toBe('true');
+        expect(bench.getAttribute('focusable')).toBe('false');
+        expect(bench.querySelectorAll('button, a, input')).toHaveLength(0);
+        // A working desk is dense: gear pushed up against gear, not four
+        // objects floating in the corners.
+        expect(bench.querySelectorAll('.bench__unit').length).toBeGreaterThanOrEqual(8);
+
+        // Cable colours live in the component rather than the stylesheet, so
+        // the palette guard in the CSS tests cannot see them. Check here that
+        // the desk stays achromatic apart from the one accent.
+        const strokes = [...bench.querySelectorAll('.bench__cables path[stroke^="#"]')].map(
+            node => node.getAttribute('stroke')!.slice(1).toLowerCase(),
+        );
+        expect(strokes.length).toBeGreaterThan(20);
+        for (const hex of new Set(strokes)) {
+            const [r, g, b] = [0, 2, 4].map(i => parseInt(hex.slice(i, i + 2), 16));
+            const saturated = Math.max(r, g, b) - Math.min(r, g, b) > 40;
+            expect(!saturated || hex === 'd13c00' || hex === 'c9b273', `${hex} is off the palette`).toBe(true);
+        }
+
+        // Every lead is patched between real sockets rather than drawn past
+        // them: each one starts on a jack and ends on a connector.
+        const jacks = [...bench.querySelectorAll('.bench__jack')].map(node => ({
+            x: Number(node.getAttribute('cx')),
+            y: Number(node.getAttribute('cy')),
+        }));
+        expect(jacks.length).toBeGreaterThan(8);
+
+        // Every socket is *on* its panel. Sockets used to be placed just
+        // outside the case, which is what made the connectors look stuck to
+        // nothing: a plug floating in the gap beside the gear.
+        for (const unit of bench.querySelectorAll('.bench__unit')) {
+            const body = unit.querySelector('rect')!;
+            const w = Number(body.getAttribute('width'));
+            const h = Number(body.getAttribute('height'));
+            for (const jack of unit.querySelectorAll('.bench__jack')) {
+                const jx = Number(jack.getAttribute('cx'));
+                const jy = Number(jack.getAttribute('cy'));
+                expect(jx >= 0 && jx <= w && jy >= 0 && jy <= h, `jack ${jx},${jy} is off its panel`).toBe(true);
+            }
+        }
+
+        const plugs = [...bench.querySelectorAll('.bench__plug')];
+        expect(plugs.length).toBeGreaterThan(8);
+
+        const paths = [...bench.querySelectorAll('.bench__cables path')];
+        expect(paths.length).toBeGreaterThan(0);
+        for (const plug of plugs) {
+            // Connectors are placed by transform, the same shape the drum
+            // machine's leads use.
+            const [, px, py] = /translate\(([-\d.]+) ([-\d.]+)\)/
+                .exec(plug.getAttribute('transform')!)!
+                .map(Number);
+            // The sheath starts at the *tail* of the barrel rather than at the
+            // socket, so a lead never runs out through its own connector. That
+            // puts each cable end exactly one connector-length from its plug.
+            const attached = paths.some(path => {
+                const d = path.getAttribute('d')!;
+                const [, sx, sy] = /^M ([-\d.]+) ([-\d.]+)/.exec(d)!;
+                const [, ex, ey] = /([-\d.]+) ([-\d.]+)$/.exec(d)!;
+                const reaches = (x: string, y: string) =>
+                    Math.abs(Math.hypot(Number(x) - px, Number(y) - py) - PLUG_REACH) < 0.01;
+                return reaches(sx, sy) || reaches(ex, ey);
+            });
+            expect(attached, `plug at ${px},${py} is not on a cable`).toBe(true);
+        }
+    });
+
+    it('only shows the tab strip when there is a choice to make', async () => {
+        // A strip of one tab is a second heading for a panel that already has
+        // one: "PLAYLIST" over "IN THE ROOM" over the list itself.
+        await mountWith(lobbyView());
+        await waitFor(() => expect(document.querySelector('.roster')).toBeTruthy());
+        expect(document.querySelector('.tabs')).toBeNull();
+
+        // Once the night is under way there is a queue to switch to, so it
+        // comes back.
+        cleanup();
+        await mountWith(lobbyView({ phase: 'listening', setlistLength: 4, round: round() }));
+        await waitFor(() => expect(document.querySelector('.tabs')).toBeTruthy());
+        expect(document.querySelectorAll('.tab').length).toBeGreaterThan(1);
+    });
+
+    it('says each thing in the lobby once', async () => {
+        // The lobby carried five explanatory subtitles, and the heading, the
+        // queue counter and the empty state each said "you have queued nothing"
+        // in their own words.
+        await mountWith(lobbyView());
+
+        await waitFor(() => expect(screen.getByText(/Queue 2 more tracks/i)).toBeTruthy());
+        const stage = document.querySelector('.stage')!;
+
+        // The count rides on the title rather than heading a section of its own.
+        expect(stage.querySelector('.stage__title')!.textContent).toContain('1/3');
+        expect(screen.queryByText(/Nothing queued yet/i)).toBeNull();
+        // Settings are a label and a control, with the reasoning left to Rules.
+        expect(document.querySelectorAll('.setting__hint')).toHaveLength(0);
+        // Nothing explains the input; it has a placeholder.
+        expect(screen.queryByText(/the more surprising/i)).toBeNull();
+    });
+
+
     it('offers guessing and the whole answer during a round', async () => {
         await mountWith(lobbyView({ phase: 'listening', setlistLength: 4, round: round() }));
 
@@ -283,6 +485,51 @@ describe('in-game screens', () => {
         expect(screen.getByRole('button', { name: /Heard it before/ }).getAttribute('aria-pressed')).toBe('true');
         // The toggles are on and it still says the answer is not in.
         expect(screen.getByText(/Pick a number for your answer to count/)).toBeTruthy();
+    });
+
+    it('counts the round down, and keeps counting once it runs out', async () => {
+        await mountWith(
+            lobbyView({
+                phase: 'listening',
+                setlistLength: 4,
+                now: Date.now(),
+                round: round({ endsAt: Date.now() + 42_000 }),
+            }),
+        );
+
+        await waitFor(() => expect(document.querySelector('.timer')).toBeTruthy());
+        const timer = document.querySelector('.timer')!;
+        expect(timer.textContent).toBe('0:42');
+        expect(timer.className).not.toContain('timer--over');
+
+        // Past the deadline it goes negative and turns red rather than stopping:
+        // the minute is pressure to get on with it, not a cut-off.
+        cleanup();
+        await mountWith(
+            lobbyView({
+                phase: 'listening',
+                setlistLength: 4,
+                now: Date.now(),
+                round: round({ endsAt: Date.now() - 7_000 }),
+            }),
+        );
+
+        await waitFor(() => expect(document.querySelector('.timer')).toBeTruthy());
+        const over = document.querySelector('.timer')!;
+        expect(over.textContent).toBe('−0:07');
+        expect(over.className).toContain('timer--over');
+    });
+
+    it('puts Done last, under the guess it finishes', async () => {
+        await mountWith(lobbyView({ phase: 'listening', setlistLength: 4, round: round() }));
+
+        await waitFor(() => expect(screen.getByRole('button', { name: /^Done$/ })).toBeTruthy());
+        const racks = [...document.querySelectorAll('.rack')];
+        const guessRack = racks.findIndex(rack => rack.querySelector('.pick'));
+        const doneRack = racks.findIndex(rack => rack.textContent?.includes('finished.'));
+
+        expect(guessRack).toBeGreaterThanOrEqual(0);
+        expect(doneRack).toBeGreaterThan(guessRack);
     });
 
     it('stacks the answer instead of letting it wrap across the rack', async () => {
@@ -567,9 +814,16 @@ describe('in-game screens', () => {
         expect(ledger).toContain('Cy banks');
         expect(ledger).toContain('12');
 
+        // One row per listener: what they guessed and what they made of the
+        // track, rather than the same people listed twice.
+        const rows = [...document.querySelectorAll('.answers__row')];
+        expect(rows).toHaveLength(2);
+        expect(rows[0].textContent).toContain('Ana');
+        expect(rows[0].querySelector('.answers__guess')!.textContent).toContain('Cy');
         // A correct guess is worth a point again, and the row says so.
-        const votes = document.querySelector('.reveal__votes')!;
-        expect(votes.textContent).toContain('+1');
+        expect(rows[0].querySelector('.answers__guess')!.textContent).toContain('+1');
+        // Bo answered but never guessed, so that half of the row is simply absent.
+        expect(rows[1].querySelector('.answers__guess')).toBeNull();
     });
 
     it('shows a rating on the reveal as a scale, not a bare number', async () => {

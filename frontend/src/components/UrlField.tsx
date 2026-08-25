@@ -102,7 +102,6 @@ export function UrlField({ value, onChange, onSubmit, disabled, busy }: UrlField
             <p id={`${inputId}-hint`} className={`url__hint${bad ? ' url__hint--bad' : ''}`}>
                 {state === 'invalid' && t.url.hintInvalid}
                 {state === 'unsupported' && t.url.hintUnsupported}
-                {state === 'empty' && t.url.hintEmpty}
                 {state === 'known' && (loading ? t.url.hintLooking : preview ? t.url.hintGood : t.url.hintReady)}
             </p>
 

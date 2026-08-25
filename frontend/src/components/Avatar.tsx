@@ -1,5 +1,5 @@
 import type { PlayerId } from '@secret-dj/common';
-import { initials, playerHue } from '../lib/format';
+import { initials, playerTone } from '../lib/format';
 
 interface AvatarProps {
     id: PlayerId;
@@ -12,7 +12,7 @@ export function Avatar({ id, name, size = 'md', dimmed }: AvatarProps) {
     return (
         <span
             className={`avatar avatar--${size}${dimmed ? ' avatar--dimmed' : ''}`}
-            style={{ ['--hue' as string]: playerHue(id) }}
+            style={{ ['--tone' as string]: `${playerTone(id)}%` }}
             title={name}
             aria-hidden="true"
         >

@@ -8,8 +8,6 @@ import { ru3 } from './plural';
  * arity — fails the build rather than silently showing English.
  */
 export const ru: Messages = {
-    brand: { name: 'Secret', accent: 'DJ' },
-
     common: {
         loading: 'Загрузка',
         close: 'Закрыть',
@@ -42,7 +40,6 @@ export const ru: Messages = {
     },
 
     shell: {
-        room: 'комната',
         copyInvite: 'скопировать',
         copied: 'скопировано!',
         copyPrompt: 'Скопируйте ссылку-приглашение:',
@@ -70,23 +67,17 @@ export const ru: Messages = {
     lobby: {
         queueMore: (n: number) => `Добавьте ещё ${ru3(n, 'трек', 'трека', 'треков')}`,
         setReady: 'Ваш сет готов',
-        hintSecret: 'Никто не видит, что вы выбрали, — ни сейчас, ни потом.',
         hintWaiting: (names: string) => `Ждём: ${names}.`,
         hintHostCanStart: 'Все готовы. Опускайте иглу, когда захотите.',
         hintWaitingForHost: 'Все готовы. Ждём, когда ведущий начнёт.',
-        emptyQueue: 'Пока ничего. Вставьте ссылку выше.',
-        title: 'Разогрев',
+        setlistLength: (n: number) => `${ru3(n, 'трек', 'трека', 'треков')} за вечер`,
         settings: 'Настройки комнаты',
-        willPlay: (n: number) => `сыграет ${n}`,
-        tracksQueued: 'Треков в очереди у каждого',
-        tracksQueuedHint: 'В очередь ставят больше, чем сыграет: так нельзя посчитать, у кого треки уже кончились.',
-        tracksPlayed: 'Сколько сыграет',
-        tracksPlayedHint: (total: number) => `Сейчас в сет-листе ${ru3(total, 'трек', 'трека', 'треков')}.`,
+        title: 'Разогрев',
+        tracksQueued: 'Треков у каждого',
+        tracksPlayed: 'Из них сыграет',
         fewer: 'Меньше',
         more: 'Больше',
         guessing: 'Угадывание',
-        guessingOn: 'Угадывайте, чей трек играет. Без этого недоступна заявка «Вы поймёте, что это я».',
-        guessingOff: 'Просто слушаем: отвечаете на вопросы, но никого не угадываете.',
         start: 'Начать вечер',
         needTwo: 'Для угадывания нужно хотя бы два диджея — позовите кого-нибудь или включите режим прослушивания.',
         stillQueueing: (names: string) => `Ещё выбирают: ${names}.`,
@@ -94,7 +85,6 @@ export const ru: Messages = {
 
     claims: {
         label: 'Ваша заявка',
-        hint: 'Каждую заявку можно поставить только один раз за вечер. Без заявки вы ничем не рискуете, но и получаете ровно то, что дала комната.',
         yoursOnly: 'Ваша заявка. До раскрытия её никто, кроме вас, не видит.',
         needsPlayers: (n: number) => `Нужно хотя бы ${n} игрока в комнате`,
         needsGuessing: 'Нужно включить угадывание',
@@ -141,7 +131,6 @@ export const ru: Messages = {
     url: {
         placeholder: 'Вставьте ссылку на Spotify, YouTube, Apple Music…',
         submit: 'В очередь',
-        hintEmpty: 'Можно что угодно — чем неожиданнее, тем лучше.',
         hintInvalid: 'Это пока не похоже на ссылку.',
         hintUnsupported:
             'Этот сервис мы не проигрываем. Попробуйте Spotify, YouTube, Apple Music, Deezer, SoundCloud, TIDAL или Яндекс.',
@@ -156,6 +145,18 @@ export const ru: Messages = {
         playingNow: 'Играет сейчас',
     },
 
+    drums: {
+        title: 'Драм-машина',
+        show: 'Драмы',
+        hide: 'Скрыть драмы',
+        play: 'Пуск',
+        stop: 'Стоп',
+        clear: 'Сброс',
+        slower: 'Медленнее',
+        faster: 'Быстрее',
+        tempo: 'Темп',
+    },
+
     round: {
         position: (n: number, total: number) => `Трек ${n} из ${total}`,
         titleMine: 'Ваш',
@@ -167,6 +168,7 @@ export const ru: Messages = {
         done: 'Готово',
         undone: 'Ещё не готов',
         doneCount: (n: number, total: number) => `Готовы ${n} из ${total}. Когда будут все, раскрытие произойдёт само.`,
+        timeLeft: 'Сколько осталось на раунд',
         hostReveal: 'Раскрыть диджея',
         hostNext: 'Следующий трек',
         hostFinish: 'Завершить вечер',
@@ -177,7 +179,6 @@ export const ru: Messages = {
 
     answer: {
         likeTitle: 'Насколько понравилось?',
-        likePrompt: 'Выберите оценку',
         likeValue: (n: number) => `${n} из 5`,
         // По фразе на каждое число, чтобы оценка значила у всех одно и то же.
         verdicts: ['Совсем никак', 'Не моё', 'Так себе', 'Неплохо', 'Очень хорошо', 'Отлично'],
@@ -217,6 +218,7 @@ export const ru: Messages = {
         rowWorking: (name: string) => `${name}: оценка, плюс очко за новинку, плюс два, если зацепило`,
         newTag: (n: number) => `новинка +${n}`,
         movedTag: (n: number) => `зацепило +${n}`,
+        saidNothing: 'ничего не сказал',
         answersTitle: 'Что сказала комната',
         obviousLabel: 'Популярность',
         noDrag: 'популярным его никто не назвал',

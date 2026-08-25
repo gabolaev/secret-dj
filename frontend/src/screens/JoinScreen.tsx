@@ -4,6 +4,7 @@ import { gameCodeFromLocation, loadRememberedName } from '../lib/session';
 import { Spinner } from '../components/Spinner';
 import { LocaleToggle } from '../components/LocaleToggle';
 import { Window } from '../components/Window';
+import { Bench } from '../components/Bench';
 import { Logo } from '../components/Logo';
 import { useT } from '../i18n';
 
@@ -51,14 +52,14 @@ export function JoinScreen({ connection, onCreate, onJoin, onShowRules }: JoinSc
 
     return (
         <div className="join">
-            <Window title={`${t.brand.name}${t.brand.accent}`} className="join__win">
+            <Bench />
+            {/* No title bar: the card's first line is the name, and a chrome
+                caption above it said it a second time. The wordmark is real
+                text, so it needs no hidden copy for a third. */}
+            <Window className="join__win">
                 <div className="join__hero">
                     <h1 className="join__logo">
-                        <Logo size={54} />
-                        <span className="visually-hidden">
-                            {t.brand.name}
-                            {t.brand.accent}
-                        </span>
+                        <Logo size="hero" />
                     </h1>
                     <p className="join__tagline">{t.join.tagline}</p>
                 </div>

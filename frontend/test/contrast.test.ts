@@ -45,12 +45,16 @@ const PAIRS: Array<[string, string, number, string]> = [
     ...SURFACES.map(s => ['text', s, 7, 'body text'] as [string, string, number, string]),
     ...SURFACES.map(s => ['muted', s, 4.5, 'secondary text'] as [string, string, number, string]),
     ...SURFACES.map(s => ['faint', s, 3, 'captions and meta'] as [string, string, number, string]),
-    ['accent', 'surface', 4.5, 'accent text and figures'],
-    ['love', 'surface', 4.5, 'rating stars'],
-    ['detective', 'surface', 4.5, 'detective scores'],
+    // Orange is paint, not ink. As a fill it only has to read as a shape, so it
+    // is held to the 3:1 that graphics need; the words that happen to be orange
+    // use the darkened `accent-text`, which is held to the full 4.5.
+    ['accent', 'surface', 3, 'the orange fill, as a shape'],
+    ['accent-text', 'surface', 4.5, 'orange used as words'],
+    ['accent-ink', 'accent', 4.5, 'the legend on an orange key'],
+    ['love', 'surface', 4.5, 'rating figures'],
+    ['detective', 'surface', 4.5, 'people awards'],
     ['good', 'surface', 4.5, 'correct guesses'],
     ['bad', 'surface', 4.5, 'errors'],
-    ['accent-ink', 'accent', 7, 'label on the primary button'],
     // The display is its own darker panel.
     ['screen-ink', 'screen', 7, 'primary readout'],
     ['screen-dim', 'screen', 4.5, 'readout captions — dim in feel, not in legibility'],

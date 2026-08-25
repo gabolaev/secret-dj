@@ -210,6 +210,10 @@ of tension, and the only round of the night you spend as the audience.
 
 ---
 
+Each round carries **a minute on the clock**, shown in the header. Nothing
+happens when it reaches zero: it keeps counting the other way and turns red, so
+the room can see who it is waiting on without anybody being cut off mid-answer.
+
 **The round ends when everybody presses Done.** No host action, no waiting on
 somebody to notice — the last Done reveals the track.
 

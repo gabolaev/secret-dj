@@ -36,20 +36,31 @@ export function LobbyScreen({ view, game }: LobbyScreenProps) {
         if (result.ok) setUrl('');
     };
 
+    // Only says something once there is something to say. While you are still
+    // queueing, the title and the counter have already said it.
+    const status =
+        remaining > 0
+            ? null
+            : waitingOn.length > 0
+              ? t.lobby.hintWaiting(waitingOn.map(player => player.name).join(', '))
+              : isHost
+                ? t.lobby.hintHostCanStart
+                : t.lobby.hintWaitingForHost;
+
     return (
         <div className="stage">
             <Window title={t.lobby.title}>
                 <header className="stage__head">
-                    <h2 className="stage__title">{remaining > 0 ? t.lobby.queueMore(remaining) : t.lobby.setReady}</h2>
-                    <p className="stage__sub">
-                        {remaining > 0
-                            ? t.lobby.hintSecret
-                            : waitingOn.length > 0
-                              ? t.lobby.hintWaiting(waitingOn.map(player => player.name).join(', '))
-                              : isHost
-                                ? t.lobby.hintHostCanStart
-                                : t.lobby.hintWaitingForHost}
-                    </p>
+                    {/* Title and count on one line: "add three more" and
+                        "0 of 3" were saying the same thing in two places, with
+                        an empty-state sentence underneath saying it a third. */}
+                    <h2 className="stage__title">
+                        {remaining > 0 ? t.lobby.queueMore(remaining) : t.lobby.setReady}
+                        <span className="stage__count">
+                            {mine.length}/{tracksPerPlayer}
+                        </span>
+                    </h2>
+                    {status && <p className="stage__sub">{status}</p>}
                 </header>
 
                 {remaining > 0 && (
@@ -58,18 +69,11 @@ export function LobbyScreen({ view, game }: LobbyScreenProps) {
                     </div>
                 )}
 
+                {mine.length > 0 && (
                 <div className="rack rack--stack">
-                    <span className="label">
-                        {t.roster.yourQueue}
-                        <span className="label__count">
-                            {mine.length}/{tracksPerPlayer}
-                        </span>
-                        {remaining === 0 && <span className="label__count">· {t.lobby.willPlay(tracksPlayedPerPlayer)}</span>}
-                    </span>
                     <TrackList
                         tracks={mine}
                         onRemove={trackId => void game.removeTrack(trackId)}
-                        emptyMessage={t.lobby.emptyQueue}
                         slot={track => (
                             <ClaimPicker
                                 track={track}
@@ -84,17 +88,17 @@ export function LobbyScreen({ view, game }: LobbyScreenProps) {
                             />
                         )}
                     />
-                    {mine.length > 0 && <p className="muted">{t.claims.hint}</p>}
                 </div>
+                )}
             </Window>
 
             {isHost && (
-                <Window title={t.lobby.settings}>
+                <Window
+                    title={t.lobby.settings}
+                    actions={<span className="win__note">{t.lobby.setlistLength(active.length * tracksPlayedPerPlayer)}</span>}
+                >
                     <div className="setting">
-                        <div>
-                            <span className="setting__name">{t.lobby.tracksQueued}</span>
-                            <span className="setting__hint">{t.lobby.tracksQueuedHint}</span>
-                        </div>
+                        <span className="setting__name">{t.lobby.tracksQueued}</span>
                         <Stepper
                             value={tracksPerPlayer}
                             min={LIMITS.tracksPerPlayerMin}
@@ -106,12 +110,7 @@ export function LobbyScreen({ view, game }: LobbyScreenProps) {
                     </div>
 
                     <div className="setting">
-                        <div>
-                            <span className="setting__name">{t.lobby.tracksPlayed}</span>
-                            <span className="setting__hint">
-                                {t.lobby.tracksPlayedHint(active.length * tracksPlayedPerPlayer)}
-                            </span>
-                        </div>
+                        <span className="setting__name">{t.lobby.tracksPlayed}</span>
                         <Stepper
                             value={tracksPlayedPerPlayer}
                             min={1}
@@ -123,12 +122,7 @@ export function LobbyScreen({ view, game }: LobbyScreenProps) {
                     </div>
 
                     <div className="setting">
-                        <div>
-                            <span className="setting__name">{t.lobby.guessing}</span>
-                            <span className="setting__hint">
-                                {guessingEnabled ? t.lobby.guessingOn : t.lobby.guessingOff}
-                            </span>
-                        </div>
+                        <span className="setting__name">{t.lobby.guessing}</span>
                         <button
                             type="button"
                             className={`toggle${guessingEnabled ? ' toggle--on' : ''}`}

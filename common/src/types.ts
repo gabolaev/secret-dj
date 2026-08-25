@@ -222,6 +222,13 @@ export interface RoundView {
     answersExpected: number;
     votesIn: number;
     votersExpected: number;
+    /**
+     * Server clock at which this round reveals itself, compared against `now`.
+     *
+     * An absolute instant rather than a countdown, so a client that misses a
+     * few state pushes recovers the right number instead of drifting.
+     */
+    endsAt: number;
     /** True once nobody present still owes a vote. Gates the host's reveal. */
     isReady: boolean;
     /** The viewer's own "I am finished". */

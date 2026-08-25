@@ -53,9 +53,10 @@ export function AnswerBar({ answer, disabled, onAnswer }: AnswerBarProps) {
                             </button>
                         ))}
                     </span>
-                    <span className="rate__caption">
-                        {like === undefined ? t.answer.likePrompt : t.answer.verdicts[like]}
-                    </span>
+                    {/* The word for the number, once there is one. The prompt
+                        to pick one lives in the note below, so it is not said
+                        twice in three lines. */}
+                    <span className="rate__caption">{like === undefined ? '' : t.answer.verdicts[like]}</span>
                 </span>
             </div>
 

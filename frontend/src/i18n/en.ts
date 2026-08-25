@@ -9,8 +9,6 @@ import { en2 } from './plural';
  * a compile error, not a string that silently falls back to English at 2am.
  */
 export const en = {
-    brand: { name: 'Secret', accent: 'DJ' },
-
     common: {
         loading: 'Loading',
         close: 'Close',
@@ -43,7 +41,6 @@ export const en = {
     },
 
     shell: {
-        room: 'room',
         copyInvite: 'copy link',
         copied: 'copied!',
         copyPrompt: 'Copy this invite link:',
@@ -71,23 +68,17 @@ export const en = {
     lobby: {
         queueMore: (n: number) => `Queue ${en2(n, 'more track', 'more tracks')}`,
         setReady: 'Your set is ready',
-        hintSecret: 'Nobody can see what you pick — not now, not later.',
         hintWaiting: (names: string) => `Waiting on ${names}.`,
         hintHostCanStart: 'Everyone is ready. Drop the needle whenever you like.',
         hintWaitingForHost: 'Everyone is ready. Waiting for the host to start.',
-        emptyQueue: 'Nothing queued yet. Paste a link above.',
-        title: 'Warm-up',
+        setlistLength: (n: number) => `${en2(n, 'track', 'tracks')} tonight`,
         settings: 'Room settings',
-        willPlay: (n: number) => `${n} will play`,
+        title: 'Warm-up',
         tracksQueued: 'Tracks each DJ queues',
-        tracksQueuedHint: 'Queue more than gets played, so nobody can count who is spent.',
         tracksPlayed: 'How many actually play',
-        tracksPlayedHint: (total: number) => `${en2(total, 'track', 'tracks')} in the setlist right now.`,
         fewer: 'Fewer',
         more: 'More',
         guessing: 'Guessing',
-        guessingOn: 'Guess the DJ behind each track, and unlock the claims scored on being recognised.',
-        guessingOff: 'Listening party: answers only, nobody guesses anybody.',
         start: 'Start the night',
         needTwo: 'Guessing needs at least two DJs — invite someone, or switch to a listening party.',
         stillQueueing: (names: string) => `Still queueing: ${names}.`,
@@ -95,7 +86,6 @@ export const en = {
 
     claims: {
         label: 'Your claim',
-        hint: 'Each claim is one a night. No claim is the floor — the rest pay more only if they land, and less if they miss.',
         yoursOnly: 'Your bet — nobody else sees it until the reveal.',
         needsPlayers: (n: number) => `Needs at least ${n} players in the room`,
         needsGuessing: 'Needs guessing switched on',
@@ -141,7 +131,6 @@ export const en = {
         evidence: Record<Exclude<ClaimId, 'none'>, (n: number, of: number) => string>;
         evidenceSpread: (percent: number) => string;
         label: string;
-        hint: string;
         spent: string;
         yoursOnly: string;
         needsPlayers: (n: number) => string;
@@ -154,7 +143,6 @@ export const en = {
     url: {
         placeholder: 'Paste a Spotify, YouTube, Apple Music… link',
         submit: 'Queue it',
-        hintEmpty: 'Anything goes — the more surprising, the better.',
         hintInvalid: 'That does not look like a link yet.',
         hintUnsupported:
             'We cannot play that host. Try Spotify, YouTube, Apple Music, Deezer, SoundCloud, TIDAL or Yandex.',
@@ -169,6 +157,18 @@ export const en = {
         playingNow: 'Playing now',
     },
 
+    drums: {
+        title: 'Drum machine',
+        show: 'Drums',
+        hide: 'Hide drums',
+        play: 'Play',
+        stop: 'Stop',
+        clear: 'Clear',
+        slower: 'Slower',
+        faster: 'Faster',
+        tempo: 'Tempo',
+    },
+
     round: {
         position: (n: number, total: number) => `Track ${n} of ${total}`,
         titleMine: 'Yours',
@@ -180,6 +180,7 @@ export const en = {
         done: 'Done',
         undone: 'Not done yet',
         doneCount: (n: number, total: number) => `${n} of ${total} finished. The reveal happens on its own once everybody has.`,
+        timeLeft: 'Time left in this round',
         hostReveal: 'Reveal the DJ',
         hostNext: 'Next track',
         hostFinish: 'Close out the night',
@@ -190,7 +191,6 @@ export const en = {
 
     answer: {
         likeTitle: 'How much did you like it?',
-        likePrompt: 'Pick a number',
         likeValue: (n: number) => `${n} out of 5`,
         // One phrase per number, so the same score means the same thing to everybody.
         verdicts: ['Nothing at all', 'Not for me', 'It passed', 'Solid', 'Really good', 'Superb'],
@@ -230,6 +230,7 @@ export const en = {
         rowWorking: (name: string) => `${name}: their rating, plus a point if it was new to them, plus two if it moved them`,
         newTag: (n: number) => `new to them +${n}`,
         movedTag: (n: number) => `moved +${n}`,
+        saidNothing: 'said nothing',
         answersTitle: 'What the room said',
         obviousLabel: 'Popularity',
         noDrag: 'nobody called it popular',

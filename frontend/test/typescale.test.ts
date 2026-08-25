@@ -37,17 +37,28 @@ describe('type scale', () => {
         expect(sizes['fs-hero']).toBeGreaterThan(sizes['fs-lg'] * 1.5);
     });
 
-    it('confines the dot-matrix face to the room code', () => {
-        // It is a display face, not a UI face. Letting it loose on prose is
-        // what made Cyrillic unreadable, so its blast radius stays this small.
-        const app = readFileSync(new URL('../src/styles/app.css', import.meta.url), 'utf8');
-        const blocks = (theme + app).split(/(?<=\})\n/);
-        const escaped = blocks
-            // `var(--font-display)`, not the `:root` declaration that defines it.
-            .filter(block => /^[^{]*\{[^}]*var\(--font-display\)/.test(block))
-            .map(block => block.split('{')[0].trim())
-            .filter(selector => !/\.(input--code|shell__code-value)/.test(selector));
-        expect(escaped, 'dot-matrix face used outside the room code').toEqual([]);
+    it('sets the whole product in one face', () => {
+        // A dot-matrix display face used to set the room code and the code
+        // field. Beside a UI face everywhere else it read as a costume rather
+        // than a design, and it was the loudest inconsistency in the interface.
+        expect(theme + app).not.toContain('--font-display');
+        expect(theme).not.toContain('Handjet');
+
+        const families = [...(theme + app).matchAll(/font-family:\s*([^;]+);/g)].map(match =>
+            match[1].trim(),
+        );
+        for (const family of families) {
+            expect(family, 'a second face crept back in').toMatch(/var\(--font-ui\)|inherit/);
+        }
+    });
+
+    it('sizes the wordmark from the scale', () => {
+        // It was `calc(var(--logo-size) * 0.46)` — 10px beside a 22px mark,
+        // smaller than the smallest step in the system.
+        for (const rule of ['.logo--bar {', '.logo--hero {']) {
+            const block = app.slice(app.indexOf(rule));
+            expect(block.slice(0, block.indexOf('}')), rule).toMatch(/font-size: var\(--fs-/);
+        }
     });
 
     it('has no hardcoded font sizes left in either stylesheet', () => {

@@ -12,6 +12,13 @@ export const LIMITS = {
     tracksPerPlayerMax: 10,
     urlMax: 2048,
     gameIdLength: 5,
+    /**
+     * How long a round stays open before it reveals itself.
+     *
+     * Shared rather than server-only so the countdown on screen is the same
+     * clock the server is about to act on, not a hopeful guess next to it.
+     */
+    roundMs: 60_000,
     /** A game with no live connections is reaped after this long. */
     emptyGameTtlMs: 30 * 60_000,
     /** A game with no activity at all is reaped after this long. */

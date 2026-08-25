@@ -1,72 +1,77 @@
 /* ---------------------------------------------------------------------------
    Secret DJ — foundation.
 
-   Rebuilt from scratch after the skeuomorphic pass. That version had two text
-   contexts — dark ink on light chrome, phosphor on a dark display — and every
-   legibility bug came from something drifting across the boundary between
-   them. So the boundary is gone:
+   The language is Teenage Engineering's: an achromatic instrument you set on a
+   desk, not a glowing app.
 
-   1. ONE CONTEXT. Everything is dark; all text is light. A colour can no
-      longer land on the wrong background, because there is only one.
+   1. ACHROMATIC BASE, ONE HOT COLOUR. Everything is a grey — the desk, the
+      panels, the keys. Orange appears only where something is live or is the
+      one thing to press. A second accent would make it a palette; one makes it
+      a signal.
 
-   2. FOUR SIZES, one UI face. `--font-ui` sets every word in the product.
-      `--font-display` is dot-matrix and is allowed only on the room code.
+   2. GEOMETRY, NOT SOFTNESS. Small radii on rectangles. Nothing is a pill
+      except the things that are physically round.
 
-   3. DEPTH FROM LIGHT, NOT FROM METAL. Surfaces separate by one step of
-      lightness plus a hairline. No bevels, no gradients pretending to be
-      brushed steel.
+   3. LABELS ARE ENGRAVED. Small, uppercase, widely tracked, quiet — the way a
+      legend is silkscreened next to a jack rather than written in a sentence.
 
-   What is left of the retro is what earns its place: the numbered playlist,
-   the tabular figures, the room code. The chrome, the fake seek bar and the
-   display panel are gone — they were decoration standing in the way.
+   4. NUMBERS LIVE ON A SCREEN. Readouts sit on a near-black panel in a light
+      face, because that is what a readout is. It is the one dark surface left,
+      and it is dark for a reason rather than as a mood.
+
+   Orange is a *fill*, not an ink: `--accent` is what you paint a key with, and
+   `--accent-ink` is the legend on top of it. Orange text on a light panel does
+   not clear 4.5:1, so `--accent-text` is the darkened one for words.
    ------------------------------------------------------------------------- */
 
-@import url('https://fonts.googleapis.com/css2?family=Handjet:ELGR,ELSH,wght@1..2,0..16,100..900&family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-    color-scheme: dark;
+    color-scheme: light;
 
     /* ---- type ---------------------------------------------------------- */
-    --fs-micro: 12px; /* labels, meta, captions */
-    --fs-base: 15px;  /* everything you read */
-    --fs-lg: 19px;    /* section titles, playlist rows */
-    --fs-hero: 42px;  /* display digits, the reveal */
+    --fs-micro: 11px; /* engraved labels */
+    --fs-base: 14px;  /* everything you read */
+    --fs-lg: 17px;    /* section titles, playlist rows */
+    --fs-hero: 40px;  /* the readout */
 
     --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-    /* Dot-matrix. The only decorative face left, and it is now used for exactly
-       two things: the room code and the code field you type it into. Both are
-       short codes, where a technical face reads as a label rather than a
-       costume. */
-    --font-display: 'Handjet', 'Courier New', monospace;
-    --matrix-axes: 'ELGR' 2, 'ELSH' 12;
+    /* Silkscreen legends and codes read aloud: both want air between letters. */
+    --track-label: 0.14em;
+    --track-code: 0.22em;
 
-    /* ---- surfaces: one ladder, each rung a step lighter ----------------- */
-    --bg: #0a0c11;
-    --surface: #12151d;
-    --surface-2: #1a1f2a;
-    --surface-3: #232936;
-    --line: rgb(255 255 255 / 8%);
-    --line-strong: rgb(255 255 255 / 16%);
+    /* ---- surfaces: the desk, then the panels sitting on it -------------- */
+    --bg: #adadaa;
+    --surface: #d4d4d1;
+    --surface-2: #e6e6e3;
+    --surface-3: #fbfbfa;
+    --line: rgb(0 0 0 / 18%);
+    --line-strong: rgb(0 0 0 / 38%);
 
     /* ---- text ---------------------------------------------------------- */
-    --text: #f0f2f7;
-    --muted: #a7b0c2;
-    --faint: #737d92;
+    --text: #14141a;
+    --muted: #3f3f47;
+    --faint: #55555d;
 
-    /* ---- colour: one accent, two semantics ----------------------------- */
-    --accent: #ffb545;
-    --accent-ink: #2a1a00;
-    --love: #ff6098;
-    --detective: #4bdcc8;
-    --good: #55dd8a;
-    --bad: #ff6b6b;
+    /* ---- the one hot colour -------------------------------------------- */
+    /* Squeezed from both sides: a brighter orange stops reading as a shape
+       against the panel, a darker one stops carrying its own legend. This is
+       the tone that clears both. */
+    --accent: #d13c00;
+    --accent-ink: #ffffff;
+    /* Darkened, for orange used as words rather than as paint. */
+    --accent-text: #9c2a08;
+    --love: #9c2a08;
+    --detective: #14141a;
+    --good: #146029;
+    --bad: #a01f16;
 
-    /* ---- the display --------------------------------------------------- */
-    --screen: #070c16;
-    --screen-2: #0c1524;
-    --screen-ink: #8fe6ff;
-    --screen-dim: #7ba6bd;
-    --screen-grid: rgb(120 200 255 / 7%);
+    /* ---- the readout --------------------------------------------------- */
+    --screen: #131316;
+    --screen-2: #1c1c20;
+    --screen-ink: #f4f4f2;
+    --screen-dim: #a0a09c;
+    --screen-grid: rgb(255 255 255 / 6%);
 
     --sp-1: 0.25rem;
     --sp-2: 0.5rem;
@@ -76,14 +81,15 @@
     --sp-6: 2rem;
     --sp-7: 3rem;
 
-    --r-sm: 6px;
-    --r-md: 10px;
-    --r-lg: 14px;
+    /* Hardware corners: enough to be moulded, never enough to be soft. */
+    --r-sm: 2px;
+    --r-md: 3px;
+    --r-lg: 4px;
     --r-pill: 999px;
 
     --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
-    --dur-fast: 120ms;
-    --dur: 220ms;
+    --dur-fast: 90ms;
+    --dur: 180ms;
 
     --header-h: 52px;
     --side-w: 300px;
@@ -100,6 +106,13 @@ html,
 body,
 #root {
     height: 100%;
+}
+
+/* Stops the page being dragged past its own top. Without it the whole document
+   rubber-bands and the sticky bar travels down with it, which looks exactly
+   like a layout bug and is indistinguishable from one. */
+html {
+    overscroll-behavior-y: none;
 }
 
 body {
@@ -201,7 +214,7 @@ button {
     gap: var(--sp-2);
     font-size: var(--fs-micro);
     font-weight: 600;
-    letter-spacing: 0.07em;
+    letter-spacing: var(--track-label);
     text-transform: uppercase;
     color: var(--faint);
 }
@@ -222,7 +235,12 @@ button {
 .win {
     border: 1px solid var(--line);
     border-radius: var(--r-lg);
-    background: var(--surface);
+    background: var(--surface-2);
+    /* A moulded part catches light at its top edge and casts a hairline under
+       itself. Two inset lines do the whole job; no gradients, no bevels. */
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 90%),
+        0 1px 2px rgb(0 0 0 / 10%);
     overflow: hidden;
 }
 
@@ -230,25 +248,27 @@ button {
     display: flex;
     align-items: center;
     gap: var(--sp-3);
-    padding: var(--sp-3) var(--sp-4);
-    background: var(--surface-2);
+    padding: var(--sp-2) var(--sp-4);
+    background: var(--surface);
     border-bottom: 1px solid var(--line);
 }
 
-/* The ruled fill either side of a caption: one restrained nod to the original,
-   at low contrast so it reads as texture rather than as content. */
+/* Was a ruled fill either side of the caption. A silkscreened legend sits at
+   the edge of a panel with nothing drawn around it, so this is now only the
+   space that pushes the title left and the controls right. */
 .win__grip {
     flex: 1;
-    height: 6px;
-    min-width: 12px;
-    border-radius: 3px;
-    background: repeating-linear-gradient(180deg, var(--line-strong) 0 1px, transparent 1px 3px);
+    min-width: 0;
+}
+
+.win__grip:first-of-type {
+    display: none;
 }
 
 .win__title {
     font-size: var(--fs-micro);
     font-weight: 600;
-    letter-spacing: 0.12em;
+    letter-spacing: var(--track-label);
     text-transform: uppercase;
     color: var(--muted);
     white-space: nowrap;
@@ -288,14 +308,26 @@ button {
     align-items: center;
     justify-content: center;
     gap: var(--sp-2);
-    padding: 0.55rem 1.1rem;
-    min-height: 40px;
-    border: 1px solid var(--line-strong);
-    border-radius: var(--r-pill);
-    background: var(--surface-2);
+    padding: 0.5rem 1rem;
+    min-height: 38px;
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    background: var(--surface-3);
     color: var(--text);
-    font-size: var(--fs-base);
+    font-size: var(--fs-micro);
     font-weight: 600;
+    letter-spacing: var(--track-label);
+    /* Tracking adds space after the *last* letter too, which shoves a centred
+       label off to the left. Indenting the line by the same amount puts it
+       back. Every centred, tracked thing in the product needs this pair. */
+    text-indent: var(--track-label);
+    text-transform: uppercase;
+    /* A key stands slightly proud of the panel and depresses when pressed. */
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 95%),
+        inset 0 -1px 0 rgb(0 0 0 / 8%),
+        0 1px 0 rgb(0 0 0 / 22%),
+        0 2px 3px rgb(0 0 0 / 12%);
     cursor: pointer;
     transition:
         background var(--dur-fast) var(--ease),
@@ -309,6 +341,7 @@ button {
 
 .button:active:not(:disabled) {
     transform: translateY(1px);
+    box-shadow: inset 0 1px 2px rgb(0 0 0 / 22%);
 }
 
 .button:disabled {
@@ -316,28 +349,32 @@ button {
     cursor: not-allowed;
 }
 
+/* The one key you are meant to press. Orange is the only colour in the
+   interface, so it never has to compete for the eye. */
 .button--primary {
-    border-color: transparent;
+    border-color: rgb(0 0 0 / 22%);
     background: var(--accent);
     color: var(--accent-ink);
-    box-shadow: 0 4px 20px rgb(255 181 69 / 22%);
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 28%),
+        0 1px 1px rgb(0 0 0 / 18%);
 }
 
 .button--primary:hover:not(:disabled) {
-    background: #ffc266;
+    background: #e84604;
 }
 
 .button--ghost {
-    min-height: 34px;
-    padding: 0.35rem 0.7rem;
+    min-height: 32px;
+    padding: 0.3rem 0.6rem;
     border-color: transparent;
     background: transparent;
     color: var(--muted);
-    font-weight: 500;
+    box-shadow: none;
 }
 
 .button--ghost:hover:not(:disabled) {
-    background: var(--surface-2);
+    background: var(--surface);
     color: var(--text);
 }
 
@@ -354,14 +391,20 @@ button {
 .knob {
     display: inline-grid;
     place-items: center;
-    width: 52px;
-    height: 52px;
+    width: 46px;
+    height: 46px;
     padding: 0;
-    border: 1px solid var(--line-strong);
+    border: 1px solid var(--line);
     border-radius: 50%;
-    background: var(--surface-2);
+    background: var(--surface-3);
     color: var(--muted);
-    font-size: var(--fs-lg);
+    font-size: var(--fs-base);
+    font-weight: 600;
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 95%),
+        inset 0 -1px 0 rgb(0 0 0 / 8%),
+        0 1px 0 rgb(0 0 0 / 22%),
+        0 2px 4px rgb(0 0 0 / 14%);
     cursor: pointer;
     transition:
         background var(--dur-fast) var(--ease),
@@ -371,12 +414,13 @@ button {
 }
 
 .knob:hover:not(:disabled) {
-    background: var(--surface-3);
+    background: #ffffff;
     color: var(--text);
 }
 
 .knob:active:not(:disabled) {
     transform: translateY(1px);
+    box-shadow: inset 0 1px 3px rgb(0 0 0 / 25%);
 }
 
 .knob:disabled {
@@ -410,11 +454,13 @@ button {
     width: 100%;
     padding: 0.7rem 0.9rem;
     border: 1px solid var(--line-strong);
-    border-radius: var(--r-md);
-    background: var(--bg);
+    border-radius: var(--r-sm);
+    background: var(--surface-3);
     color: var(--text);
     font-family: inherit;
     font-size: var(--fs-base);
+    /* Sunk into the panel rather than sitting on it. */
+    box-shadow: inset 0 1px 2px rgb(0 0 0 / 12%);
     transition: border-color var(--dur-fast) var(--ease);
 }
 
@@ -428,10 +474,14 @@ button {
 }
 
 .input--code {
-    font-family: var(--font-display);
-    font-variation-settings: var(--matrix-axes);
+    background: var(--screen);
+    border-color: rgb(0 0 0 / 55%);
     font-size: var(--fs-hero);
-    letter-spacing: 0.18em;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    /* Trailing tracking would push the last glyph off the optical centre. */
+    letter-spacing: var(--track-code);
+    text-indent: var(--track-code);
     text-align: center;
     text-transform: uppercase;
     color: var(--screen-ink);

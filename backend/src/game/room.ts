@@ -569,6 +569,18 @@ export class GameRoom {
         return feed;
     }
 
+    /**
+     * When the current round's minute is up. Zero when no round is open.
+     *
+     * Nothing happens at zero — the clock keeps counting into the negative and
+     * the room can see it. It is pressure to get on with it, not a guillotine
+     * that throws away an answer somebody was halfway through.
+     */
+    get roundEndsAt(): number {
+        return this.round ? this.round.startedAt + LIMITS.roundMs : 0;
+    }
+
+
     /** True when every listener present has pressed done, and there is one. */
     everyoneDone(): boolean {
         const round = this.round;

@@ -21,7 +21,7 @@ const view: GameView = {
     track: { id: 't', url: 'https://open.spotify.com/track/abc', title: 'X', service: 'Spotify', metadata: 'ready', claim: { id: 'none' } },
     isMine: false, myAnswer: { like: 4, heard: false, popular: false, moved: false },
     answersIn: 2, answersExpected: 2, votesIn: 1, votersExpected: 2,
-    isReady: false, myDone: false, doneIn: 0, doneExpected: 2,
+    endsAt: Date.now() + 60_000, isReady: false, myDone: false, doneIn: 0, doneExpected: 2,
     canVote: true, canAnswer: true,
   },
   history: [], setlistLength: 6, now: Date.now(),

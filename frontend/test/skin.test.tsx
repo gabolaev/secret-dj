@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { render } from '@testing-library/react';
 import { I18nProvider } from '../src/i18n';
 import { Window } from '../src/components/Window';
-import { Logo, LogoMark } from '../src/components/Logo';
+import { Logo } from '../src/components/Logo';
 
 describe('window', () => {
     it('puts the caption and any actions in the header strip', () => {
@@ -32,26 +32,20 @@ describe('window', () => {
 });
 
 describe('logo', () => {
-    it('is drawn, not typed, so it cannot vanish into a background', () => {
-        const { container } = render(<LogoMark size={22} />);
-        const svg = container.querySelector('svg')!;
-        expect(svg.getAttribute('width')).toBe('22');
-        // Platter, grooves, label, spindle, pivot, stylus.
-        expect(svg.querySelectorAll('circle').length).toBeGreaterThanOrEqual(5);
-        // The tonearm is what makes it read as a deck rather than a disc.
-        expect(svg.querySelector('path')).toBeTruthy();
+    it('is the name itself, with no drawn mark beside it', () => {
+        // There used to be a record-deck drawn in SVG here. At bar size it read
+        // as a smudge, and beside an interface made entirely of engraved
+        // uppercase labels it was the one illustrated thing on screen.
+        const { container } = render(<Logo />);
+        expect(container.querySelector('svg')).toBeNull();
+        expect(container.querySelector('.logo')!.textContent).toBe('Secret DJ');
     });
 
-    it('carries its own contrast rather than inheriting text colour alone', () => {
-        const { container } = render(<LogoMark />);
-        const fills = [...container.querySelectorAll('[fill]')].map(node => node.getAttribute('fill'));
-        expect(fills).toContain('#0d1119');
-        expect(fills.some(fill => fill?.includes('--accent'))).toBe(true);
-    });
-
-    it('is hidden from assistive tech, since the wordmark carries the name', () => {
-        const { container } = render(<Logo size={24} />);
-        expect(container.querySelector('svg')!.getAttribute('aria-hidden')).toBe('true');
-        expect(container.querySelector('.logo__word')!.textContent).toBe('SecretDJ');
+    it('carries the name as real text, so it is selectable and readable', () => {
+        const { container } = render(<Logo size="hero" />);
+        const logo = container.querySelector('.logo')!;
+        expect(logo.className).toContain('logo--hero');
+        // The second word is the one coloured thing in it.
+        expect(logo.querySelector('em')!.textContent).toBe('DJ');
     });
 });

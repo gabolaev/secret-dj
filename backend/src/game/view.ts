@@ -115,6 +115,7 @@ function projectRound(room: GameRoom, viewerId: PlayerId): RoundView | undefined
         // An aggregate, like the vote counter: it says how many are still to
         // come, never which of them, so it cannot single the DJ out.
         answersExpected: Math.max(room.answersIn(), room.listenerCount()),
+        endsAt: room.roundEndsAt,
         isReady: room.isRoundReady,
         // Aggregates only, like the vote counter: how many are finished, never
         // which of them, so the DJ cannot be picked out of the pattern.

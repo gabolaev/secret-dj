@@ -1,5 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { trackScore, type GameView } from '@secret-dj/common';
+import { Cables, useCableOrigin } from './Cables';
+import { DrumMachine } from './DrumMachine';
 import { PlayerRoster } from './PlayerRoster';
 import { TrackList } from './TrackList';
 import { Window } from './Window';
@@ -21,6 +23,11 @@ interface SidebarProps {
 export function Sidebar({ view }: SidebarProps) {
     const t = useT();
     const [tab, setTab] = useState<'room' | 'queue' | 'played'>('room');
+    const [drums, setDrums] = useState(false);
+    // The cables are drawn from wherever the machine currently is, so they read
+    // as coming out of it rather than off the edge of the window.
+    const machine = useRef<HTMLDivElement>(null);
+    const origin = useCableOrigin(machine, drums);
     const playedIds = useMemo(() => new Set(view.history.map(played => played.track.id)), [view.history]);
 
     const inPlay = view.phase !== 'lobby';
@@ -37,7 +44,12 @@ export function Sidebar({ view }: SidebarProps) {
     const active = tabs.some(entry => entry.id === tab) ? tab : 'room';
 
     return (
+        <>
+        {drums && origin && <Cables from={origin} />}
         <Window title={t.roster.playlist} className="side" flush>
+            {/* A strip of one tab is a second heading for a panel that already
+                has one. It earns its place only when there is a choice. */}
+            {tabs.length > 1 && (
             <div className="tabs" role="tablist">
                 {tabs.map(entry => (
                     <button
@@ -52,6 +64,7 @@ export function Sidebar({ view }: SidebarProps) {
                     </button>
                 ))}
             </div>
+            )}
 
             <div className="side__screen" role="tabpanel">
                 {active === 'room' && <PlayerRoster view={view} />}
@@ -91,5 +104,28 @@ export function Sidebar({ view }: SidebarProps) {
                 )}
             </div>
         </Window>
+
+        {/* Three minutes of somebody else's track and nothing to do with your
+            hands. Silent on purpose — see the component. */}
+        <div ref={machine}>
+        <Window
+            title={t.drums.title}
+            className="side side--inset"
+            actions={
+                <button
+                    type="button"
+                    className="win__btn"
+                    aria-expanded={drums}
+                    aria-label={drums ? t.drums.hide : t.drums.show}
+                    onClick={() => setDrums(value => !value)}
+                >
+                    {drums ? '–' : '+'}
+                </button>
+            }
+        >
+            {drums && <DrumMachine />}
+        </Window>
+        </div>
+        </>
     );
 }
