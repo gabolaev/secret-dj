@@ -146,7 +146,7 @@ export const ru: Messages = {
     },
 
     drums: {
-        title: 'На полях',
+        title: 'Драм-машина',
         silent: 'без звука',
         play: 'Пуск',
         stop: 'Стоп',

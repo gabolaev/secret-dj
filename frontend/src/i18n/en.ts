@@ -168,7 +168,7 @@ export const en = {
     },
 
     drums: {
-        title: 'Marginalia',
+        title: 'Drum Machine',
         silent: 'silent',
         play: 'Run',
         stop: 'Stop',
