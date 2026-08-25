@@ -1720,15 +1720,29 @@
 
 /* ------------------------------------------------------------------- sheet */
 
+/*
+ * A real `<dialog>`, so focus trapping, Escape and the backdrop come from the
+ * platform. The dialog element itself is the backdrop: it fills the viewport
+ * and centres the sheet inside it.
+ *
+ * The `[open]` gate is load-bearing. A closed dialog is hidden by the UA's own
+ * `dialog:not([open]) { display: none }`, and *any* unconditional `display` in
+ * author CSS overrides it — which leaves the rules sheet painted over the app
+ * from first render with no way to dismiss it, because `close()` sets the
+ * attribute this rule is keyed on and nothing else. Style the open state.
+ */
 .sheet {
     position: fixed;
     inset: 0;
     z-index: 80;
-    display: grid;
-    place-items: center;
     padding: var(--sp-5);
     background: rgb(23 22 20 / 55%);
     border: 0;
+}
+
+.sheet[open] {
+    display: grid;
+    place-items: center;
 }
 
 .sheet::backdrop {

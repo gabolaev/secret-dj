@@ -98,6 +98,36 @@ describe('type scale', () => {
     });
 });
 
+describe('overlays', () => {
+    it('never sets display on a dialog outside its open state', () => {
+        // A closed `<dialog>` is hidden by the UA's own
+        // `dialog:not([open]) { display: none }`. Any unconditional `display`
+        // in author CSS wins over it, and the symptom is not subtle: the rules
+        // sheet paints over the app from first render and the close button
+        // does nothing, because `close()` only clears the attribute.
+        //
+        // jsdom never loads this stylesheet, so no render test can catch it.
+        // Guard the rule itself.
+        // The dialog itself is the selector whose final compound is `.sheet` —
+        // `.sheet__body` and `.sheet .x` are ordinary descendants.
+        const isDialog = (selector: string) =>
+            selector
+                .split(',')
+                .some(part => /(^|[\s>+~])\.sheet(\[[^\]]*\]|:[a-z-]+)*\s*$/.test(part.trim()));
+
+        const blocks = [...app.matchAll(/([^{}]+)\{([^}]*)\}/g)];
+        const styled = blocks.filter(
+            ([, selector, body]) => isDialog(selector) && /(^|[\s;])display\s*:/.test(body),
+        );
+
+        // It must be styled *somewhere*, or this guard is watching nothing.
+        expect(styled.length).toBeGreaterThan(0);
+        for (const [, selector] of styled) {
+            expect(selector, 'a dialog styled with display outside [open]').toContain('[open]');
+        }
+    });
+});
+
 describe('motion', () => {
     it('animates covers and nothing else', () => {
         // "If something is moving, a secret is being opened." Everything else is
