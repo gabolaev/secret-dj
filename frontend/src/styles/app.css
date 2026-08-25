@@ -1,9 +1,13 @@
 /* ---------------------------------------------------------------------------
-   Layout and components.
+   Secret DJ — components.
 
-   Structure: a slim bar, then a two-column body that collapses to one. The
-   round is a single card with the display at the top and hairline-separated
-   control rows beneath it.
+   Everything here is printed matter: paper, one ink, one hairline, one hot
+   colour used as a fill. There are no shadows, no gradients and no radii in
+   this file. If a rule below reaches for depth it does it with `--ink` or with
+   a 1px rule, because those are the only two devices the design has.
+
+   The one thing that animates is a cover being wiped off a secret. See
+   `.redact` in theme.css — nothing in this file may add a second moving part.
    ------------------------------------------------------------------------- */
 
 .boot {
@@ -14,81 +18,82 @@
 
 /* -------------------------------------------------------------------- logo */
 
-/* The name *is* the mark: stamped the way a case is, not drawn. */
+/* The name *is* the mark: stamped the way a code is on a case, not drawn. */
 .logo {
-    display: inline-flex;
-    align-items: baseline;
-    gap: 0.34em;
-    color: var(--text);
-    font-weight: 500;
-    letter-spacing: var(--track-code);
-    /* Tracking pads the last letter too; without this the wordmark sits left of
-       where it looks like it should. */
-    text-indent: var(--track-code);
+    font-family: var(--font-num);
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-indent: 0.18em;
     text-transform: uppercase;
-    line-height: 1;
     white-space: nowrap;
 }
 
 .logo em {
     font-style: normal;
-    font-weight: 700;
-    color: var(--accent-text);
+}
+
+/* The interpunct is the only ornament in the product, and it is a character. */
+.logo em::before {
+    content: '·';
+    margin: 0 0.1em;
 }
 
 .logo--bar {
-    font-size: var(--fs-base);
+    font-size: var(--fs-micro);
 }
 
-/* The one place the name is a title rather than a label. At `--fs-lg` it sat
-   three points above the sentence under it, which is not a hierarchy. */
 .logo--hero {
-    font-size: var(--fs-hero);
-    letter-spacing: 0.1em;
-    text-indent: 0.1em;
+    font-size: var(--fs-lead);
+    letter-spacing: var(--track-code);
+    text-indent: var(--track-code);
 }
 
 /* -------------------------------------------------------------------- join */
 
-/* The card floats above the bench; the bench is the desk it sits on. */
+/*
+ * No decorative backdrop at all. The first thing the product says is what the
+ * game is, so the page is the sheet and nothing sits behind it.
+ */
 .join {
-    position: relative;
-    z-index: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: var(--sp-4);
+    gap: var(--sp-3);
     min-height: 100dvh;
-    padding: var(--sp-5) var(--sp-4);
+    padding: var(--sp-7) var(--sp-5);
 }
 
-.join__win {
-    position: relative;
-    width: min(400px, 100%);
-    animation: rise var(--dur) var(--ease) both;
+.join__sheet {
+    width: 100%;
+    max-width: 375px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-4);
+    padding: 22px var(--sp-5) var(--sp-5);
+    border-radius: var(--r-frame);
+    background: var(--bone);
 }
 
 .join__hero {
     display: flex;
     flex-direction: column;
-    align-items: center;
     gap: var(--sp-2);
-    padding-bottom: var(--sp-5);
-    text-align: center;
 }
 
 .join__logo {
-    display: flex;
+    margin: 0;
+    letter-spacing: 0;
 }
 
-/* Balanced, so a centred sentence does not break after a preposition and leave
-   one word stranded on the second line. */
+/* The one display line on the screen. Instrument Serif does not cover
+   Cyrillic, so RU falls back to Archivo at the same size — which is why this
+   is set by size and leading rather than by anything the serif alone does. */
 .join__tagline {
-    max-width: 26ch;
-    color: var(--faint);
-    font-size: var(--fs-base);
-    line-height: 1.45;
+    font-family: var(--font-disp);
+    font-size: 30px;
+    font-weight: 400;
+    line-height: 1.1;
+    letter-spacing: -0.005em;
     text-wrap: balance;
 }
 
@@ -102,24 +107,21 @@
     display: flex;
     flex-direction: column;
     gap: var(--sp-2);
-    margin-top: var(--sp-1);
 }
 
+/* An error is a bordered note in situ, written as a sentence — never a field
+   that has quietly turned a colour. */
 .join__error {
-    margin-top: var(--sp-4);
-    padding: var(--sp-3);
-    border: 1px solid rgb(192 38 27 / 35%);
-    border-radius: var(--r-md);
-    background: rgb(192 38 27 / 10%);
-    color: var(--bad);
-    font-size: var(--fs-base);
-    text-align: center;
+    padding: 11px var(--sp-3);
+    border-left: 3px solid var(--signal-text);
+    background: var(--paper);
+    color: var(--ink-2);
+    font-size: 13px;
+    line-height: 1.45;
 }
 
 .join__status {
     display: flex;
-    justify-content: center;
-    margin-top: var(--sp-4);
 }
 
 .join__foot {
@@ -127,321 +129,155 @@
     align-items: center;
     justify-content: space-between;
     gap: var(--sp-3);
-    margin-top: var(--sp-5);
-    padding-top: var(--sp-4);
-    border-top: 1px solid var(--line);
+    padding-top: var(--sp-2);
+    border-top: 1px solid var(--rule);
 }
 
 .join__services {
-    max-width: 42ch;
-    padding: var(--sp-2) var(--sp-3);
-    border-radius: var(--r-2);
-    color: var(--accent-ink);
-    text-align: center;
+    max-width: 375px;
+    color: var(--ink-2);
     font-size: var(--fs-micro);
-    line-height: 1.6;
-    mix-blend-mode: overlay;
+    line-height: 1.7;
 }
 
 /* ------------------------------------------------------------------- shell */
 
-/* Positioned, so the whole app is one layer above the cables. This has to live
-   here rather than on the inner columns: those are static, and a positioned
-   element outranks static content whatever the DOM order says — which is
-   exactly how the cables ended up lying over the settings panel. */
 .shell {
-    position: relative;
-    z-index: 1;
     display: flex;
     flex-direction: column;
     min-height: 100dvh;
 }
 
+/* One printed bar. It carries what is true of the whole room. */
 .shell__bar {
     position: sticky;
     top: 0;
-    z-index: 40;
+    z-index: 20;
     display: flex;
     align-items: center;
-    gap: var(--sp-4);
-    height: var(--header-h);
-    padding: 0 var(--sp-4);
-    border-bottom: 1px solid var(--line);
-    background: rgb(228 228 226 / 88%);
-    backdrop-filter: blur(14px);
+    gap: var(--sp-3);
+    min-height: var(--header-h);
+    padding: var(--sp-2) var(--sp-5);
+    background: var(--paper);
+    border-bottom: 1px solid var(--rule);
 }
 
 .shell__logo {
     flex-shrink: 0;
+    font-size: 13px;
+}
+
+/* The room code: the one string people read out loud, so it is stamped rather
+   than set. Two of the three radii in the whole product are here and on the
+   app frame; everything else is square. */
+.shell__code {
+    flex-shrink: 0;
+    padding: 3px 9px;
+    border: 1px solid var(--ink);
+    border-radius: var(--r-chip);
+    background: transparent;
+    color: var(--ink);
+    font-family: var(--font-num);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: var(--track-code);
+    text-indent: var(--track-code);
+    cursor: pointer;
+    transition: background var(--dur-fast) var(--ease);
+}
+
+.shell__code:hover {
+    background: var(--bone);
+}
+
+/* Connection state is carried by the code block itself rather than by a dot
+   beside it: it is already the thing you look at, and one element saying one
+   thing beats two. A dashed rule is "not connected" without being red. */
+.shell__code--connecting,
+.shell__code--offline {
+    border-style: dashed;
+    color: var(--ink-2);
+}
+
+.shell__room,
+.shell__position {
+    flex-shrink: 0;
+    color: var(--ink-2);
+    font-size: var(--fs-micro);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    white-space: nowrap;
 }
 
 .shell__spacer {
     flex: 1;
+    min-width: 0;
 }
 
-/* Room code: the one string people read out loud, so it stays on the bar — and
-   it is where the connection shows, glowing at its edge rather than through a
-   separate dot that had to be explained. */
-.shell__code {
-    display: inline-flex;
-    align-items: center;
-    padding: 5px 14px;
-    border: 1px solid rgb(0 0 0 / 55%);
-    border-radius: var(--r-sm);
-    background: var(--screen);
-    cursor: pointer;
-    transition:
-        border-color var(--dur) var(--ease),
-        box-shadow var(--dur) var(--ease),
-        background var(--dur-fast) var(--ease);
-}
-
-.shell__code:hover {
-    background: var(--screen-2);
-}
-
-.shell__code--online {
-    border-color: rgb(85 221 138 / 55%);
-    box-shadow:
-        0 0 0 1px rgb(85 221 138 / 25%),
-        0 0 14px rgb(85 221 138 / 30%);
-}
-
-.shell__code--offline {
-    border-color: rgb(192 38 27 / 60%);
-    box-shadow:
-        0 0 0 1px rgb(192 38 27 / 30%),
-        0 0 14px rgb(192 38 27 / 35%);
-}
-
-/* Breathing, because "connecting" is a state that is going somewhere. The
-   resting glow is on the rule itself, not only in the keyframes: the global
-   reduced-motion rule stops the animation, and without this the state would
-   lose its colour entirely for anyone who has that switched on. */
-.shell__code--connecting {
-    border-color: rgb(209 60 0 / 55%);
-    box-shadow:
-        0 0 0 1px rgb(209 60 0 / 28%),
-        0 0 12px rgb(209 60 0 / 30%);
-    animation: reaching 1.4s ease-in-out infinite;
-}
-
-@keyframes reaching {
-
-    0%,
-    100% {
-        box-shadow:
-            0 0 0 1px rgb(209 60 0 / 18%),
-            0 0 6px rgb(209 60 0 / 18%);
-    }
-
-    50% {
-        box-shadow:
-            0 0 0 1px rgb(209 60 0 / 38%),
-            0 0 16px rgb(209 60 0 / 40%);
-    }
-}
-
-.shell__code-value {
-    color: var(--screen-ink);
-    font-size: var(--fs-base);
+/* The clock. Plain while there is time, and a filled red block once it is not:
+   the one place the hot colour appears without being a button. */
+.timer {
+    flex-shrink: 0;
+    padding: 3px 10px;
+    border: 1px solid var(--ink);
+    border-radius: var(--r-chip);
+    font-size: 15px;
     font-weight: 600;
-    font-variant-numeric: tabular-nums;
-    line-height: 1;
-    letter-spacing: var(--track-code);
-    text-indent: var(--track-code);
+    letter-spacing: 0.04em;
 }
 
-.shell__leave:hover {
-    color: var(--bad);
+.timer--over {
+    border-color: var(--signal);
+    background: var(--signal);
+    color: var(--signal-ink);
 }
 
 .shell__body {
+    flex: 1;
     display: grid;
     grid-template-columns: minmax(0, 1fr) var(--side-w);
-    align-items: start;
-    gap: var(--sp-4);
-    width: min(var(--page-w), 100%);
+    gap: var(--sp-6);
+    width: 100%;
+    max-width: var(--page-w);
     margin: 0 auto;
-    padding: var(--sp-5) var(--sp-4) var(--sp-7);
-    flex: 1;
+    padding: var(--sp-5);
+    align-items: start;
 }
 
-.shell__main {
-    min-width: 0;
+.shell__main,
+.shell__side {
     display: flex;
     flex-direction: column;
-    gap: var(--sp-4);
+    gap: var(--sp-5);
+    min-width: 0;
 }
 
 .shell__side {
     position: sticky;
-    top: calc(var(--header-h) + var(--sp-4));
-    /* Two panels stacked now: the playlist and the machine under it. */
+    top: calc(var(--header-h) + var(--sp-5));
+}
+
+/* ------------------------------------------------------------------- block */
+
+.block {
     display: flex;
     flex-direction: column;
-    gap: var(--sp-4);
-}
-
-/* ---------------------------------------------------------------- playlist */
-
-/* The playlist's tabs run edge to edge on purpose. Anything else in the column
-   needs its margins back. */
-.side .win__body {
-    padding: 0;
-}
-
-.side--inset .win__body {
-    padding: var(--sp-3);
-}
-
-/* Folded away, the panel is its own title bar and nothing else — an empty body
-   would still be a padded blank strip under it. */
-.side--inset .win__body:empty {
-    display: none;
-}
-
-.tabs {
-    display: flex;
-    gap: var(--sp-1);
-    padding: var(--sp-2);
-    border-bottom: 1px solid var(--line);
-}
-
-.tab {
-    flex: 1;
-    padding: 0.4rem 0.6rem;
-    border: 0;
-    border-radius: var(--r-sm);
-    background: transparent;
-    color: var(--faint);
-    font-size: var(--fs-micro);
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition:
-        color var(--dur-fast) var(--ease),
-        background var(--dur-fast) var(--ease);
-}
-
-.tab:hover {
-    color: var(--muted);
-}
-
-.tab[aria-selected='true'] {
-    background: var(--surface-3);
-    color: var(--text);
-}
-
-.tab__count {
-    opacity: 0.6;
-}
-
-.side__screen {
-    padding: var(--sp-2);
-    min-height: 160px;
-    max-height: 58vh;
-    overflow-y: auto;
-    border: 0;
-    border-radius: 0;
-    background: transparent;
-}
-
-.side__screen::before {
-    display: none;
-}
-
-/* Numbered rows with tabular figures: a playlist, not a bullet list. */
-.roster {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-}
-
-.roster__row {
-    display: flex;
-    align-items: center;
     gap: var(--sp-2);
-    padding: 0.4rem 0.55rem;
-    border-radius: var(--r-sm);
-    font-size: var(--fs-base);
-    color: var(--text);
-}
-
-.roster__row--you {
-    background: var(--surface-2);
-}
-
-.roster__row--dim {
-    opacity: 0.5;
-}
-
-.roster__n {
-    min-width: 1.5em;
-    color: var(--faint);
-    font-variant-numeric: tabular-nums;
-    font-size: var(--fs-micro);
-}
-
-.roster__name {
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-    flex: 1;
     min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
 }
 
-.roster__you {
-    color: var(--faint);
-    font-size: var(--fs-micro);
-}
-
-.roster__host {
-    color: var(--accent-text);
-    font-size: var(--fs-micro);
-}
-
-.roster__status {
-    font-size: var(--fs-micro);
-    color: var(--faint);
-}
-
-.roster__status--ready {
-    color: var(--good);
-}
-
-.roster__status--waiting {
-    color: var(--accent-text);
-}
-
-.roster__status--dj {
-    color: var(--love);
-}
-
-.roster__scores {
-    display: inline-flex;
-    gap: var(--sp-2);
-    font-variant-numeric: tabular-nums;
-    font-size: var(--fs-micro);
-}
-
-.roster__score {
-    display: inline-flex;
-    align-items: center;
-    gap: 3px;
-    color: var(--faint);
-}
-
-.roster__score--selector.is-top {
-    color: var(--love);
-}
-
-.roster__score--detective.is-top {
-    color: var(--detective);
+/* A button living in a block's legend — "copy all 4 links". Reversed, so it
+   reads as a stamp pressed onto the rule rather than as another key. */
+.stamp--action {
+    padding: 3px 9px;
+    border: 0;
+    background: var(--ink);
+    color: var(--on-ink);
+    font-family: inherit;
+    font-size: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+    cursor: pointer;
 }
 
 /* ------------------------------------------------------------------ avatar */
@@ -450,119 +286,248 @@
     display: inline-grid;
     place-items: center;
     flex-shrink: 0;
-    width: 26px;
-    height: 26px;
-    /* Square with a moulded corner, like everything else that is a part. */
-    border-radius: var(--r-sm);
-    background: hsl(0 0% var(--tone));
-    color: var(--accent-ink);
+    width: 22px;
+    height: 22px;
+    background: hsl(40 6% var(--tone, 20%));
+    color: var(--on-ink);
+    font-family: var(--font-num);
     font-size: var(--fs-micro);
-    font-weight: 700;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: 0;
 }
 
 .avatar--sm {
-    width: 21px;
-    height: 21px;
-    font-size: var(--fs-micro);
+    width: 20px;
+    height: 20px;
+    font-size: 10px;
 }
 
 .avatar--lg {
-    width: 44px;
-    height: 44px;
-    font-size: var(--fs-base);
+    width: 52px;
+    height: 52px;
+    font-size: var(--fs-fig);
+}
+
+/* The DJ, on the band, at the moment the round pays off. The only avatar in
+   the hot colour — if they were all red, red would stop meaning anything. */
+.avatar--signal {
+    background: var(--signal);
+    color: var(--signal-ink);
 }
 
 .avatar--dimmed {
-    filter: grayscale(0.8);
-    opacity: 0.6;
+    opacity: 0.45;
 }
 
-/* -------------------------------------------------------------------- deck */
+/* ------------------------------------------------------------------ roster */
 
-/* Live counts, in the card header. Small, tabular, and using the same accent
-   language as everything else. */
-.stats {
-    display: inline-flex;
+/* Presence only: HERE / GONE / YOU. See PlayerRoster for why nothing about
+   answering may appear in this list. */
+.roster {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    border: 1px solid var(--rule);
+    background: var(--rule);
+}
+
+.roster__row {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 7px 10px;
+    background: var(--paper);
+}
+
+.roster__row--dim {
+    opacity: 0.55;
+}
+
+.roster__row--you {
+    background: var(--bone);
+}
+
+.roster__name {
+    flex: 1;
+    font-size: 13px;
+}
+
+.roster__host {
+    flex-shrink: 0;
+    color: var(--ink-2);
+    font-size: 10px;
+}
+
+/* Words first. The colour repeats the word; it never replaces it. */
+.roster__state {
+    flex-shrink: 0;
+    font-family: var(--font-num);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+}
+
+.roster__state--you {
+    color: var(--signal-text);
+}
+
+.roster__state--gone {
+    text-decoration: line-through;
+}
+
+/* ----------------------------------------------------------------- setlist */
+
+/* The running order as a fixed-length column of slots. Tracks not yet played
+   are bars of the same width with no title on them — a column of secrets you
+   watch shorten. */
+.setlist__row {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 7px 10px;
+}
+
+.setlist__n {
+    flex-shrink: 0;
+    width: 18px;
+    color: var(--ink-2);
+    font-size: 10px;
+}
+
+.setlist__title {
+    flex: 1;
+    min-width: 0;
+    font-size: 13px;
+}
+
+.setlist__by {
+    flex-shrink: 0;
+    max-width: 9ch;
+    color: var(--ink-2);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.setlist__seal {
+    flex: 1;
+    min-width: 0;
+}
+
+.setlist__row--playing {
+    background: var(--bone);
+}
+
+.setlist__row--playing .setlist__title {
+    font-weight: 600;
+}
+
+/* ------------------------------------------------------------- placeholder */
+
+/* Geometry for a secret that has not arrived. Holds a line open at the right
+   size so a sealed row is exactly as tall as the row it becomes. */
+.placeholder {
+    display: inline-block;
+    flex-shrink: 0;
+    height: 1em;
+}
+
+.placeholder--micro {
+    font-size: var(--fs-micro);
+}
+
+.placeholder--fig {
+    font-size: var(--fs-fig);
+}
+
+/* ------------------------------------------------------------- embed frame */
+
+/*
+ * The foreign rectangle is quarantined, not integrated: an ink passe-partout
+ * with a printed caption strip above it. Framing a foreign object admits that
+ * it is foreign. Do not try to blend it — that is how you get a design that
+ * only works for one provider.
+ */
+.embed-frame {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.embed-frame__strip {
+    display: flex;
     align-items: center;
     gap: var(--sp-2);
-    margin-left: auto;
-}
-
-.stat {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3rem;
-    padding: 0.15rem 0.5rem;
-    border-radius: var(--r-pill);
-    background: var(--surface-3);
-    color: var(--muted);
+    padding: 7px var(--sp-3);
+    background: var(--ink);
+    color: var(--bone);
     font-size: var(--fs-micro);
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-}
-
-.stat i {
-    font-style: normal;
-}
-
-/* The round clock, as a readout: light figures on the one black panel in the
-   interface. It is the only thing on screen that is running out, and it keeps
-   running once it has. */
-.timer {
-    padding: 0.2rem 0.55rem;
-    border-radius: var(--r-sm);
-    background: var(--screen);
-    color: var(--screen-ink);
-    font-size: var(--fs-base);
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-    letter-spacing: 0.08em;
-}
-
-.timer--over {
-    background: var(--accent);
-    color: var(--accent-ink);
-    animation: overtime 1s steps(1, end) infinite;
-}
-
-@keyframes overtime {
-    50% {
-        background: var(--screen);
-        color: var(--accent-text);
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-
-    /* Still unmistakable, just not flashing at anybody. */
-    .timer--over {
-        animation: none;
-    }
-}
-
-.stat--rated {
-    color: var(--love);
-}
-
-.stat--mine {
-    background: rgb(209 60 0 / 18%);
-    color: var(--love);
+    letter-spacing: 0.12em;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
 }
 
-.screen {
-    border-radius: var(--r-md);
-    background: var(--screen);
-    overflow: hidden;
+.embed-frame__service {
+    margin-left: auto;
+    color: var(--on-ink-2);
 }
 
-.screen iframe {
+.embed-frame__mat {
+    padding: 10px;
+    background: var(--ink);
+}
+
+.embed-frame__mat iframe {
     display: block;
-    border: 0;
     width: 100%;
+    border: 0;
 }
 
+.embed-frame__title {
+    display: flex;
+    align-items: baseline;
+    gap: var(--sp-3);
+    padding: 10px var(--sp-3);
+    border: 1px solid var(--rule);
+    border-top: 0;
+    background: var(--paper);
+}
+
+.embed-frame__name {
+    flex: 1;
+    min-width: 0;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+/* A failed lookup is a designed state: the raw URL *is* the content, set in
+   mono to say so, and one line of copy takes the blame. Never invent a title. */
+.embed-frame__name--raw {
+    font-family: var(--font-num);
+    font-size: var(--fs-base);
+    font-weight: 400;
+    word-break: break-all;
+}
+
+.embed-frame__title a {
+    flex-shrink: 0;
+    color: var(--ink-2);
+    font-size: var(--fs-micro);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--rule);
+}
+
+.embed-frame__failed {
+    padding: var(--sp-2) var(--sp-3) 0;
+    color: var(--signal-text);
+    font-size: var(--fs-micro);
+    line-height: 1.6;
+}
+
+/* The states the embed itself can be in, inside the mat. */
 .embed--loading,
 .embed--fallback {
     display: flex;
@@ -570,1030 +535,512 @@
     align-items: center;
     justify-content: center;
     gap: var(--sp-3);
-    min-height: 140px;
-    padding: var(--sp-6) var(--sp-4);
+    min-height: 152px;
+    padding: var(--sp-4);
+    border: 1px dashed #6b665a;
+    color: var(--on-ink-2);
     text-align: center;
-    color: var(--muted);
-    font-size: var(--fs-base);
+}
+
+.embed__reason {
+    max-width: 42ch;
+    font-size: 13px;
+    line-height: 1.5;
 }
 
 .embed__url {
-    color: var(--faint);
+    font-family: var(--font-num);
     font-size: var(--fs-micro);
+    color: #6b665a;
     word-break: break-all;
 }
 
-.deck__meta {
-    display: flex;
-    align-items: center;
-    gap: var(--sp-2);
-    padding-top: var(--sp-3);
-    font-size: var(--fs-micro);
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--faint);
-}
+/* -------------------------------------------------------------------- band */
 
-.deck__meta img {
-    width: 14px;
-    height: 14px;
-}
-
-.deck__meta a {
-    margin-left: auto;
-    color: var(--faint);
-    transition: color var(--dur-fast) var(--ease);
-}
-
-.deck__meta a:hover {
-    color: var(--text);
-}
-
-/* A hairline between control rows, in place of a nested card. */
-.rack {
+/*
+ * Who put this on. The identity is the largest thing on screen at the moment
+ * it lands — reversed out of ink, a full-width band rather than a line in a
+ * header — and it stays put afterwards so the arithmetic below always has a
+ * name at the top of it.
+ */
+.band__row {
     display: flex;
     align-items: center;
     gap: var(--sp-4);
-    flex-wrap: wrap;
-    margin-top: var(--sp-4);
-    padding-top: var(--sp-4);
-    border-top: 1px solid var(--line);
+    padding: 18px var(--sp-5);
 }
 
-.rack--stack {
-    flex-direction: column;
-    align-items: stretch;
-    gap: var(--sp-3);
-}
-
-.win__body>.rack:first-child {
-    margin-top: 0;
-    padding-top: 0;
-    border-top: 0;
-}
-
-/* ------------------------------------------------------------------ rating */
-
-/* Takes the whole rack row and stacks its own three parts, rather than letting
-   the parent's flex-wrap decide where the answer breaks. */
-.answer {
-    flex: 1 1 100%;
+.band__who {
+    flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
+    gap: 3px;
+}
+
+.band__name {
+    font-size: var(--fs-name);
+    font-weight: 600;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+}
+
+.band__sub {
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--on-ink-2);
+}
+
+.band__named {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+}
+
+.band__eyebrow {
+    font-size: var(--fs-micro);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--on-ink-2);
+}
+
+.band__count {
+    font-size: 20px;
+    font-weight: 600;
+}
+
+/* -------------------------------------------------------------------- claim */
+
+.claim-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-1);
+    padding: 14px var(--sp-4);
+    border: 1px solid var(--rule);
+    background: var(--paper);
+}
+
+/* The DJ's own view of their own bet. Said on the card's face rather than left
+   to look like everybody else's. */
+.claim-card--yours {
+    border-color: var(--ink);
+}
+
+.claim-card__title {
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+.claim-card__blurb {
+    color: var(--ink-2);
+    line-height: 1.45;
+}
+
+/* ----------------------------------------------------------------- answers */
+
+/*
+ * Fixed columns: name, number, what they said, who they named, what it came
+ * to. Five columns that always hold the same thing means you can read down one
+ * of them — which is how a table gets read from four feet away with a drink in
+ * your hand.
+ */
+.answers__row {
+    display: flex;
+    align-items: center;
     gap: var(--sp-3);
+    padding: 9px var(--sp-3);
+    background: var(--paper);
+}
+
+.answers__name {
+    width: 132px;
+    flex-shrink: 0;
+    font-weight: 500;
+}
+
+.answers__like {
+    width: 40px;
+    flex-shrink: 0;
+    font-size: var(--fs-lead);
+    font-weight: 600;
+}
+
+.answers__tags {
+    flex: 1;
     min-width: 0;
+    color: var(--ink-2);
+    font-size: 12px;
+}
+
+.answers__silent {
+    color: var(--ink-2);
+    font-style: italic;
+}
+
+/* The guess. A wrong one is a hairline and a middot; a right one is a filled
+   block, a tick and more weight — fill *and* mark *and* weight, so it survives
+   greyscale. */
+.answers__guess {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px var(--sp-2);
+    border: 1px solid var(--rule);
+    background: var(--bone);
+    color: var(--ink-2);
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+}
+
+.answers__guess.is-correct {
+    border-color: var(--ink);
+    background: var(--ink);
+    color: var(--on-ink);
+    font-weight: 600;
+}
+
+.answers__sum {
+    width: 44px;
+    flex-shrink: 0;
+    text-align: right;
+    color: var(--ink-2);
+    font-size: 12px;
+}
+
+/* The line under the table that accounts for everybody who is not in it. */
+.answers__foot {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    padding: 9px var(--sp-3);
+    background: var(--bone);
+    border-top: 1px dashed var(--rule-soft);
+    color: var(--ink-2);
+    font-size: var(--fs-micro);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.answers__foot-end {
+    margin-left: auto;
+}
+
+/* ------------------------------------------------------------- your answer */
+
+.answer-card {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: var(--sp-4);
+}
+
+.answer {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
 }
 
 .rate {
     display: flex;
-    align-items: flex-start;
-    gap: var(--sp-4);
-}
-
-/* Left, like the toggles and the note under it. Centring the caption left it
-   floating in the middle of a block that is otherwise flush to the edge. */
-.rate__slot {
-    display: inline-flex;
     flex-direction: column;
-    align-items: flex-start;
     gap: var(--sp-2);
 }
 
-/* The five stars sit tight against each other so they read as one control
-   rather than as five buttons that happen to be next to each other. */
-.rate__stars {
-    display: inline-flex;
-    gap: 2px;
+.rate__slot {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
 }
 
-.rate__knob--like {
-    color: var(--muted);
-    font-variant-numeric: tabular-nums;
+.rate__stars {
+    display: flex;
+    gap: var(--sp-1);
+    flex-wrap: wrap;
+}
+
+/*
+ * The six rating keys. 52px desktop, 56px at 375 — six across, nothing hidden
+ * behind a sheet, and every one of them clears the 44px touch target on its
+ * own.
+ */
+.rate__key {
+    width: 60px;
+    height: 52px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 1px solid var(--rule);
+    background: var(--bone);
+    color: var(--ink-2);
+    font-family: var(--font-num);
+    font-size: var(--fs-lead);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background var(--dur-fast) var(--ease);
+}
+
+.rate__key:hover:not(:disabled) {
+    background: var(--paper);
 }
 
 /* Everything up to your answer is inked in, so the row reads as a level rather
-   than as six separate buttons. */
-.rate__knob--like.is-lit {
-    background: var(--text);
-    border-color: var(--text);
-    color: var(--surface-3);
+   than as six unrelated buttons. */
+.rate__key.is-lit {
+    border-color: var(--ink);
+    background: var(--ink);
+    color: var(--on-ink);
 }
 
-.rate__knob--like.is-active {
-    background: var(--accent);
-    border-color: rgb(0 0 0 / 30%);
-    color: var(--accent-ink);
-    box-shadow:
-        inset 0 1px 0 rgb(255 255 255 / 25%),
-        0 1px 0 rgb(0 0 0 / 25%);
+/* The one you actually chose, in the hot colour with a keyline holding it off
+   the ink beside it. */
+.rate__key.is-active {
+    border-color: var(--signal-text);
+    background: var(--signal);
+    color: var(--signal-ink);
+    box-shadow: inset 0 0 0 2px var(--paper);
 }
 
-.rate__knob--none.is-active {
-    background: var(--surface-3);
-    color: var(--text);
-}
-
-/* Reserves its line whether or not there is a verdict to show, so picking a
-   number does not shunt the toggles down. */
+/* Reserves its line whether or not there is a verdict yet, so picking a number
+   never shifts the toggles below it. */
 .rate__caption {
-    min-height: 1.2em;
-    font-size: var(--fs-micro);
-    font-weight: 500;
-    color: var(--muted);
-    white-space: nowrap;
+    min-height: 1.4em;
+    color: var(--ink-2);
+    font-size: 13px;
 }
 
-/* ------------------------------------------------------------------ claims */
-
-/* The bet on a queued track: a badge until you open it, because five claims
-   across three tracks is a wall rather than a decision.
-   `flex-basis: 100%` is load-bearing — the track row is a flex line, so without
-   it the claim sits *beside* the title instead of under it. */
-.claim {
-    flex-basis: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--sp-2);
-    margin-top: var(--sp-1);
-}
-
-.claim__badge {
-    align-self: flex-start;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    padding: 0.2rem 0.7rem;
-    border: 1px dashed var(--line);
-    border-radius: var(--r-pill);
-    background: none;
-    color: var(--muted);
-    font: inherit;
-    font-size: var(--fs-micro);
-    cursor: pointer;
-}
-
-.claim__badge:hover {
-    border-color: var(--muted);
-    color: var(--text);
-}
-
-.claim.is-open .claim__badge {
-    border-style: solid;
-    border-color: transparent;
-    background: rgb(209 60 0 / 16%);
-    color: var(--accent-text);
-}
-
-.claim__deck {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: var(--sp-2);
-    padding: var(--sp-3);
-    border: 1px solid var(--line);
-    border-radius: var(--r-md);
-    background: var(--surface-2);
-}
-
-.claim__option {
-    display: flex;
-    flex-direction: column;
-    gap: 0.15rem;
-    padding: var(--sp-2) var(--sp-3);
-    border: 1px solid transparent;
-    border-radius: var(--r-md);
-    background: none;
-    color: var(--text);
-    font: inherit;
-    text-align: left;
-    cursor: pointer;
-}
-
-.claim__option:hover:not(:disabled) {
-    background: var(--surface-3);
-}
-
-.claim__option.is-active {
-    border-color: var(--accent);
-    background: rgb(209 60 0 / 12%);
-}
-
-.claim__option:disabled {
-    color: var(--faint);
-    cursor: not-allowed;
-}
-
-.claim__name {
-    font-size: var(--fs-base);
-    font-weight: 600;
-}
-
-.claim__blurb {
-    font-size: var(--fs-micro);
-    color: var(--faint);
-}
-
-/* The claim, announced to the room while the DJ stays hidden. */
-.banner {
-    display: flex;
-    align-items: baseline;
-    gap: var(--sp-2);
-    flex-wrap: wrap;
-    margin-top: var(--sp-3);
-    padding: var(--sp-2) var(--sp-3);
-    border-left: 2px solid var(--accent);
-    border-radius: 0 var(--r-md) var(--r-md) 0;
-    background: var(--surface-2);
-    font-size: var(--fs-base);
-}
-
-.banner__blurb {
-    color: var(--faint);
-    font-size: var(--fs-micro);
-}
-
-.banner--none {
-    border-left-color: var(--line);
-}
-
-.banner--never-heard {
-    border-left-color: var(--accent);
-}
-
-.banner--unanimous {
-    border-left-color: var(--love);
-}
-
-.banner--emotional {
-    border-left-color: var(--love);
-}
-
-.banner--so-me {
-    border-left-color: var(--accent);
-}
-
-.banner--divisive {
-    border-left-color: var(--muted);
-}
-
-.ledger__claim--none,
-.ledger__claim--never-heard,
-.ledger__claim--unanimous,
-.ledger__claim--emotional,
-.ledger__claim--so-me,
-.ledger__claim--divisive {
-    background: var(--surface-2);
-}
-
-/* The three answers that are not the number. */
 .bets {
     display: flex;
-    align-items: center;
     gap: var(--sp-2);
     flex-wrap: wrap;
 }
 
 .answer__note {
-    color: var(--faint);
-    font-size: var(--fs-micro);
-    line-height: 1.45;
+    color: var(--ink-2);
+    font-size: 13px;
+    line-height: 1.5;
 }
 
-.chip__count {
-    margin-left: 0.35rem;
-    color: var(--faint);
-    font-variant-numeric: tabular-nums;
-}
-
-.reveal__pts.is-down {
-    color: var(--muted);
-}
-
-/* ----------------------------------------------------------------- answers */
-
-/* The reveal prints every answer with a name on it. That attribution is the
-   only thing holding the honesty rule up, so it is laid out to be read, not
-   tucked behind a hover. */
-.answers {
+.answer-card__foot {
     display: flex;
     flex-direction: column;
     gap: var(--sp-2);
 }
 
-.answers__row {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    flex-wrap: wrap;
-}
+/* --------------------------------------------------------------- the chips */
 
-.answers__name {
-    font-size: var(--fs-micro);
-    color: var(--muted);
-}
-
-/* The guess, inline with everything else that person did. */
-.answers__guess {
+/* Plain statements of fact, latching on. A pressed chip is filled ink and
+   carries the word YES; an unpressed one carries NO. Never colour alone. */
+.chip {
     display: inline-flex;
     align-items: center;
-    gap: 0.3rem;
-    color: var(--faint);
-    font-size: var(--fs-micro);
-}
-
-.answers__guess.is-correct {
-    color: var(--text);
-    font-weight: 600;
-}
-
-.answers__guess i {
-    font-style: normal;
-}
-
-.answers__guess b {
-    font-weight: 700;
-}
-
-.answers__guess em {
-    color: var(--accent-text);
-    font-style: normal;
-    font-weight: 600;
-}
-
-.answers__silent {
-    color: var(--faint);
-    font-size: var(--fs-micro);
-}
-
-.answers__like {
-    min-width: 2.4rem;
-    padding: 0.1rem 0.4rem;
-    border-radius: var(--r-pill);
-    background: var(--surface-2);
-    color: var(--love);
-    font-size: var(--fs-micro);
-    font-variant-numeric: tabular-nums;
-    text-align: center;
-}
-
-/* Silkscreened, not a coloured badge: uppercase, tracked, and only the one
-   that matters is filled. */
-.tag {
-    padding: 0.05rem 0.4rem;
-    border: 1px solid transparent;
-    border-radius: var(--r-sm);
-    background: var(--surface);
-    color: var(--muted);
-    font-size: var(--fs-micro);
-    font-weight: 600;
-    letter-spacing: var(--track-label);
-    text-indent: var(--track-label);
-    text-transform: uppercase;
-}
-
-.tag--heard {
-    color: var(--muted);
-}
-
-.tag--popular {
-    background: var(--accent);
-    color: var(--accent-ink);
-}
-
-.tag--moved {
-    background: var(--text);
-    color: var(--surface-3);
-}
-
-/* The score, showing its working: what the room gave, what obviousness took
-   back, what the claim did to the remainder. */
-.ledger {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-    margin: var(--sp-3) 0;
-    border: 1px solid var(--line);
-    border-radius: var(--r-md);
-    overflow: hidden;
-    list-style: none;
-}
-
-.ledger li {
-    display: flex;
-    align-items: baseline;
     gap: var(--sp-2);
-    flex-wrap: wrap;
-    padding: var(--sp-2) var(--sp-3);
-    background: var(--surface-2);
-}
-
-.ledger__label {
-    font-size: var(--fs-micro);
-    font-weight: 600;
-}
-
-/* The step this row performed, in the units of the score. A bare "×0.5" never
-   said half of what — this says which number became which. */
-.ledger__change {
-    color: var(--text);
-    font-size: var(--fs-micro);
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-}
-
-.ledger__change i {
-    margin: 0 0.15rem;
-    color: var(--faint);
-    font-style: normal;
-}
-
-.ledger__detail {
-    flex: 1;
-    color: var(--faint);
-    font-size: var(--fs-micro);
-}
-
-.ledger__claim {
-    border-top: 1px solid var(--line);
-}
-
-.ledger__total {
-    border-top: 1px solid var(--line);
-    font-weight: 600;
-}
-
-/* Not a point delta — the running subtotal the next line operates on. */
-.ledger__sum {
-    color: var(--muted);
-    font-size: var(--fs-micro);
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-}
-
-.ledger__nil {
-    color: var(--faint);
-    font-size: var(--fs-micro);
-}
-
-.answers__sum {
-    margin-left: auto;
-    color: var(--muted);
-    font-size: var(--fs-micro);
-    font-variant-numeric: tabular-nums;
-}
-
-.tag--new {
-    border-color: var(--line-strong);
-    background: transparent;
-}
-
-/* `.chip` keeps a narrow left pad for the avatar a guess chip carries. These
-   have no avatar, so they need it back or the label sits on the border. */
-.chip--answer {
-    padding-left: 0.75rem;
-}
-
-/* Pressed in, like a latching switch. An outline alone was invisible against a
-   near-white key. */
-.chip--answer.is-active {
-    background: var(--text);
-    border-color: var(--text);
-    color: var(--surface-3);
-    box-shadow: inset 0 1px 3px rgb(0 0 0 / 40%);
-}
-
-.rules-claims {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-    margin: var(--sp-3) 0;
-    border: 1px solid var(--line);
-    border-radius: var(--r-md);
-    overflow: hidden;
-    list-style: none;
-}
-
-.rules-claims li {
-    display: flex;
-    flex-direction: column;
-    gap: 0.15rem;
-    padding: var(--sp-2) var(--sp-3);
-    background: var(--surface-2);
-}
-
-.rules-claims strong {
+    padding: 9px 14px 9px 7px;
+    border: 1px solid var(--rule);
+    background: var(--bone);
+    color: var(--ink);
+    font-family: inherit;
     font-size: var(--fs-base);
-}
-
-.rules-claims span {
-    color: var(--faint);
-    font-size: var(--fs-micro);
-}
-
-.rules-claims em {
-    color: var(--accent-text);
-    font-size: var(--fs-micro);
-    font-style: normal;
-}
-
-.sheet__lead {
-    margin-top: var(--sp-4);
-    font-size: var(--fs-micro);
-    font-weight: 600;
-    color: var(--text);
-}
-
-.sheet__subhead {
-    margin-top: var(--sp-5);
-    font-size: var(--fs-base);
-    font-weight: 600;
-}
-
-.scoring {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-    margin: var(--sp-3) 0;
-    border: 1px solid var(--line);
-    border-radius: var(--r-md);
-    overflow: hidden;
-}
-
-.scoring__row {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--sp-3);
-    padding: var(--sp-2) var(--sp-3);
-    background: var(--surface-2);
-    font-size: var(--fs-micro);
-}
-
-.scoring__row dt {
-    color: var(--muted);
-}
-
-.scoring__row dd {
-    margin: 0;
-    flex-shrink: 0;
-    color: var(--accent-text);
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-    text-align: right;
-}
-
-.sheet__example {
-    margin-top: var(--sp-2);
-    padding: var(--sp-3);
-    border-radius: var(--r-md);
-    background: var(--surface-2);
-    color: var(--muted);
-    font-size: var(--fs-micro);
-}
-
-.sheet__oath {
-    margin-bottom: var(--sp-4);
-    padding: var(--sp-3);
-    border-left: 2px solid var(--accent);
-    border-radius: 0 var(--r-md) var(--r-md) 0;
-    background: var(--surface-2);
-    font-size: var(--fs-base);
-}
-
-/* Behind everything, touching nothing: it must never intercept a click or add
-   a scrollbar. Drawn in viewport pixels from wherever the machine is. */
-.cables {
-    position: fixed;
-    top: 0;
-    left: 0;
-    z-index: 0;
-    pointer-events: none;
-}
-
-/* The bench behind the join card. Quiet on purpose: it is the backdrop to a
-   form somebody has to read and type into. */
-.bench {
-    opacity: 0.3;
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-}
-
-.bench__body {
-    fill: #bcbcb9;
-    stroke: rgb(0 0 0 / 12%);
-}
-
-.bench__screen {
-    fill: #6f6f74;
-}
-
-.bench__key {
-    fill: #8e8e93;
-}
-
-.bench__key--hot {
-    fill: var(--accent);
-    opacity: 0.85;
-}
-
-.bench__knob,
-.bench__cap {
-    fill: #d3d3d0;
-}
-
-/* Keys are the one shape that says "music" before anything is read, so they
-   keep more of their own contrast than the rest of the bench. */
-.bench__whitekey {
-    fill: #e8e8e5;
-}
-
-.bench__blackkey {
-    fill: #4a4a50;
-}
-
-/* The record deck. It gets the most tonal separation on the bench, because a
-   platter reads as a platter only if the record is darker than the plinth. */
-.bench__platter {
-    fill: #bcbcb9;
-}
-
-.bench__record {
-    fill: #2a2a30;
-}
-
-.bench__groove {
-    fill: none;
-    stroke: rgb(255 255 255 / 7%);
-    stroke-width: 1;
-}
-
-.bench__label {
-    fill: #b8542f;
-}
-
-.bench__spindle {
-    fill: #e8e8e5;
-}
-
-.bench__arm {
-    fill: none;
-    stroke: #cfcfcc;
-    stroke-width: 6;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-}
-
-.bench__headshell {
-    fill: #55555d;
-}
-
-.bench__brick {
-    fill: #a9a9a6;
-    stroke: rgb(0 0 0 / 12%);
-}
-
-.bench__slot {
-    fill: #8e8e93;
-}
-
-.bench__cables,
-.bench__plugs {
-    opacity: 0.82;
-}
-
-/* The socket in the case, and the connector sitting in it. Drawn so a lead
-   plainly ends *in* something rather than near it. */
-.bench__jack {
-    fill: #55555c;
-}
-
-.bench__plug {
-    fill: #3a3a40;
-}
-
-/* Far enough back that the card always wins, and the whole thing fades toward
-   the middle where the reading happens. */
-.bench__unit {
-    opacity: 0.7;
-}
-
-/* ----------------------------------------------------------- drum machine */
-
-.dm {
-    display: flex;
-    flex-direction: column;
-    gap: var(--sp-3);
-}
-
-.dm__bar {
-    display: flex;
-    align-items: center;
-    gap: var(--sp-2);
-}
-
-.dm__transport,
-.dm__clear,
-.dm__bpm {
-    padding: 0.25rem 0.5rem;
-    border: 1px solid var(--line-strong);
-    border-radius: var(--r-sm);
-    background: var(--surface-3);
-    color: var(--muted);
-    font: inherit;
-    font-size: var(--fs-micro);
-    font-weight: 600;
-    letter-spacing: var(--track-label);
-    text-indent: var(--track-label);
-    text-transform: uppercase;
-    box-shadow:
-        inset 0 1px 0 rgb(255 255 255 / 95%),
-        0 1px 0 rgb(0 0 0 / 22%);
+    font-weight: 500;
+    max-width: 200px;
     cursor: pointer;
-    transition:
-        transform var(--dur-fast) var(--ease),
-        box-shadow var(--dur-fast) var(--ease),
-        background var(--dur-fast) var(--ease);
-}
-
-.dm__transport.is-running {
-    background: var(--accent);
-    border-color: rgb(0 0 0 / 30%);
-    color: var(--accent-ink);
-}
-
-/* Pushed right when the row fits, and simply last when it wraps. `auto` on its
-   own left it hanging over the edge instead of moving down. */
-.dm__clear {
-    margin-left: auto;
-}
-
-.dm__tempo {
-    display: inline-flex;
-    flex-shrink: 0;
-    gap: 2px;
-}
-
-.dm__bpm {
-    min-width: 30px;
-    padding: 0.25rem 0.4rem;
-    font-size: var(--fs-base);
-    line-height: 1;
-    letter-spacing: 0;
-    text-indent: 0;
-}
-
-.dm__bpm:disabled {
-    opacity: 0.35;
-    cursor: not-allowed;
-}
-
-.dm__grid {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-}
-
-.dm__row {
-    display: grid;
-    grid-template-columns: 3.2rem repeat(8, minmax(0, 1fr));
-    align-items: center;
-    gap: 3px;
-}
-
-.dm__voice {
-    color: var(--faint);
-    font-size: var(--fs-micro);
-    font-weight: 600;
-    letter-spacing: var(--track-label);
-}
-
-/* A moulded black keycap, the dominant part on the panel. Dark keys on a light
-   body is the whole look, and it is where the value contrast in this interface
-   finally comes from. */
-.dm__pad {
-    aspect-ratio: 1;
-    min-height: 26px;
-    padding: 0;
-    border: 1px solid rgb(0 0 0 / 55%);
-    border-radius: var(--r-sm);
-    background: #26262a;
-    box-shadow:
-        inset 0 1px 0 rgb(255 255 255 / 14%),
-        0 2px 0 rgb(0 0 0 / 30%),
-        0 3px 4px rgb(0 0 0 / 18%);
-    cursor: pointer;
-    /* Snaps down, eases back: a key that returns as fast as it travels feels
-       like a picture of a key rather than a key. */
-    transition:
-        background var(--dur-fast) var(--ease),
-        box-shadow 160ms var(--ease),
-        transform 160ms var(--ease);
-}
-
-.dm__pad:hover {
-    background: #34343a;
-}
-
-/* Travel. The cap sinks onto the panel and its shadow disappears under it. */
-.dm__pad:active {
-    transform: translateY(2px);
-    box-shadow: inset 0 2px 4px rgb(0 0 0 / 45%);
-    transition-duration: 0ms;
-}
-
-/* And the strike itself, which outlives the click so a tap you barely made
-   still registers as something that happened. */
-.dm__pad.is-hit {
-    animation: struck 220ms var(--ease);
-}
-
-@keyframes struck {
-    0% {
-        background: var(--accent);
-        box-shadow:
-            inset 0 1px 0 rgb(255 255 255 / 35%),
-            0 0 16px rgb(209 60 0 / 85%);
-    }
-
-    100% {
-        box-shadow:
-            inset 0 1px 0 rgb(255 255 255 / 14%),
-            0 2px 0 rgb(0 0 0 / 30%);
-    }
-}
-
-/* Armed: a white cap among the black ones. */
-.dm__pad.is-on {
-    background: var(--surface-3);
-    border-color: rgb(0 0 0 / 40%);
-}
-
-/* Under the playhead a black cap only glints; an armed one fires. That
-   difference is the whole illusion of a machine running. */
-.dm__pad.is-now {
-    background: #3d3d44;
-}
-
-.dm__pad.is-on.is-now {
-    background: var(--accent);
-    border-color: rgb(0 0 0 / 45%);
-    box-shadow:
-        inset 0 1px 0 rgb(255 255 255 / 30%),
-        0 0 10px rgb(209 60 0 / 60%);
-}
-
-/* The readout: numbers behind glass, not printed on the panel. */
-.dm__display {
-    display: flex;
-    align-items: baseline;
-    gap: var(--sp-2);
-    padding: var(--sp-2) var(--sp-3);
-    border: 1px solid rgb(0 0 0 / 55%);
-    border-radius: var(--r-sm);
-    background: var(--screen);
-    color: var(--screen-ink);
-}
-
-.dm__glyph {
-    color: var(--accent);
-    font-size: var(--fs-micro);
-}
-
-.dm__bpm-read {
-    display: inline-flex;
-    align-items: baseline;
-    gap: 0.3rem;
-    font-size: var(--fs-lg);
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-    letter-spacing: 0.08em;
-}
-
-.dm__bpm-read i {
-    color: var(--screen-dim);
-    font-size: var(--fs-micro);
-    font-style: normal;
-    font-weight: 600;
-    letter-spacing: var(--track-label);
-}
-
-.dm__bpm-read--dim {
-    color: var(--screen-dim);
-    font-size: var(--fs-base);
-}
-
-.dm__spacer {
-    flex: 1;
-}
-
-/* Indicator lamps: their own parts, sitting above the keys the way they do on
-   the hardware. The blink reads far better when it is not fighting a keycap. */
-.dm__lights {
-    display: grid;
-    grid-template-columns: 3.2rem repeat(8, minmax(0, 1fr));
-    align-items: center;
-    gap: 3px;
-    padding-left: calc(3.2rem + 3px);
-}
-
-.dm__led {
-    justify-self: center;
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: rgb(0 0 0 / 22%);
     transition: background var(--dur-fast) var(--ease);
 }
 
-.dm__led.is-downbeat {
-    background: rgb(0 0 0 / 38%);
-}
-
-.dm__led.is-lit {
-    background: var(--accent);
-    box-shadow: 0 0 6px rgb(209 60 0 / 70%);
-}
-
-/* The transport and tempo keys travel too, or the grid is the only thing in
-   the panel that answers to a finger. */
-.dm__transport:active,
-.dm__clear:active,
-.dm__bpm:active {
-    transform: translateY(1px);
-    box-shadow: inset 0 1px 3px rgb(0 0 0 / 30%);
-}
-
-/* ------------------------------------------------------------------- picks */
-
-.pick {
-    display: flex;
-    align-items: center;
-    gap: var(--sp-2);
-    flex-wrap: wrap;
-}
-
-.pick--guess {
-    /* The only tone left now that decoys are gone. */
-}
-
-.pick__label {
-    margin-right: var(--sp-1);
-    font-size: var(--fs-micro);
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--faint);
-    white-space: nowrap;
-}
-
-.chip {
-    font-variant-emoji: text;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    padding: 0.3rem 0.3rem 0.3rem 0.3rem;
-    border: 1px solid var(--line-strong);
-    border-radius: var(--r-sm);
-    background: var(--surface-3);
-    color: var(--muted);
-    font-size: var(--fs-micro);
-    font-weight: 600;
-    letter-spacing: var(--track-label);
-    text-indent: var(--track-label);
-    text-transform: uppercase;
-    box-shadow:
-        inset 0 1px 0 rgb(255 255 255 / 95%),
-        0 1px 0 rgb(0 0 0 / 18%);
-    cursor: pointer;
-    transition:
-        border-color var(--dur-fast) var(--ease),
-        background var(--dur-fast) var(--ease),
-        color var(--dur-fast) var(--ease);
-}
-
-.chip--bare {
-    padding: 0.3rem 0.3rem;
-}
-
 .chip:hover:not(:disabled) {
-    border-color: var(--line-strong);
-    color: var(--text);
+    background: var(--paper);
 }
 
 .chip.is-active {
-    border-color: rgb(0 0 0 / 30%);
-    background: var(--accent);
-    color: var(--accent-ink);
-    box-shadow:
-        inset 0 1px 0 rgb(255 255 255 / 25%),
-        0 1px 0 rgb(0 0 0 / 25%);
+    border-color: var(--ink);
+    background: var(--ink);
+    color: var(--on-ink);
+}
+
+.chip:disabled {
+    opacity: 0.38;
+    cursor: not-allowed;
+}
+
+/* The answer toggles have no avatar, so they need no room for one. */
+.chip--answer {
+    padding-left: 14px;
+}
+
+.pick {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+.pick__label {
+    width: 100%;
+    font-size: 15px;
+    font-weight: 500;
+}
+
+/* ------------------------------------------------------------------ ledger */
+
+/*
+ * The working. Every step prints which number became which plus one plain
+ * sentence naming the cause — the ledger never prints a bare multiplier,
+ * because "×0.5" never said half of *what*.
+ */
+.ledger__row {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    padding: 13px var(--sp-4);
+    background: var(--paper);
+}
+
+.ledger__n {
+    width: 22px;
+    flex-shrink: 0;
+    color: var(--ink-2);
+    font-size: var(--fs-micro);
+}
+
+.ledger__body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+/* Ledger labels wrap. Nothing here may depend on a string being short, and a
+   truncated cause is a cause nobody can check. */
+.ledger__label {
+    font-size: 15px;
+    font-weight: 500;
+}
+
+.ledger__detail {
+    color: var(--ink-2);
+    font-size: var(--fs-micro);
+    line-height: 1.5;
+}
+
+.ledger__change {
+    flex-shrink: 0;
+    font-size: var(--fs-fig);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+}
+
+.ledger__total {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: var(--sp-4);
+}
+
+.ledger__total .ledger__label {
+    flex: 1;
+    font-size: var(--fs-lead);
+    font-weight: 600;
+}
+
+.ledger__banked {
+    font-size: 34px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.ledger__pace {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    padding-top: var(--sp-1);
+}
+
+.ledger__pace .muted {
+    flex: 1;
+    min-width: 260px;
+    font-size: var(--fs-micro);
+    line-height: 1.6;
+}
+
+/* ----------------------------------------------------------------- tallies */
+
+/* ♥ and ★ stay apart, always. ♥ decides the finale's order and is set solid;
+   ★ is one person's gamble, ranks nothing, and is set quieter to say so. */
+.tallies {
+    display: flex;
+    gap: var(--sp-4);
+    flex-wrap: wrap;
+}
+
+.tally {
+    flex: 1;
+    min-width: 200px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-1);
+    padding: 14px var(--sp-4);
+    border: 1px solid var(--rule);
+    background: var(--paper);
+}
+
+.tally__label {
+    font-size: var(--fs-micro);
+    letter-spacing: var(--track-label);
+    text-transform: uppercase;
+    color: var(--ink-2);
+}
+
+.tally__value {
+    font-size: 30px;
+    font-weight: 600;
+}
+
+.tally--quiet .tally__value {
+    color: var(--ink-2);
+    font-weight: 500;
+}
+
+.tally__blurb {
+    color: var(--ink-2);
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+/* ------------------------------------------------------------------- yours */
+
+/* The DJ's own round. You are the only person in the room who can do nothing. */
+.yours {
+    gap: 6px;
+    padding: 14px var(--sp-4);
+    background: var(--ink);
+    color: var(--on-ink);
+}
+
+.yours__eyebrow {
+    font-size: var(--fs-micro);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--redact-label);
+}
+
+.yours__lead {
+    font-family: var(--font-disp);
+    font-size: 30px;
+    font-weight: 400;
+    line-height: 1.1;
+}
+
+.yours .muted {
+    color: var(--on-ink-2);
+    line-height: 1.5;
 }
 
 /* ------------------------------------------------------------------- stage */
@@ -1601,35 +1048,12 @@
 .stage {
     display: flex;
     flex-direction: column;
-    gap: var(--sp-4);
-    animation: rise var(--dur) var(--ease) both;
-}
-
-.stage__head {
-    display: flex;
-    flex-direction: column;
-    gap: var(--sp-1);
-}
-
-.stage__title {
-    display: flex;
-    align-items: baseline;
-    gap: var(--sp-3);
-    font-size: var(--fs-lg);
-    color: var(--text);
-}
-
-.stage__count {
-    margin-left: auto;
-    color: var(--faint);
-    font-size: var(--fs-base);
-    font-weight: 500;
-    font-variant-numeric: tabular-nums;
+    gap: var(--sp-5);
 }
 
 .stage__sub {
-    color: var(--muted);
-    font-size: var(--fs-base);
+    color: var(--ink-2);
+    line-height: 1.5;
 }
 
 .cta {
@@ -1638,63 +1062,147 @@
     gap: var(--sp-2);
 }
 
-.cta .muted {
-    text-align: center;
-    font-size: var(--fs-micro);
+/* -------------------------------------------------------------------- hand */
+
+/*
+ * The hand: a handful of cards, one use each. A spent card leaves the hand
+ * visually — struck through, naming the track that took it — rather than
+ * vanishing, and an unavailable one prints its reason on its face.
+ */
+.hand {
+    display: flex;
+    gap: var(--sp-2);
+    flex-wrap: wrap;
 }
 
-/* ------------------------------------------------------------------ reveal */
-
-.reveal {
+.hand__card {
+    width: 158px;
     display: flex;
     flex-direction: column;
-    gap: var(--sp-4);
-    margin-top: var(--sp-4);
-    padding-top: var(--sp-4);
-    border-top: 1px solid var(--line);
-    animation: rise var(--dur) var(--ease) both;
+    gap: var(--sp-1);
+    padding: 11px var(--sp-3);
+    border: 1px solid var(--ink);
+    background: var(--paper);
 }
 
-.reveal__head {
+/* No-claim: the floor. Unlimited, always there, quieter than the bets, and it
+   must never nag. */
+.hand__card--floor {
+    border-color: var(--rule);
+}
+
+.hand__card--out {
+    border: 1px dashed var(--rule-soft);
+    background: var(--bone);
+    opacity: 0.55;
+}
+
+.hand__card--out .hand__name {
+    text-decoration: line-through;
+}
+
+.hand__name {
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.hand__blurb {
+    color: var(--ink-2);
+    font-size: 10px;
+    line-height: 1.45;
+}
+
+/* The reason a card cannot be played is printed, not implied. */
+.hand__blurb--bad {
+    color: var(--signal-text);
+}
+
+/* ------------------------------------------------------------ claim picker */
+
+.claim {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+}
+
+/* The slot on a track. An empty one reads "drop a card here or leave it safe";
+   no-claim is a legitimate finished state, so the dashes never nag. */
+.claim__badge {
+    align-self: flex-start;
+    padding: 7px 11px;
+    border: 1px solid var(--ink);
+    background: var(--ink);
+    color: var(--on-ink);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.claim__deck {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.claim__option {
     display: flex;
     align-items: center;
-    gap: var(--sp-3);
+    gap: 10px;
+    padding: var(--sp-3);
+    border: 1px solid var(--rule);
+    background: var(--paper);
+    color: var(--ink);
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: background var(--dur-fast) var(--ease);
 }
 
-.reveal__eyebrow {
-    font-size: var(--fs-micro);
-    font-weight: 600;
-    letter-spacing: 0.07em;
-    text-transform: uppercase;
-    color: var(--faint);
+.claim__option:hover:not(:disabled) {
+    background: var(--bone);
 }
 
-.reveal__name {
-    font-size: var(--fs-hero);
-    line-height: 1.05;
-    color: var(--accent-text);
+.claim__option.is-active {
+    border-color: var(--ink);
+    background: var(--ink);
+    color: var(--on-ink);
 }
 
-.reveal__sub {
-    color: var(--muted);
-    font-size: var(--fs-base);
+.claim__option:disabled {
+    border-style: dashed;
+    border-color: var(--rule-soft);
+    background: var(--bone);
+    opacity: 0.55;
+    cursor: not-allowed;
 }
 
-.reveal__pts {
-    color: var(--accent-text);
-    font-size: var(--fs-micro);
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
+.claim__option:disabled .claim__name {
+    text-decoration: line-through;
 }
 
-.who {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 0.2rem 0.65rem 0.2rem 0.2rem;
-    border-radius: var(--r-pill);
-    background: var(--surface-2);
-    font-size: var(--fs-micro);
+.claim__name {
+    flex: 1;
+    min-width: 0;
+    font-size: 15px;
+    font-weight: 500;
+}
+
+/* The reason a claim is unavailable rides on the card, never in a tooltip. */
+.claim__blurb {
+    flex-shrink: 0;
+    max-width: 22ch;
+    font-family: var(--font-num);
+    font-size: 10px;
+    line-height: 1.45;
+    text-align: right;
+    color: var(--ink-2);
+}
+
+.claim__option.is-active .claim__blurb {
+    color: var(--on-ink-2);
 }
 
 /* ------------------------------------------------------------- track lists */
@@ -1703,21 +1211,17 @@
     display: flex;
     flex-direction: column;
     gap: 1px;
+    border: 1px solid var(--rule);
+    background: var(--rule);
 }
 
 .track {
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
-    gap: var(--sp-2);
-    padding: 0.4rem 0.55rem;
-    border-radius: var(--r-sm);
-    font-size: var(--fs-base);
-    color: var(--text);
-}
-
-.track:hover {
-    background: var(--surface-2);
+    gap: var(--sp-3);
+    flex-wrap: wrap;
+    padding: 11px var(--sp-3);
+    background: var(--paper);
 }
 
 .track__logo {
@@ -1730,7 +1234,8 @@
 .track__logo--generic {
     display: grid;
     place-items: center;
-    color: var(--faint);
+    color: var(--ink-2);
+    font-size: var(--fs-micro);
 }
 
 .track__title {
@@ -1739,73 +1244,48 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-}
-
-.track--played {
-    color: var(--faint);
-}
-
-.track--playing .track__title {
-    color: var(--accent-text);
-}
-
-.track__x {
-    flex-shrink: 0;
-    width: 22px;
-    height: 22px;
-    padding: 0;
-    border: 0;
-    border-radius: 50%;
-    background: transparent;
-    color: var(--faint);
-    cursor: pointer;
-    transition:
-        color var(--dur-fast) var(--ease),
-        background var(--dur-fast) var(--ease);
-}
-
-.track__x:hover {
-    background: rgb(192 38 27 / 15%);
-    color: var(--bad);
+    font-size: 15px;
+    font-weight: 500;
 }
 
 .track__meta {
     flex-shrink: 0;
-    color: var(--faint);
-    font-size: var(--fs-micro);
-    font-variant-numeric: tabular-nums;
+    color: var(--ink-2);
+    font-family: var(--font-num);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
 }
 
-.track__meta--score {
-    color: var(--accent-text);
+.track__x {
+    width: 24px;
+    flex-shrink: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--ink-2);
+    font-size: var(--fs-base);
+    cursor: pointer;
 }
 
-/* Two numbers per row, so they need to be told apart at a glance rather than
-   read: the room's verdict in the love colour, the banked total in the accent
-   the claim uses everywhere else. */
-.track__meta--love {
-    color: var(--love);
+.track__x:hover {
+    color: var(--signal-text);
 }
 
-.final-list__scores {
-    display: inline-flex;
-    align-items: baseline;
-    gap: var(--sp-2);
-    font-variant-numeric: tabular-nums;
+.track--playing {
+    background: var(--bone);
 }
 
-.final-list__legend {
-    margin-bottom: var(--sp-2);
-    color: var(--faint);
-    font-size: var(--fs-micro);
+.track--played {
+    opacity: 0.5;
 }
 
-/* ------------------------------------------------------------------- lobby */
+/* --------------------------------------------------------------- url field */
 
 .url {
     display: flex;
     flex-direction: column;
-    gap: var(--sp-2);
+    gap: 6px;
 }
 
 .url__row {
@@ -1816,124 +1296,109 @@
 .url__row .input {
     flex: 1;
     min-width: 0;
+    font-size: var(--fs-base);
+    padding: var(--sp-3) 14px;
 }
 
 .url__hint {
+    min-height: 1.4em;
+    color: var(--ink-2);
+    font-family: var(--font-num);
     font-size: var(--fs-micro);
-    color: var(--faint);
 }
 
+/* Never a colour on its own: the bad hint is a sentence that says what is
+   wrong, and the colour only reinforces it. */
 .url__hint--bad {
-    color: var(--bad);
+    color: var(--signal-text);
 }
 
 .url__preview {
     display: flex;
     align-items: center;
     gap: var(--sp-3);
-    padding: var(--sp-2);
-    border: 1px solid var(--line);
-    border-radius: var(--r-md);
+    padding: 10px var(--sp-3);
+    border: 1px solid var(--rule);
+    background: var(--paper);
 }
 
 .url__art {
     width: 40px;
     height: 40px;
     flex-shrink: 0;
-    border-radius: var(--r-sm);
     object-fit: cover;
-    background: var(--surface-3);
 }
 
 .url__meta {
+    flex: 1;
     min-width: 0;
     display: flex;
     flex-direction: column;
 }
 
 .url__title {
-    font-size: var(--fs-base);
-    font-weight: 600;
+    font-weight: 500;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
 .url__artist {
-    color: var(--faint);
-    font-size: var(--fs-micro);
+    color: var(--ink-2);
+    font-size: 13px;
 }
 
 .url__badge {
+    flex-shrink: 0;
     display: inline-flex;
     align-items: center;
-    gap: 0.3rem;
-    margin-left: auto;
-    padding: 0.2rem 0.6rem;
-    border-radius: var(--r-pill);
-    background: var(--surface-3);
-    font-size: var(--fs-micro);
-    color: var(--muted);
-    white-space: nowrap;
+    gap: 6px;
+    color: var(--ink-2);
+    font-family: var(--font-num);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
 }
 
 .url__badge img {
-    width: 12px;
-    height: 12px;
+    width: 14px;
+    height: 14px;
 }
+
+/* ---------------------------------------------------------------- settings */
 
 .setting {
     display: flex;
     align-items: center;
-    gap: var(--sp-4);
-    padding: var(--sp-3) 0;
-}
-
-.setting+.setting {
-    border-top: 1px solid var(--line);
+    gap: var(--sp-3);
+    padding: 11px var(--sp-3);
 }
 
 .setting__name {
-    display: block;
-    font-size: var(--fs-base);
-    font-weight: 600;
-    color: var(--text);
-}
-
-.win__note {
-    color: var(--faint);
-    font-size: var(--fs-micro);
+    flex: 1;
     font-weight: 500;
 }
 
 .stepper {
     display: flex;
     align-items: center;
-    gap: var(--sp-1);
-    margin-left: auto;
-    padding: 3px;
-    border: 1px solid var(--line);
-    border-radius: var(--r-pill);
+    border: 1px solid var(--rule);
 }
 
 .stepper button {
-    width: 28px;
-    height: 28px;
+    width: 34px;
+    height: 34px;
     padding: 0;
     border: 0;
-    border-radius: 50%;
-    background: transparent;
-    color: var(--muted);
+    background: var(--bone);
+    color: var(--ink);
     font-size: var(--fs-base);
     cursor: pointer;
-    transition:
-        background var(--dur-fast) var(--ease),
-        color var(--dur-fast) var(--ease);
+    transition: background var(--dur-fast) var(--ease);
 }
 
 .stepper button:hover:not(:disabled) {
-    background: var(--surface-3);
-    color: var(--text);
+    background: var(--paper);
 }
 
 .stepper button:disabled {
@@ -1942,184 +1407,284 @@
 }
 
 .stepper__value {
-    min-width: 1.6em;
+    min-width: 34px;
     text-align: center;
-    font-size: var(--fs-base);
+    font-size: 15px;
     font-weight: 600;
-    font-variant-numeric: tabular-nums;
 }
 
+/* A word, not a sliding pill. The state has to survive greyscale like every
+   other state in the product. */
 .toggle {
-    position: relative;
-    flex-shrink: 0;
-    margin-left: auto;
-    width: 46px;
-    height: 26px;
-    padding: 0;
-    border: 1px solid var(--line-strong);
-    border-radius: var(--r-pill);
-    background: var(--surface-2);
+    padding: var(--sp-1) 10px;
+    border: 1px solid var(--rule);
+    background: var(--bone);
+    color: var(--ink-2);
+    font-family: var(--font-num);
+    font-size: var(--fs-micro);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
     cursor: pointer;
-    transition:
-        background var(--dur) var(--ease),
-        border-color var(--dur) var(--ease);
-}
-
-.toggle__thumb {
-    position: absolute;
-    top: 3px;
-    left: 3px;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: var(--faint);
-    transition:
-        transform var(--dur) var(--ease),
-        background var(--dur) var(--ease);
+    transition: background var(--dur-fast) var(--ease);
 }
 
 .toggle--on {
-    border-color: transparent;
-    background: rgb(209 60 0 / 25%);
-}
-
-.toggle--on .toggle__thumb {
-    transform: translateX(20px);
-    background: var(--accent);
+    border-color: var(--ink);
+    background: var(--ink);
+    color: var(--on-ink);
 }
 
 /* ------------------------------------------------------------------ finale */
 
-.takeaway__blurb {
-    margin-bottom: var(--sp-3);
-    color: var(--faint);
-    font-size: var(--fs-micro);
-}
-
-.awards {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-    gap: var(--sp-3);
-}
-
-.award {
+.finale__head {
     display: flex;
-    flex-direction: column;
-    gap: var(--sp-1);
-    /* Wider floor: at 190px the blurb wrapped to three ragged lines and the
-       winners piled up underneath it. */
-    min-width: 0;
-    padding: var(--sp-4);
-    border: 1px solid var(--line);
-    border-radius: var(--r-md);
-    background: var(--surface-2);
-    animation: rise var(--dur) var(--ease) both;
-    animation-delay: var(--delay);
+    align-items: baseline;
+    gap: 14px;
+    flex-wrap: wrap;
 }
 
-.award__glyph {
-    font-variant-emoji: text;
-    font-size: var(--fs-lg);
-    color: var(--accent-text);
+.finale__title {
+    font-family: var(--font-disp);
+    font-size: var(--fs-display);
+    font-weight: 400;
+    line-height: 1.05;
+    letter-spacing: 0;
 }
 
-.award--people .award__glyph {
-    font-variant-emoji: text;
-    color: var(--detective);
-}
-
-.award__title {
-    font-size: var(--fs-base);
-    font-weight: 600;
-}
-
-.award__blurb {
-    color: var(--faint);
+.finale__summary {
+    margin-left: auto;
+    color: var(--ink-2);
     font-size: var(--fs-micro);
-    line-height: 1.45;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
 }
 
-/* One winner per line. Wrapping them inline is what produced the pile: with
-   five names they reflowed into a ragged block with no reading order, and every
-   card ended up a different height. */
-.award__winners {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.3rem;
-    margin-top: var(--sp-2);
-    list-style: none;
-}
-
-/* Pinned to the bottom, so the numbers line up across a row of cards however
-   many winners each of them has. */
-.award__value {
-    margin-top: auto;
-    padding-top: var(--sp-2);
-    color: var(--muted);
-    font-size: var(--fs-micro);
-    font-weight: 600;
-}
-
-.award__detail {
-    color: var(--faint);
-    font-size: var(--fs-micro);
-    font-style: italic;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.final-list {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-}
-
-.final-list li {
+.final-list__row {
     display: flex;
     align-items: center;
     gap: var(--sp-3);
-    padding: 0.5rem 0.55rem;
-    border-radius: var(--r-sm);
-    font-size: var(--fs-base);
-}
-
-.final-list li:hover {
-    background: var(--surface-2);
+    padding: 10px var(--sp-3);
 }
 
 .final-list__n {
-    min-width: 1.6em;
+    width: 22px;
     flex-shrink: 0;
-    color: var(--faint);
+    color: var(--ink-2);
     font-size: var(--fs-micro);
-    font-variant-numeric: tabular-nums;
 }
 
 .final-list__title {
     flex: 1;
     min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.final-list__dj {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    flex-shrink: 0;
-    color: var(--muted);
-    font-size: var(--fs-micro);
-}
-
-.final-list--takeaway .final-list__title {
+    font-size: 15px;
     font-weight: 500;
 }
 
-.final-list--ghost li {
-    color: var(--faint);
+.final-list__played,
+.final-list__gave {
+    flex-shrink: 0;
+    color: var(--ink-2);
+    font-size: var(--fs-micro);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.final-list__dj {
+    width: 96px;
+    flex-shrink: 0;
+    text-align: right;
+    font-size: 13px;
+}
+
+/* ♥ is solid because it decides the order. ★ is quiet because it decides
+   nothing. They are never in the same column and never the same weight. */
+.final-list__love {
+    width: 56px;
+    flex-shrink: 0;
+    text-align: right;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.final-list__banked {
+    width: 56px;
+    flex-shrink: 0;
+    text-align: right;
+    color: var(--ink-2);
+    font-size: 13px;
+}
+
+/* Written, not blank: the one screen where a zero state is a personality test
+   for the product. */
+.takeaway__empty {
+    padding: 13px;
+    border: 1px dashed var(--rule-soft);
+    background: var(--paper);
+    font-size: 15px;
+    line-height: 1.4;
+}
+
+/* ------------------------------------------------------------------ awards */
+
+.awards {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--sp-2);
+}
+
+.award {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 13px;
+    border: 1px solid var(--rule);
+    background: var(--paper);
+}
+
+/* One award leads, in ink. The rest are a grid of equals — there is no
+   leaderboard here and the layout must not imply one. */
+.award--lead {
+    border-color: var(--ink);
+}
+
+/* Not given, with the reason. Never omitted: the explanation is more
+   interesting than the trophy would have been. */
+.award--none {
+    border: 1px dashed var(--rule-soft);
+    background: var(--bone);
+}
+
+.award__title {
+    font-size: 10px;
+    letter-spacing: var(--track-label);
+    text-transform: uppercase;
+    color: var(--ink-2);
+}
+
+.award--lead .award__title {
+    color: var(--on-ink-2);
+}
+
+/* Ties are shared, never broken: one winner per line, so a three-way tie reads
+   as three names rather than as a pile. */
+.award__winners {
+    display: flex;
+    flex-direction: column;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.25;
+}
+
+.award__winners--none {
+    color: var(--ink-2);
+}
+
+.award__value {
+    margin-top: auto;
+    padding-top: 3px;
+    color: var(--ink-2);
+    font-size: var(--fs-micro);
+    line-height: 1.45;
+}
+
+.award--lead .award__value {
+    color: var(--on-ink-2);
+}
+
+/* ------------------------------------------------------------ drum machine */
+
+/*
+ * A punched card. An armed step is the same solid ink as a redaction, so the
+ * one thing on screen that is allowed to move is also the only thing on screen
+ * with nothing to hide.
+ */
+.dm__card {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    padding: 11px;
+    border: 1px solid var(--rule);
+    background: var(--paper);
+}
+
+.dm__head,
+.dm__row {
+    display: grid;
+    grid-template-columns: 30px repeat(8, minmax(0, 1fr));
+    gap: 3px;
+    align-items: center;
+}
+
+/* The playhead lives above the card, not inside the cells: a cell is either
+   punched or it is not, and nothing else may change how it looks. */
+.dm__tick {
+    height: 3px;
+    background: var(--rule);
+    transition: background 60ms linear;
+}
+
+.dm__tick.is-now {
+    background: var(--signal);
+}
+
+.dm__voice {
+    color: var(--ink-2);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+}
+
+.dm__cell {
+    aspect-ratio: 1;
+    min-height: 0;
+    padding: 0;
+    border: 1px solid var(--rule);
+    background: var(--bone);
+    cursor: pointer;
+    transition: background 60ms linear;
+}
+
+.dm__cell.is-on {
+    border-color: var(--ink);
+    background: var(--ink);
+}
+
+.dm__bar {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding-top: 2px;
+}
+
+.dm__transport,
+.dm__clear {
+    padding: 5px 9px;
+    border: 1px solid var(--ink);
+    background: var(--bone);
+    color: var(--ink);
+    font-family: var(--font-num);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+
+.dm__transport.is-running {
+    background: var(--ink);
+    color: var(--on-ink);
+}
+
+.dm__clear {
+    border-color: var(--rule);
+    color: var(--ink-2);
+}
+
+.dm__count {
+    margin-left: auto;
+    color: var(--ink-2);
+    font-size: 10px;
+    letter-spacing: 0.06em;
 }
 
 /* ------------------------------------------------------------------ toasts */
@@ -2129,65 +1694,73 @@
     left: 50%;
     bottom: var(--sp-5);
     z-index: 60;
+    transform: translateX(-50%);
     display: flex;
     flex-direction: column;
-    align-items: center;
     gap: var(--sp-2);
-    transform: translateX(-50%);
-    pointer-events: none;
+    width: min(420px, calc(100vw - 2 * var(--sp-5)));
 }
 
 .toast {
-    pointer-events: auto;
-    padding: 0.5rem 1rem;
-    border: 1px solid var(--line-strong);
-    border-radius: var(--r-pill);
-    background: var(--surface-2);
-    color: var(--text);
-    font-size: var(--fs-base);
-    cursor: pointer;
-    box-shadow: 0 12px 32px rgb(0 0 0 / 22%);
-    animation: rise var(--dur) var(--ease) both;
+    padding: 11px var(--sp-3);
+    border: 1px solid var(--ink);
+    background: var(--ink);
+    color: var(--on-ink);
+    font-size: 13px;
+    line-height: 1.45;
 }
 
 .toast--success {
-    color: var(--good);
+    border-left: 3px solid var(--on-ink);
 }
 
 .toast--error {
-    color: var(--bad);
+    border-left: 3px solid var(--signal);
 }
 
 /* ------------------------------------------------------------------- sheet */
 
 .sheet {
-    width: min(560px, calc(100vw - 2rem));
-    padding: 0;
-    border: 1px solid var(--line-strong);
-    border-radius: var(--r-lg);
-    background: var(--surface);
-    color: var(--text);
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    display: grid;
+    place-items: center;
+    padding: var(--sp-5);
+    background: rgb(23 22 20 / 55%);
+    border: 0;
 }
 
 .sheet::backdrop {
-    background: rgb(20 20 26 / 45%);
-    backdrop-filter: blur(4px);
+    background: rgb(23 22 20 / 55%);
 }
 
 .sheet__body {
+    width: min(640px, 100%);
+    max-height: 84dvh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-3);
     padding: var(--sp-5);
+    background: var(--bone);
+    border-radius: var(--r-frame);
 }
 
 .sheet__header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     gap: var(--sp-3);
-    margin-bottom: var(--sp-4);
+    padding-bottom: var(--sp-2);
+    border-bottom: 1px solid var(--rule);
 }
 
 .sheet__header h2 {
-    font-size: var(--fs-lg);
+    flex: 1;
+    font-family: var(--font-disp);
+    font-size: 30px;
+    font-weight: 400;
+    letter-spacing: 0;
 }
 
 .sheet__tools {
@@ -2196,100 +1769,350 @@
     gap: var(--sp-2);
 }
 
+/* The house rule, set as the one thing on the sheet you are asked to agree to. */
+.sheet__oath {
+    padding: var(--sp-3) 14px;
+    border-left: 3px solid var(--ink);
+    background: var(--paper);
+    font-size: 15px;
+    line-height: 1.5;
+}
+
 .sheet__list {
     display: flex;
     flex-direction: column;
     gap: var(--sp-3);
+    counter-reset: rule;
 }
 
 .sheet__list li {
-    color: var(--muted);
-    font-size: var(--fs-base);
+    display: flex;
+    gap: var(--sp-3);
+    counter-increment: rule;
+}
+
+.sheet__list li::before {
+    content: counter(rule, decimal-leading-zero);
+    flex-shrink: 0;
+    color: var(--ink-2);
+    font-family: var(--font-num);
+    font-size: var(--fs-micro);
     line-height: 1.6;
 }
 
-.sheet__list strong {
-    color: var(--text);
+.sheet__subhead {
+    padding-top: var(--sp-2);
+    font-family: var(--font-num);
+    font-size: var(--fs-micro);
+    font-weight: 600;
+    letter-spacing: var(--track-label);
+    text-transform: uppercase;
+    color: var(--ink-2);
+}
+
+.sheet__lead {
+    font-size: 15px;
     font-weight: 600;
 }
 
-.sheet__note {
-    margin-top: var(--sp-4);
-    padding-top: var(--sp-4);
-    border-top: 1px solid var(--line);
-    color: var(--faint);
-    font-size: var(--fs-micro);
-    line-height: 1.6;
+.sheet__note,
+.sheet__example {
+    color: var(--ink-2);
+    font-size: 13px;
+    line-height: 1.55;
+}
+
+.sheet__example {
+    padding: var(--sp-2) var(--sp-3);
+    border: 1px solid var(--rule);
+    background: var(--paper);
+    font-family: var(--font-num);
+}
+
+.rules-claims {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    border: 1px solid var(--rule);
+    background: var(--rule);
+}
+
+.rules-claims li {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--sp-2) var(--sp-3);
+    background: var(--paper);
+}
+
+.rules-claims strong {
+    font-size: var(--fs-base);
+}
+
+.rules-claims span {
+    color: var(--ink-2);
+    font-size: 13px;
+}
+
+.scoring {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    border: 1px solid var(--rule);
+    background: var(--rule);
+}
+
+.scoring__row {
+    display: flex;
+    align-items: baseline;
+    gap: var(--sp-3);
+    padding: var(--sp-2) var(--sp-3);
+    background: var(--paper);
+}
+
+.scoring__row dt {
+    flex: 1;
+}
+
+.scoring__row dd {
+    margin: 0;
+    flex-shrink: 0;
+    font-family: var(--font-num);
+    font-weight: 600;
 }
 
 /* ---------------------------------------------------------------- language */
 
 .locale {
     display: inline-flex;
-    padding: 2px;
-    border: 1px solid var(--line);
-    border-radius: var(--r-pill);
+    flex-shrink: 0;
+    border: 1px solid var(--rule);
 }
 
 .locale__option {
-    padding: 0.2rem 0.6rem;
+    padding: 5px var(--sp-2);
     border: 0;
-    border-radius: var(--r-pill);
     background: transparent;
-    color: var(--faint);
-    font-size: var(--fs-micro);
+    color: var(--ink-2);
+    font-family: var(--font-num);
+    font-size: 10px;
     font-weight: 600;
+    letter-spacing: 0.1em;
     cursor: pointer;
+    transition: background var(--dur-fast) var(--ease);
 }
 
 .locale__option.is-active {
-    background: var(--surface-3);
-    color: var(--accent-text);
+    background: var(--ink);
+    color: var(--on-ink);
 }
 
 /* ------------------------------------------------------------- responsive */
 
-@media (max-width: 880px) {
+@media (max-width: 900px) {
     .shell__body {
         grid-template-columns: minmax(0, 1fr);
-        padding: var(--sp-4) var(--sp-3) var(--sp-6);
     }
 
     .shell__side {
         position: static;
     }
 
-    .rate {
-        width: 100%;
-        justify-content: space-around;
-    }
-
-    .wallet {
-        margin-left: 0;
-        width: 100%;
-        justify-content: center;
+    .awards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 
-/* Classes that exist so the markup reads clearly, even where they add little
-   of their own. Keeping them declared means the class-name guard stays honest
-   instead of accumulating exceptions. */
+/*
+ * 375px. Nothing is dropped and nothing goes behind a sheet: the five columns
+ * of the answers table become five stacked rows in the same order, so the two
+ * views teach the same reading.
+ */
+@media (max-width: 560px) {
+    .shell__bar {
+        flex-wrap: wrap;
+        padding: var(--sp-2) 14px;
+    }
+
+    .shell__room,
+    .shell__position {
+        font-size: 10px;
+    }
+
+    .shell__body {
+        padding: 14px;
+        gap: var(--sp-5);
+    }
+
+    .band__row {
+        gap: var(--sp-3);
+        padding: 14px;
+    }
+
+    .band__name {
+        font-size: 26px;
+    }
+
+    .band__named {
+        display: none;
+    }
+
+    .avatar--lg {
+        width: 40px;
+        height: 40px;
+        font-size: var(--fs-lead);
+    }
+
+    /* Six keys across at 56px: the target grows on touch rather than shrinking. */
+    .rate__key {
+        flex: 1;
+        width: auto;
+        min-width: 0;
+        height: 56px;
+    }
+
+    .answers__row {
+        flex-wrap: wrap;
+        gap: var(--sp-2);
+    }
+
+    .answers__name {
+        width: auto;
+        flex: 1;
+    }
+
+    .answers__tags {
+        flex-basis: 100%;
+    }
+
+    .answers__sum {
+        width: auto;
+    }
+
+    .ledger__row {
+        flex-wrap: wrap;
+        padding: 11px var(--sp-3);
+    }
+
+    .ledger__n {
+        display: none;
+    }
+
+    .ledger__change {
+        font-size: 18px;
+    }
+
+    .final-list__row {
+        flex-wrap: wrap;
+        gap: var(--sp-2);
+    }
+
+    .final-list__played,
+    .final-list__dj {
+        width: auto;
+        text-align: left;
+    }
+
+    .awards {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hand__card {
+        width: 100%;
+    }
+
+    .claim__blurb {
+        max-width: 14ch;
+    }
+
+    .finale__title {
+        font-size: 28px;
+    }
+
+    .finale__summary {
+        margin-left: 0;
+    }
+}
+
+/* The word carried by a latching chip, so its state never rests on fill alone. */
+.chip__state {
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+}
+
+.chip.is-active .chip__state {
+    color: var(--on-ink-2);
+}
+
+/* What a tick is worth, said once under the table rather than on every row. */
+.answers__key {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    color: var(--ink-2);
+    font-size: var(--fs-micro);
+}
+
+/* ------------------------------------------------- containers and details */
+
+/* Lists that get their rules and seams from `.list`, and their own identity
+   from the row rules above. Named here so the layout each one actually needs
+   lives with the component rather than being inherited by accident. */
+.answers,
+.ledger,
+.final-list,
+.setlist,
+.settings {
+    min-width: 0;
+}
+
+/* The band is a full-bleed ink block, so it must clip its own cover. */
+.band {
+    min-width: 0;
+}
+
+/* The fidget is a block like any other; the card inside it carries the frame. */
+.dm {
+    gap: var(--sp-2);
+}
+
+/* The embed's own states sit inside the passe-partout, on ink. */
 .embed {
+    width: 100%;
+}
+
+/* The guess row gets more space between chips than the answer toggles do,
+   because a name is longer than a two-word statement and the chips wrap. */
+.pick--guess {
+    gap: var(--sp-2);
+}
+
+/* An open claim picker pushes its deck out under the track it belongs to. */
+.claim.is-open {
+    padding-bottom: var(--sp-1);
+}
+
+.award__who {
     display: block;
 }
 
-.embed__reason {
-    color: var(--muted);
+.shell__code-value {
+    display: inline-block;
 }
 
-.rate__knob {
-    font-size: var(--fs-lg);
+/* Last on the bar, and the only thing there you can do by accident. */
+.shell__leave {
+    margin-right: calc(var(--sp-2) * -1);
 }
 
 .spinner__label {
-    color: inherit;
+    letter-spacing: var(--track-label);
 }
 
+/* Room for two locales side by side in a narrow header. */
 .locale--compact .locale__option {
-    padding: 0.15rem 0.5rem;
+    padding: 3px 6px;
 }

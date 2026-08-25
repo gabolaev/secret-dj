@@ -44,13 +44,10 @@ export function TrackList({ tracks, nowPlayingId, playedIds, onRemove, emptyMess
                         >
                             <span className={track.metadata === 'pending' ? 'shimmer' : undefined}>{trackLabel(track)}</span>
                         </a>
-                        {playing && (
-                            <span className="eq" title={t.tracks.playingNow} aria-label={t.tracks.playingNow}>
-                                <i />
-                                <i />
-                                <i />
-                            </span>
-                        )}
+                        {/* A word, not three animated bars. Nothing on an idle
+                            screen moves, and "now playing" is information a
+                            label carries better than a drawing of an EQ. */}
+                        {playing && <span className="track__meta num">{t.tracks.playingNow}</span>}
                         {onRemove && !played && !playing && (
                             <button
                                 type="button"

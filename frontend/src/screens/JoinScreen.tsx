@@ -3,8 +3,6 @@ import { LIMITS } from '@secret-dj/common';
 import { gameCodeFromLocation, loadRememberedName } from '../lib/session';
 import { Spinner } from '../components/Spinner';
 import { LocaleToggle } from '../components/LocaleToggle';
-import { Window } from '../components/Window';
-import { Bench } from '../components/Bench';
 import { Logo } from '../components/Logo';
 import { useT } from '../i18n';
 
@@ -15,6 +13,19 @@ interface JoinScreenProps {
     onShowRules: () => void;
 }
 
+/**
+ * The first thing the product says is what the game is.
+ *
+ * No decorative backdrop, no hardware, no card floating over an illustration —
+ * a sheet of paper with the name on it and two fields. The name field is
+ * labelled with the *consequence* of filling it in ("it goes on every answer
+ * you give"), because that is the only thing about it worth knowing and it is
+ * the first promise the design makes about attribution.
+ *
+ * Whichever of the two buttons is actually actionable is the primary one: with
+ * a code in the box you are joining, without one you are starting a room. A red
+ * key that cannot be pressed is a worse lie than no red key.
+ */
 export function JoinScreen({ connection, onCreate, onJoin, onShowRules }: JoinScreenProps) {
     const t = useT();
     const [name, setName] = useState(loadRememberedName);
@@ -32,6 +43,7 @@ export function JoinScreen({ connection, onCreate, onJoin, onShowRules }: JoinSc
     const trimmedName = name.trim();
     const nameOk = trimmedName.length >= LIMITS.nameMin && trimmedName.length <= LIMITS.nameMax;
     const offline = connection !== 'online';
+    const hasCode = Boolean(code.trim());
 
     const run = async (intent: 'create' | 'join') => {
         if (!nameOk || busy || offline) return;
@@ -47,16 +59,12 @@ export function JoinScreen({ connection, onCreate, onJoin, onShowRules }: JoinSc
 
     const submit = (event: FormEvent) => {
         event.preventDefault();
-        void run(code.trim() ? 'join' : 'create');
+        void run(hasCode ? 'join' : 'create');
     };
 
     return (
         <div className="join">
-            <Bench />
-            {/* No title bar: the card's first line is the name, and a chrome
-                caption above it said it a second time. The wordmark is real
-                text, so it needs no hidden copy for a third. */}
-            <Window className="join__win">
+            <div className="join__sheet">
                 <div className="join__hero">
                     <h1 className="join__logo">
                         <Logo size="hero" />
@@ -79,9 +87,7 @@ export function JoinScreen({ connection, onCreate, onJoin, onShowRules }: JoinSc
                     </label>
 
                     <label className="field">
-                        <span className="field__label">
-                            {t.join.codeLabel} <span className="field__optional">{t.join.codeOptional}</span>
-                        </span>
+                        <span className="field__label">{t.join.codeLabel}</span>
                         <input
                             className="input input--code"
                             value={code}
@@ -96,23 +102,25 @@ export function JoinScreen({ connection, onCreate, onJoin, onShowRules }: JoinSc
                     <div className="join__actions">
                         <button
                             type="button"
-                            className="button button--primary button--lg button--block"
+                            className={`button button--lg button--block${hasCode ? ' button--primary' : ''}`}
+                            onClick={() => void run('join')}
+                            disabled={!nameOk || !hasCode || busy !== null || offline}
+                        >
+                            {busy === 'join' ? <Spinner /> : t.join.join}
+                        </button>
+                        <button
+                            type="button"
+                            className={`button button--lg button--block${hasCode ? '' : ' button--primary'}`}
                             onClick={() => void run('create')}
                             disabled={!nameOk || busy !== null || offline}
                         >
                             {busy === 'create' ? <Spinner /> : t.join.create}
                         </button>
-                        <button
-                            type="button"
-                            className="button button--lg button--block"
-                            onClick={() => void run('join')}
-                            disabled={!nameOk || !code.trim() || busy !== null || offline}
-                        >
-                            {busy === 'join' ? <Spinner /> : t.join.join}
-                        </button>
                     </div>
                 </form>
 
+                {/* In situ, bordered, and written as a sentence — never a field
+                    that has quietly turned a colour. */}
                 {error && <p className="join__error">{error}</p>}
                 {offline && (
                     <p className="join__status">
@@ -126,9 +134,9 @@ export function JoinScreen({ connection, onCreate, onJoin, onShowRules }: JoinSc
                     </button>
                     <LocaleToggle />
                 </div>
-            </Window>
+            </div>
 
-            <p className="join__services">{t.join.services}</p>
+            <p className="join__services num">{t.join.services}</p>
         </div>
     );
 }

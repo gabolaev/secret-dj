@@ -44,7 +44,7 @@ export function AnswerBar({ answer, disabled, onAnswer }: AnswerBarProps) {
                                 type="button"
                                 role="radio"
                                 aria-checked={like === value}
-                                className={`knob rate__knob rate__knob--like${like !== undefined && value <= like && value > 0 ? ' is-lit' : ''}${like === value ? ' is-active' : ''}`}
+                                className={`rate__key${like !== undefined && value <= like && value > 0 ? ' is-lit' : ''}${like === value ? ' is-active' : ''}`}
                                 disabled={disabled}
                                 onClick={() => onAnswer({ like: value })}
                             >
@@ -74,6 +74,10 @@ export function AnswerBar({ answer, disabled, onAnswer }: AnswerBarProps) {
                             onClick={() => onAnswer({ [toggle.key]: !on })}
                         >
                             {toggle.label}
+                            {/* The word, not just the fill: a toggle whose only
+                                state is a colour is a toggle nobody can read in
+                                greyscale, or from four feet away. */}
+                            <span className="chip__state num">{on ? t.answer.yes : t.answer.no}</span>
                         </button>
                     );
                 })}

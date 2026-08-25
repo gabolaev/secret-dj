@@ -1,95 +1,108 @@
 /* ---------------------------------------------------------------------------
-   Secret DJ — foundation.
+   Secret DJ — foundation. "Redaction".
 
-   The language is Teenage Engineering's: an achromatic instrument you set on a
-   desk, not a glowing app.
+   The governing idea: this game is made of things that exist and are being
+   withheld — the DJ's identity, their claim, everyone's answers — and then
+   handed over all at once with names attached. So the design's first job is a
+   rendering mode for *withheld* that is visibly distinct from *absent*.
 
-   1. ACHROMATIC BASE, ONE HOT COLOUR. Everything is a grey — the desk, the
-      panels, the keys. Orange appears only where something is live or is the
-      one thing to press. A second accent would make it a palette; one makes it
-      a signal.
+   That mode is redaction: a solid ink bar with a 45° hatch, occupying exactly
+   the space the secret will occupy when it is told, wiped away left-to-right
+   at the reveal. Nothing reflows, nothing appears from nowhere; the page just
+   stops covering things up.
 
-   2. GEOMETRY, NOT SOFTNESS. Small radii on rectangles. Nothing is a pill
-      except the things that are physically round.
+   1. PAPER, NOT PANELS. Printed matter: two warm off-whites, one ink, one
+      hairline. No shadows, no gradients, no glass. Depth is done with a single
+      hairline and with fill inversion.
 
-   3. LABELS ARE ENGRAVED. Small, uppercase, widely tracked, quiet — the way a
-      legend is silkscreened next to a jack rather than written in a sentence.
+   2. RADIUS ZERO. The only rounded things are the outer app frame and the room
+      code chip. Dropping radius entirely is what stops the redaction bars
+      reading as "chips".
 
-   4. NUMBERS LIVE ON A SCREEN. Readouts sit on a near-black panel in a light
-      face, because that is what a readout is. It is the one dark surface left,
-      and it is dark for a reason rather than as a mood.
+   3. ONE HOT COLOUR, AND IT IS A FILL. `--signal` paints the primary key, the
+      avatar and the overrun timer. Red as *words* uses `--signal-text`, which
+      is the darkened one — the fill tone does not clear 4.5:1 at body sizes.
 
-   Orange is a *fill*, not an ink: `--accent` is what you paint a key with, and
-   `--accent-ink` is the legend on top of it. Orange text on a light panel does
-   not clear 4.5:1, so `--accent-text` is the darkened one for words.
+   4. NEVER COLOUR ALONE. Every state carries a word or a mark as well as a
+      colour: HERE / GONE / YOU, SEALED, ✓ on a correct guess, LANDED. A
+      correct guess is fill + tick + weight, so it survives greyscale.
+
+   5. ONLY COVERS ANIMATE. If something is moving, a secret is being opened.
+      That is the whole rule, and it is what buys the motion its meaning.
    ------------------------------------------------------------------------- */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,400..700;1,400&family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap');
 
 :root {
     color-scheme: light;
 
-    /* ---- type ---------------------------------------------------------- */
-    --fs-micro: 11px; /* engraved labels */
-    --fs-base: 14px;  /* everything you read */
-    --fs-lg: 17px;    /* section titles, playlist rows */
-    --fs-hero: 40px;  /* the readout */
+    /* ---- surfaces: paper, not panels ----------------------------------- */
+    --bone: #eae6dd; /* the page */
+    --paper: #f5f2ec; /* raised rows, cards, inputs */
+    --ink: #171614; /* text, filled keys, the reversed band */
+    --ink-2: #4a473e; /* secondary text, all mono annotation */
+    --rule: #cfc9bb; /* hairlines */
+    --rule-soft: #b9b3a4; /* dashed "not here yet" outlines */
 
-    --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-    /* Silkscreen legends and codes read aloud: both want air between letters. */
+    /* ---- the one hot colour -------------------------------------------- */
+    /* Fills only: the primary key, the timer once it is over, the avatar. */
+    --signal: #b8391f;
+    --signal-ink: #ffffff;
+    /* The same red as *words* at small sizes. */
+    --signal-text: #8f2a12;
+
+    /* ---- redaction ------------------------------------------------------ */
+    --redact: #16150f;
+    --redact-hatch: repeating-linear-gradient(45deg, #16150f 0 4px, #2b2921 4px 8px);
+    --redact-label: #8a8474; /* the SEALED legend on top of a bar */
+    --on-ink: #f5f2ec; /* text on --ink */
+    --on-ink-2: #a09a8b; /* secondary text on --ink */
+
+    /* ---- type ----------------------------------------------------------- */
+    /* Archivo — everything you read. Grotesque, wide apertures, holds at 13px
+       and ships a full Cyrillic set.
+       IBM Plex Mono — every number, label and annotation. Mono is earned: the
+       product's payoff is an arithmetic receipt, and tabular figures are why
+       `27 → 4.5` reads at four feet.
+       Instrument Serif — display only, one or two per screen, never in a
+       table. Cyrillic is *not* covered; RU falls back to Archivo at the same
+       size, which is why the display step is never load-bearing. */
+    --font-ui: 'Archivo', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    --font-num: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+    --font-disp: 'Instrument Serif', Georgia, 'Times New Roman', serif;
+
+    --fs-micro: 11px; /* mono labels and annotations */
+    --fs-base: 14px; /* rows, copy */
+    --fs-lead: 17px; /* the one sentence that matters on a screen */
+    --fs-fig: 22px; /* ledger changes, rating keys */
+    --fs-name: 40px; /* the revealed DJ */
+    --fs-display: 38px; /* join, finale */
+
+    /* Tracking goes on uppercase mono labels only, never on a sentence —
+       tracked-out Cyrillic prose is what killed the last skin. */
     --track-label: 0.14em;
     --track-code: 0.22em;
 
-    /* ---- surfaces: the desk, then the panels sitting on it -------------- */
-    --bg: #adadaa;
-    --surface: #d4d4d1;
-    --surface-2: #e6e6e3;
-    --surface-3: #fbfbfa;
-    --line: rgb(0 0 0 / 18%);
-    --line-strong: rgb(0 0 0 / 38%);
+    /* ---- spacing: a 4px grid -------------------------------------------- */
+    --sp-1: 4px;
+    --sp-2: 8px;
+    --sp-3: 12px;
+    --sp-4: 16px;
+    --sp-5: 20px;
+    --sp-6: 24px;
+    --sp-7: 40px;
 
-    /* ---- text ---------------------------------------------------------- */
-    --text: #14141a;
-    --muted: #3f3f47;
-    --faint: #55555d;
+    /* ---- radii: zero everywhere ----------------------------------------- */
+    /* Printed matter has no corner radius. The two exceptions are the outer
+       app frame and the room-code chip, and they are 4px and 2px so that they
+       read as "a sheet" and "a stamp" rather than as rounded UI. */
+    --r-frame: 4px;
+    --r-chip: 2px;
 
-    /* ---- the one hot colour -------------------------------------------- */
-    /* Squeezed from both sides: a brighter orange stops reading as a shape
-       against the panel, a darker one stops carrying its own legend. This is
-       the tone that clears both. */
-    --accent: #d13c00;
-    --accent-ink: #ffffff;
-    /* Darkened, for orange used as words rather than as paint. */
-    --accent-text: #9c2a08;
-    --love: #9c2a08;
-    --detective: #14141a;
-    --good: #146029;
-    --bad: #a01f16;
-
-    /* ---- the readout --------------------------------------------------- */
-    --screen: #131316;
-    --screen-2: #1c1c20;
-    --screen-ink: #f4f4f2;
-    --screen-dim: #a0a09c;
-    --screen-grid: rgb(255 255 255 / 6%);
-
-    --sp-1: 0.25rem;
-    --sp-2: 0.5rem;
-    --sp-3: 0.75rem;
-    --sp-4: 1rem;
-    --sp-5: 1.5rem;
-    --sp-6: 2rem;
-    --sp-7: 3rem;
-
-    /* Hardware corners: enough to be moulded, never enough to be soft. */
-    --r-sm: 2px;
-    --r-md: 3px;
-    --r-lg: 4px;
-    --r-pill: 999px;
-
+    /* ---- motion: one easing, three durations ---------------------------- */
     --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
-    --dur-fast: 90ms;
-    --dur: 180ms;
+    --dur-wipe: 420ms; /* any redaction uncovering, and the stamps riding it */
+    --dur-fast: 90ms; /* hover / press, background only */
 
     --header-h: 52px;
     --side-w: 300px;
@@ -119,24 +132,12 @@ body {
     margin: 0;
     font-family: var(--font-ui);
     font-size: var(--fs-base);
-    line-height: 1.55;
-    color: var(--text);
-    background: var(--bg);
+    line-height: 1.45;
+    color: var(--ink);
+    background: var(--bone);
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
     overflow-x: hidden;
-}
-
-/* A single, still wash of warmth. Nothing moves behind the content. */
-body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    pointer-events: none;
-    background:
-        radial-gradient(60vmax 40vmax at 20% -10%, rgb(255 181 69 / 6%), transparent 65%),
-        radial-gradient(55vmax 40vmax at 85% 0%, rgb(255 96 152 / 5%), transparent 65%);
 }
 
 h1,
@@ -173,19 +174,26 @@ button {
     font-family: inherit;
 }
 
+/* Text glyphs, never colour emoji. The product's marks are ✓ × ♥ ★ ☄ ⚡ ◎ ☾ ◇
+   ▶ ■, and a platform that renders any of them in colour has invented an icon
+   set the design does not have. */
+.glyph,
+[data-glyph] {
+    font-variant-emoji: text;
+}
+
 :focus-visible {
-    outline: 2px solid var(--accent);
+    outline: 2px solid var(--signal);
     outline-offset: 2px;
-    border-radius: var(--r-sm);
 }
 
 ::selection {
-    background: rgb(255 181 69 / 30%);
+    background: rgb(184 57 31 / 22%);
 }
 
 * {
     scrollbar-width: thin;
-    scrollbar-color: var(--surface-3) transparent;
+    scrollbar-color: var(--rule) transparent;
 }
 
 *::-webkit-scrollbar {
@@ -194,127 +202,191 @@ button {
 }
 
 *::-webkit-scrollbar-thumb {
-    background: var(--surface-3);
-    border-radius: var(--r-pill);
+    background: var(--rule);
 }
 
 /* ---------------------------------------------------------------- surfaces */
 
+/* A bordered box. One hairline is the entire elevation system. */
 .card {
-    border: 1px solid var(--line);
-    border-radius: var(--r-lg);
-    background: var(--surface);
+    border: 1px solid var(--rule);
+    background: var(--paper);
 }
 
-/* Small caps label. The only place letterspacing is used, and never on a
-   sentence — tracked-out Cyrillic prose is what made the last pass unreadable. */
+/* The mono label that titles every block: uppercase, tracked, with a rule
+   running out to the right and an optional count on the end of it. This is the
+   one place letterspacing is used, and it is never used on a sentence. */
 .label {
     display: flex;
     align-items: center;
     gap: var(--sp-2);
+    font-family: var(--font-num);
     font-size: var(--fs-micro);
-    font-weight: 600;
     letter-spacing: var(--track-label);
     text-transform: uppercase;
-    color: var(--faint);
+    color: var(--ink-2);
+}
+
+/* The rule *is* the rest of the label: it runs from the words to the edge of
+   the block, which is what makes a bare line of small caps read as a heading
+   rather than as a stray annotation. */
+.label::after {
+    content: '';
+    flex: 1;
+    min-width: 16px;
+    height: 1px;
+    background: var(--rule);
+}
+
+/* When the label carries a trailing count, the rule goes *between* them
+   instead of after the lot. */
+.label:has(.label__count)::after {
+    order: 1;
 }
 
 .label__count {
-    color: var(--muted);
-    letter-spacing: 0;
+    order: 2;
+    letter-spacing: var(--track-label);
+    white-space: nowrap;
+}
+
+/* Reversed: the same label sitting on an ink block. */
+.label--ink {
+    color: var(--on-ink-2);
+}
+
+.label--ink::after {
+    background: rgb(160 154 139 / 35%);
 }
 
 .divider {
     height: 1px;
-    background: var(--line);
+    background: var(--rule);
 }
 
-/* ------------------------------------------------------------------ window */
+/* A list is a bordered box whose rows are separated by the gap itself, so rows
+   never double up borders and a one-row list has no seam in it. */
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    border: 1px solid var(--rule);
+    background: var(--rule);
+}
 
-/* A card with a header strip. Not a fake title bar — just structure. */
-.win {
-    border: 1px solid var(--line);
-    border-radius: var(--r-lg);
-    background: var(--surface-2);
-    /* A moulded part catches light at its top edge and casts a hairline under
-       itself. Two inset lines do the whole job; no gradients, no bevels. */
-    box-shadow:
-        inset 0 1px 0 rgb(255 255 255 / 90%),
-        0 1px 2px rgb(0 0 0 / 10%);
+/* The heavy rule. Used once per screen, on the block that matters most. */
+.list--strong {
+    border-color: var(--ink);
+    background: var(--ink);
+}
+
+.list > * {
+    background: var(--paper);
+}
+
+/* ---------------------------------------------------------------- redaction */
+
+/*
+ * The primitive.
+ *
+ * A redacted element renders its content at full size and covers it with an
+ * absolutely-positioned sibling. That is the whole "no reflow" promise: the
+ * bar is the size of the sentence beneath it, so you can measure the secret,
+ * count it, see there are nine answers in there, and read nothing.
+ *
+ * Never render a placeholder and swap it — and never ship the secret to the
+ * client and hide it in CSS. The covers are a rendering of information the
+ * browser genuinely does not have.
+ */
+.redact {
+    position: relative;
     overflow: hidden;
 }
 
-.win__bar {
+.redact__cover {
+    position: absolute;
+    inset: 0;
     display: flex;
     align-items: center;
     gap: var(--sp-3);
-    padding: var(--sp-2) var(--sp-4);
-    background: var(--surface);
-    border-bottom: 1px solid var(--line);
+    padding: 0 var(--sp-3);
+    background-color: var(--redact);
+    background-image: var(--redact-hatch);
+    /* Sealed: covering everything. Wiped: gone off the right-hand edge. The
+       only property that animates anywhere in the product. */
+    clip-path: inset(0 0 0 0);
+    transition: clip-path var(--dur-wipe) var(--ease);
+    pointer-events: none;
 }
 
-/* Was a ruled fill either side of the caption. A silkscreened legend sits at
-   the edge of a panel with nothing drawn around it, so this is now only the
-   space that pushes the title left and the controls right. */
-.win__grip {
-    flex: 1;
-    min-width: 0;
+.redact[data-open='true'] .redact__cover {
+    clip-path: inset(0 0 0 100%);
 }
 
-.win__grip:first-of-type {
-    display: none;
-}
-
-.win__title {
+.redact__legend {
+    font-family: var(--font-num);
     font-size: var(--fs-micro);
-    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--redact-label);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.redact__legend--end {
+    margin-left: auto;
+    color: var(--redact-label);
+    letter-spacing: var(--track-label);
+}
+
+/* A stamp that changes with the wipe rather than after it — the colour rides
+   along with the cover so the two read as one movement. */
+.stamp {
+    font-family: var(--font-num);
+    font-size: var(--fs-micro);
     letter-spacing: var(--track-label);
     text-transform: uppercase;
-    color: var(--muted);
+    color: var(--ink-2);
+    transition: color var(--dur-wipe) var(--ease);
     white-space: nowrap;
 }
 
-.win__body {
-    padding: var(--sp-4);
+.stamp--open {
+    color: var(--signal-text);
 }
 
-.win__btn {
-    display: grid;
-    place-items: center;
-    width: 26px;
-    height: 26px;
-    flex-shrink: 0;
-    padding: 0;
-    border: 1px solid var(--line);
-    border-radius: var(--r-sm);
-    background: transparent;
-    color: var(--muted);
-    font-size: var(--fs-micro);
-    cursor: pointer;
-    transition:
-        color var(--dur-fast) var(--ease),
-        background var(--dur-fast) var(--ease);
+/* ------------------------------------------------------------------ blocks */
+
+/* An ink block: the reversed band. The second of the two elevation devices,
+   and the only one that is not a hairline. */
+.ink {
+    background: var(--ink);
+    color: var(--on-ink);
 }
 
-.win__btn:hover {
-    background: var(--surface-3);
-    color: var(--text);
+.ink .muted,
+.ink .label {
+    color: var(--on-ink-2);
 }
 
 /* ---------------------------------------------------------------- controls */
 
+/* A key. Square, hairlined, filled or not — there is no third state and no
+   bevel. Hover moves the background and nothing else. */
 .button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: var(--sp-2);
-    padding: 0.5rem 1rem;
-    min-height: 38px;
-    border: 1px solid var(--line);
-    border-radius: var(--r-md);
-    background: var(--surface-3);
-    color: var(--text);
-    font-size: var(--fs-micro);
+    padding: 10px var(--sp-4);
+    min-height: 40px;
+    border: 1px solid var(--ink);
+    border-radius: 0;
+    background: var(--bone);
+    color: var(--ink);
+    font-family: var(--font-num);
+    font-size: 12px;
     font-weight: 600;
     letter-spacing: var(--track-label);
     /* Tracking adds space after the *last* letter too, which shoves a centred
@@ -322,26 +394,12 @@ button {
        back. Every centred, tracked thing in the product needs this pair. */
     text-indent: var(--track-label);
     text-transform: uppercase;
-    /* A key stands slightly proud of the panel and depresses when pressed. */
-    box-shadow:
-        inset 0 1px 0 rgb(255 255 255 / 95%),
-        inset 0 -1px 0 rgb(0 0 0 / 8%),
-        0 1px 0 rgb(0 0 0 / 22%),
-        0 2px 3px rgb(0 0 0 / 12%);
     cursor: pointer;
-    transition:
-        background var(--dur-fast) var(--ease),
-        border-color var(--dur-fast) var(--ease),
-        transform var(--dur-fast) var(--ease);
+    transition: background var(--dur-fast) var(--ease);
 }
 
 .button:hover:not(:disabled) {
-    background: var(--surface-3);
-}
-
-.button:active:not(:disabled) {
-    transform: translateY(1px);
-    box-shadow: inset 0 1px 2px rgb(0 0 0 / 22%);
+    background: var(--paper);
 }
 
 .button:disabled {
@@ -349,83 +407,45 @@ button {
     cursor: not-allowed;
 }
 
-/* The one key you are meant to press. Orange is the only colour in the
-   interface, so it never has to compete for the eye. */
+/* The one key you are meant to press. */
 .button--primary {
-    border-color: rgb(0 0 0 / 22%);
-    background: var(--accent);
-    color: var(--accent-ink);
-    box-shadow:
-        inset 0 1px 0 rgb(255 255 255 / 28%),
-        0 1px 1px rgb(0 0 0 / 18%);
+    border-color: var(--signal);
+    background: var(--signal);
+    color: var(--signal-ink);
 }
 
 .button--primary:hover:not(:disabled) {
-    background: #e84604;
+    background: var(--signal-text);
 }
 
 .button--ghost {
     min-height: 32px;
-    padding: 0.3rem 0.6rem;
+    padding: 5px var(--sp-2);
     border-color: transparent;
     background: transparent;
-    color: var(--muted);
-    box-shadow: none;
+    color: var(--ink-2);
 }
 
 .button--ghost:hover:not(:disabled) {
-    background: var(--surface);
-    color: var(--text);
+    background: var(--paper);
+    color: var(--ink);
 }
 
+/* The sentence-shaped buttons — "Start the night", "Next track". These are
+   prose, not legends, so they drop the mono and the tracking. */
 .button--lg {
-    min-height: 46px;
-    padding: 0.7rem 1.5rem;
+    min-height: 48px;
+    padding: 15px var(--sp-5);
+    font-family: var(--font-ui);
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 0;
+    text-indent: 0;
+    text-transform: none;
 }
 
 .button--block {
     width: 100%;
-}
-
-/* Round transport key. */
-.knob {
-    display: inline-grid;
-    place-items: center;
-    width: 46px;
-    height: 46px;
-    padding: 0;
-    border: 1px solid var(--line);
-    border-radius: 50%;
-    background: var(--surface-3);
-    color: var(--muted);
-    font-size: var(--fs-base);
-    font-weight: 600;
-    box-shadow:
-        inset 0 1px 0 rgb(255 255 255 / 95%),
-        inset 0 -1px 0 rgb(0 0 0 / 8%),
-        0 1px 0 rgb(0 0 0 / 22%),
-        0 2px 4px rgb(0 0 0 / 14%);
-    cursor: pointer;
-    transition:
-        background var(--dur-fast) var(--ease),
-        color var(--dur-fast) var(--ease),
-        border-color var(--dur-fast) var(--ease),
-        transform var(--dur-fast) var(--ease);
-}
-
-.knob:hover:not(:disabled) {
-    background: #ffffff;
-    color: var(--text);
-}
-
-.knob:active:not(:disabled) {
-    transform: translateY(1px);
-    box-shadow: inset 0 1px 3px rgb(0 0 0 / 25%);
-}
-
-.knob:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
 }
 
 /* ------------------------------------------------------------------ fields */
@@ -433,50 +453,51 @@ button {
 .field {
     display: flex;
     flex-direction: column;
-    gap: var(--sp-2);
+    gap: 6px;
 }
 
 .field__label {
+    font-family: var(--font-num);
     font-size: var(--fs-micro);
-    font-weight: 600;
-    letter-spacing: 0.07em;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: var(--faint);
+    color: var(--ink-2);
 }
 
 .field__optional {
     text-transform: none;
     letter-spacing: 0;
-    font-weight: 400;
 }
 
 .input {
     width: 100%;
-    padding: 0.7rem 0.9rem;
-    border: 1px solid var(--line-strong);
-    border-radius: var(--r-sm);
-    background: var(--surface-3);
-    color: var(--text);
+    padding: 13px 14px;
+    border: 1px solid var(--ink);
+    border-radius: 0;
+    background: var(--paper);
+    color: var(--ink);
     font-family: inherit;
-    font-size: var(--fs-base);
-    /* Sunk into the panel rather than sitting on it. */
-    box-shadow: inset 0 1px 2px rgb(0 0 0 / 12%);
+    font-size: 16px;
     transition: border-color var(--dur-fast) var(--ease);
 }
 
 .input::placeholder {
-    color: var(--faint);
+    color: var(--ink-2);
 }
 
 .input:focus {
     outline: none;
-    border-color: var(--accent);
+    border-color: var(--signal);
 }
 
+/* The room code is the one string people read out loud, so it is set the way a
+   code is stamped on a case: reversed out of ink, tracked wide, tabular. */
 .input--code {
-    background: var(--screen);
-    border-color: rgb(0 0 0 / 55%);
-    font-size: var(--fs-hero);
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--on-ink);
+    font-family: var(--font-num);
+    font-size: var(--fs-display);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
     /* Trailing tracking would push the last glyph off the optical centre. */
@@ -484,14 +505,23 @@ button {
     text-indent: var(--track-code);
     text-align: center;
     text-transform: uppercase;
-    color: var(--screen-ink);
+}
+
+.input--code::placeholder {
+    color: var(--on-ink-2);
 }
 
 /* --------------------------------------------------------------- utilities */
 
 .muted {
-    color: var(--muted);
+    color: var(--ink-2);
     font-size: var(--fs-base);
+}
+
+/* Every number, label and annotation in the product. */
+.num {
+    font-family: var(--font-num);
+    font-variant-numeric: tabular-nums;
 }
 
 .visually-hidden {
@@ -505,89 +535,53 @@ button {
     white-space: nowrap;
 }
 
-.shimmer {
-    color: var(--faint);
-    animation: pulse 1.4s ease-in-out infinite;
+/* Truncation is only ever applied where the full value is available elsewhere —
+   a track title with a `title` attribute, a player name that appears in full in
+   the roster. Claims, errors and ledger labels wrap instead, because nothing in
+   this product may depend on a string being short. */
+.clip {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-@keyframes pulse {
-    50% {
-        opacity: 0.45;
-    }
+.shimmer {
+    color: var(--ink-2);
 }
 
 .spinner {
     display: inline-flex;
     align-items: center;
     gap: var(--sp-2);
-    color: var(--muted);
-    font-size: var(--fs-base);
+    color: var(--ink-2);
+    font-family: var(--font-num);
+    font-size: var(--fs-micro);
+    letter-spacing: var(--track-label);
+    text-transform: uppercase;
 }
 
+/* A waiting mark, not a spinning one: nothing on an idle screen moves. */
 .spinner__disc {
-    width: 15px;
-    height: 15px;
-    border: 2px solid var(--line-strong);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
+    width: 9px;
+    height: 9px;
+    flex-shrink: 0;
+    background: var(--ink-2);
 }
 
-@keyframes spin {
-    to {
-        transform: rotate(1turn);
-    }
-}
-
-.eq {
-    display: inline-flex;
-    align-items: flex-end;
-    gap: 2px;
-    height: 11px;
-}
-
-.eq i {
-    width: 2px;
-    border-radius: 1px;
-    background: var(--accent);
-    transform-origin: bottom;
-    animation: vu 600ms steps(4, end) infinite alternate;
-}
-
-.eq i:nth-child(1) {
-    height: 55%;
-    animation-delay: -180ms;
-}
-.eq i:nth-child(2) {
-    height: 100%;
-    animation-delay: -420ms;
-}
-.eq i:nth-child(3) {
-    height: 75%;
-    animation-delay: -60ms;
-}
-
-@keyframes rise {
-    from {
-        opacity: 0;
-        transform: translateY(6px);
-    }
-    to {
-        opacity: 1;
-        transform: none;
-    }
-}
-
+/*
+ * Reduced motion.
+ *
+ * The reveal is *identical* under reduced motion — a cut instead of a wipe.
+ * Nothing is communicated by the animation that is not also communicated by
+ * the end state plus its label, which is why this can be a blanket rule.
+ */
 @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
     *::after {
-        animation-duration: 0.01ms !important;
+        transition-duration: 1ms !important;
+        animation-duration: 1ms !important;
         animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-    }
-
-    .eq i {
-        transform: scaleY(0.55);
     }
 }

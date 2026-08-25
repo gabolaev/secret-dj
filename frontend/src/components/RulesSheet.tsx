@@ -37,7 +37,7 @@ export function RulesSheet({ open, onClose }: RulesSheetProps) {
                     <h2>{t.rules.title}</h2>
                     <div className="sheet__tools">
                         <LocaleToggle compact />
-                        <button type="button" className="win__btn" onClick={onClose} aria-label={t.common.close}>
+                        <button type="button" className="button button--ghost" onClick={onClose} aria-label={t.common.close}>
                             ✕
                         </button>
                     </div>

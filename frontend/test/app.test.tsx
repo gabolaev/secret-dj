@@ -4,7 +4,6 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testi
 import { CLAIMS } from '@secret-dj/common';
 import type { GameView, PublicPlayer, Result, RoundView, Session } from '@secret-dj/common';
 import { en } from '../src/i18n/en';
-import { PLUG_REACH } from '../src/components/Cables';
 
 /**
  * Screen-selection and localisation tests.
@@ -159,7 +158,7 @@ describe('screen selection', () => {
         const App = await importApp();
         render(<App />);
         expect(screen.getByPlaceholderText('DJ Nightshift')).toBeTruthy();
-        expect(screen.getByRole('button', { name: /start a new room/i })).toBeTruthy();
+        expect(screen.getByRole('button', { name: /start a new one/i })).toBeTruthy();
     });
 
     it('renders exactly one join form (v1 rendered two)', async () => {
@@ -172,7 +171,7 @@ describe('screen selection', () => {
         window.location.hash = '#K7QM2';
         const App = await importApp();
         render(<App />);
-        expect(screen.getByPlaceholderText('e.g. K7QM2').getAttribute('value')).toBe('K7QM2');
+        expect(screen.getByPlaceholderText('K7QM2').getAttribute('value')).toBe('K7QM2');
     });
 
     it('does not strand the player when a stored session is rejected', async () => {
@@ -192,12 +191,12 @@ describe('language', () => {
     it('switches the whole UI without a reload', async () => {
         const App = await importApp();
         render(<App />);
-        expect(screen.getByRole('button', { name: /start a new room/i })).toBeTruthy();
+        expect(screen.getByRole('button', { name: /start a new one/i })).toBeTruthy();
 
         fireEvent.click(screen.getByRole('button', { name: 'RU' }));
 
-        expect(screen.getByRole('button', { name: 'Создать комнату' })).toBeTruthy();
-        expect(screen.queryByRole('button', { name: /start a new room/i })).toBeNull();
+        expect(screen.getByRole('button', { name: 'Создать свою' })).toBeTruthy();
+        expect(screen.queryByRole('button', { name: /start a new one/i })).toBeNull();
         expect(document.documentElement.lang).toBe('ru');
     });
 
@@ -210,14 +209,14 @@ describe('language', () => {
         vi.resetModules();
         const AppAgain = await importApp();
         render(<AppAgain />);
-        expect(screen.getByRole('button', { name: 'Создать комнату' })).toBeTruthy();
+        expect(screen.getByRole('button', { name: 'Создать свою' })).toBeTruthy();
     });
 
     it('follows the browser when nothing is stored', async () => {
         Object.defineProperty(window.navigator, 'language', { configurable: true, value: 'ru-RU' });
         const App = await importApp();
         render(<App />);
-        expect(screen.getByRole('button', { name: 'Создать комнату' })).toBeTruthy();
+        expect(screen.getByRole('button', { name: 'Создать свою' })).toBeTruthy();
         Object.defineProperty(window.navigator, 'language', { configurable: true, value: 'en-US' });
     });
 });
@@ -266,176 +265,106 @@ describe('in-game screens', () => {
         expect(within(code as HTMLElement).getByRole('status').textContent).toBe('live');
     });
 
-    it('hides a silent drum machine behind a button in the sidebar', async () => {
+    it('keeps the fidget silent, local, and stopped until somebody starts it', async () => {
         vi.useFakeTimers({ shouldAdvanceTime: true });
         try {
             await mountWith(lobbyView());
-            await waitFor(() => expect(screen.getByText('Drum machine')).toBeTruthy());
-
-            // Folded away, the panel is its title bar and nothing else.
-            expect(document.querySelector('.dm')).toBeNull();
-            expect(document.querySelector('.side--inset .win__body')!.children).toHaveLength(0);
-
-            fireEvent.click(screen.getByRole('button', { name: 'Drums' }));
             await waitFor(() => expect(document.querySelector('.dm')).toBeTruthy());
 
-            // Four voices, eight steps, and it opens already running a pattern.
+            // Four voices, eight steps, seeded — an empty grid is not a toy.
             expect(document.querySelectorAll('.dm__row')).toHaveLength(4);
-            expect(document.querySelectorAll('.dm__pad')).toHaveLength(32);
-            expect(document.querySelectorAll('.dm__pad.is-on').length).toBeGreaterThan(0);
+            expect(document.querySelectorAll('.dm__cell')).toHaveLength(32);
+            expect(document.querySelectorAll('.dm__cell.is-on').length).toBeGreaterThan(0);
 
-            // Indicator lamps are their own row, the way the hardware does it.
-            expect(document.querySelectorAll('.dm__led')).toHaveLength(8);
-            expect(document.querySelectorAll('.dm__led.is-lit')).toHaveLength(1);
-            // ...and the readout says what it is doing.
-            expect(document.querySelector('.dm__display')!.textContent).toContain('120');
+            // It must NOT auto-run. This is the whole design rule for it: the
+            // only thing allowed to animate in the product is a cover being
+            // wiped off a secret, and a toy that starts itself cannot honour
+            // `prefers-reduced-motion` no matter what the stylesheet says.
+            const playhead = () =>
+                [...document.querySelectorAll('.dm__tick')].findIndex(tick =>
+                    tick.className.includes('is-now'),
+                );
+            expect(playhead()).toBe(-1);
+            await act(async () => {
+                vi.advanceTimersByTime(1000);
+            });
+            expect(playhead()).toBe(-1);
 
-            // The playhead moves on its own — one lit step, and a different one
-            // a beat later.
-            const lit = () => [...document.querySelectorAll('.dm__pad')].findIndex(pad => pad.className.includes('is-now'));
-            const first = lit();
-            expect(first).toBeGreaterThanOrEqual(0);
+            // Started by hand, it runs.
+            fireEvent.click(screen.getByRole('button', { name: 'Run' }));
+            await waitFor(() => expect(playhead()).toBeGreaterThanOrEqual(0));
+            const first = playhead();
             await act(async () => {
                 vi.advanceTimersByTime(260);
             });
-            expect(lit()).not.toBe(first);
+            expect(playhead()).not.toBe(first);
 
-            // A pad is a switch you can flip...
-            const pad = document.querySelectorAll('.dm__pad')[0];
-            const wasOn = pad.getAttribute('aria-pressed') === 'true';
-            fireEvent.click(pad);
-            expect(pad.getAttribute('aria-pressed')).toBe(String(!wasOn));
+            // A cell is a switch you can flip, and it has exactly two states:
+            // punched or not. Nothing else may change how it looks.
+            const cell = document.querySelectorAll('.dm__cell')[0];
+            const wasOn = cell.getAttribute('aria-pressed') === 'true';
+            fireEvent.click(cell);
+            expect(cell.getAttribute('aria-pressed')).toBe(String(!wasOn));
 
-            // ...and the hit is an event of its own, so a tap on a stopped
-            // machine still registers as something that happened.
-            expect(pad.className).toContain('is-hit');
-            await act(async () => {
-                vi.advanceTimersByTime(240);
-            });
-            expect(pad.className).not.toContain('is-hit');
-
-            // Cables spill out of it across the page — and must never be able
-            // to swallow a click, add a scrollbar, or draw over the content.
-            const cables = document.querySelector('.cables')!;
-            expect(cables).toBeTruthy();
-            expect(cables.getAttribute('aria-hidden')).toBe('true');
-            expect(cables.tagName.toLowerCase()).toBe('svg');
-            // Portalled straight to the body. Inside the layout it sat in the
-            // sidebar column, where a positioned element paints over static
-            // block content whatever the DOM order says.
-            expect(cables.parentElement).toBe(document.body);
-            expect(cables.closest('.shell')).toBeNull();
-            // Every lead ends in a connector rather than stopping in mid-air.
-            expect(cables.querySelectorAll('g > rect').length).toBeGreaterThan(0);
-
-            // The tempo keys are a pair of nudges rather than four buttons
-            // repeating the number the display already carries.
-            fireEvent.click(screen.getByRole('button', { name: 'Slower' }));
-            expect(document.querySelector('.dm__display')!.textContent).toContain('110');
-
-            // Nothing anywhere in it can make a sound.
+            // Nothing anywhere in it can make a sound, and nothing leaves the
+            // browser: it is worth no points and nobody sees your pattern.
             expect(document.querySelector('audio')).toBeNull();
-
-            // Folding the machine away takes them with it.
-            fireEvent.click(screen.getByRole('button', { name: 'Hide drums' }));
-            await waitFor(() => expect(document.querySelector('.cables')).toBeNull());
+            expect(sent.some(message => JSON.stringify(message).includes('drum'))).toBe(false);
         } finally {
             vi.useRealTimers();
         }
     });
 
-    it('lays gear out behind the join card without getting in its way', async () => {
-        window.localStorage.clear();
-        const App = await importApp();
-        render(<App />);
-
-        await waitFor(() => expect(document.querySelector('.bench')).toBeTruthy());
-        const bench = document.querySelector('.bench')!;
-        // A backdrop to a form somebody has to read and type into: it must not
-        // be reachable, focusable, or announced.
-        expect(bench.getAttribute('aria-hidden')).toBe('true');
-        expect(bench.getAttribute('focusable')).toBe('false');
-        expect(bench.querySelectorAll('button, a, input')).toHaveLength(0);
-        // A working desk is dense: gear pushed up against gear, not four
-        // objects floating in the corners.
-        expect(bench.querySelectorAll('.bench__unit').length).toBeGreaterThanOrEqual(8);
-
-        // Cable colours live in the component rather than the stylesheet, so
-        // the palette guard in the CSS tests cannot see them. Check here that
-        // the desk stays achromatic apart from the one accent.
-        const strokes = [...bench.querySelectorAll('.bench__cables path[stroke^="#"]')].map(
-            node => node.getAttribute('stroke')!.slice(1).toLowerCase(),
-        );
-        expect(strokes.length).toBeGreaterThan(20);
-        for (const hex of new Set(strokes)) {
-            const [r, g, b] = [0, 2, 4].map(i => parseInt(hex.slice(i, i + 2), 16));
-            const saturated = Math.max(r, g, b) - Math.min(r, g, b) > 40;
-            expect(!saturated || hex === 'd13c00' || hex === 'c9b273', `${hex} is off the palette`).toBe(true);
-        }
-
-        // Every lead is patched between real sockets rather than drawn past
-        // them: each one starts on a jack and ends on a connector.
-        const jacks = [...bench.querySelectorAll('.bench__jack')].map(node => ({
-            x: Number(node.getAttribute('cx')),
-            y: Number(node.getAttribute('cy')),
-        }));
-        expect(jacks.length).toBeGreaterThan(8);
-
-        // Every socket is *on* its panel. Sockets used to be placed just
-        // outside the case, which is what made the connectors look stuck to
-        // nothing: a plug floating in the gap beside the gear.
-        for (const unit of bench.querySelectorAll('.bench__unit')) {
-            const body = unit.querySelector('rect')!;
-            const w = Number(body.getAttribute('width'));
-            const h = Number(body.getAttribute('height'));
-            for (const jack of unit.querySelectorAll('.bench__jack')) {
-                const jx = Number(jack.getAttribute('cx'));
-                const jy = Number(jack.getAttribute('cy'));
-                expect(jx >= 0 && jx <= w && jy >= 0 && jy <= h, `jack ${jx},${jy} is off its panel`).toBe(true);
-            }
-        }
-
-        const plugs = [...bench.querySelectorAll('.bench__plug')];
-        expect(plugs.length).toBeGreaterThan(8);
-
-        const paths = [...bench.querySelectorAll('.bench__cables path')];
-        expect(paths.length).toBeGreaterThan(0);
-        for (const plug of plugs) {
-            // Connectors are placed by transform, the same shape the drum
-            // machine's leads use.
-            const [, px, py] = /translate\(([-\d.]+) ([-\d.]+)\)/
-                .exec(plug.getAttribute('transform')!)!
-                .map(Number);
-            // The sheath starts at the *tail* of the barrel rather than at the
-            // socket, so a lead never runs out through its own connector. That
-            // puts each cable end exactly one connector-length from its plug.
-            const attached = paths.some(path => {
-                const d = path.getAttribute('d')!;
-                const [, sx, sy] = /^M ([-\d.]+) ([-\d.]+)/.exec(d)!;
-                const [, ex, ey] = /([-\d.]+) ([-\d.]+)$/.exec(d)!;
-                const reaches = (x: string, y: string) =>
-                    Math.abs(Math.hypot(Number(x) - px, Number(y) - py) - PLUG_REACH) < 0.01;
-                return reaches(sx, sy) || reaches(ex, ey);
-            });
-            expect(attached, `plug at ${px},${py} is not on a cable`).toBe(true);
-        }
-    });
-
-    it('only shows the tab strip when there is a choice to make', async () => {
-        // A strip of one tab is a second heading for a panel that already has
-        // one: "PLAYLIST" over "IN THE ROOM" over the list itself.
-        await mountWith(lobbyView());
-        await waitFor(() => expect(document.querySelector('.roster')).toBeTruthy());
-        expect(document.querySelector('.tabs')).toBeNull();
-
-        // Once the night is under way there is a queue to switch to, so it
-        // comes back.
-        cleanup();
+    it('shows the room, the setlist and the fidget at once, with no tab strip', async () => {
+        // Tabs were hiding two of three short lists behind a click in a column
+        // with room for all three — and the running order is the one thing you
+        // want visible *while* something else is on screen.
         await mountWith(lobbyView({ phase: 'listening', setlistLength: 4, round: round() }));
-        await waitFor(() => expect(document.querySelector('.tabs')).toBeTruthy());
-        expect(document.querySelectorAll('.tab').length).toBeGreaterThan(1);
+        await waitFor(() => expect(document.querySelector('.roster')).toBeTruthy());
+
+        expect(document.querySelector('.tabs')).toBeNull();
+        expect(document.querySelector('.setlist')).toBeTruthy();
+        expect(document.querySelector('.dm')).toBeTruthy();
     });
 
+    it('prints the running order as a column of secrets, not a list that grows', async () => {
+        await mountWith(lobbyView({ phase: 'listening', setlistLength: 4, round: round() }));
+        await waitFor(() => expect(document.querySelector('.setlist')).toBeTruthy());
+
+        // One slot per track in the setlist, from the very first round: a track
+        // that has not been on yet is a secret like any other, so it is a bar of
+        // the same width with no title on it. Naming it would name its DJ.
+        const rows = document.querySelectorAll('.setlist__row');
+        expect(rows).toHaveLength(4);
+
+        const sealed = document.querySelectorAll('.setlist__row--sealed');
+        expect(sealed.length).toBe(3);
+        for (const row of sealed) {
+            const cover = row.querySelector('.redact__cover');
+            expect(cover).toBeTruthy();
+            expect(row.querySelector('.redact')!.getAttribute('data-open')).toBe('false');
+        }
+    });
+
+    it('shows presence in the roster and nothing else, ever', async () => {
+        // The single most important rule in the design. The DJ is the one
+        // person who cannot answer, so a roster that reports progress names
+        // them by omission — mark them not-done and they are the last one
+        // pending; mark them done and they are the only one finished the
+        // instant the round opens. There is no safe value.
+        await mountWith(lobbyView({ phase: 'listening', setlistLength: 4, round: round() }));
+        await waitFor(() => expect(document.querySelector('.roster')).toBeTruthy());
+
+        const states = [...document.querySelectorAll('.roster__state')].map(node => node.textContent);
+        for (const state of states) {
+            expect(['here', 'gone', 'away', 'you']).toContain(state);
+        }
+
+        // And no score column: ★ is what a DJ banked on a gamble, and it has no
+        // business ranking the people in the room.
+        expect(document.querySelector('.roster__score')).toBeNull();
+        expect(document.querySelector('.roster__scores')).toBeNull();
+    });
     it('says each thing in the lobby once', async () => {
         // The lobby carried five explanatory subtitles, and the heading, the
         // queue counter and the empty state each said "you have queued nothing"
@@ -445,8 +374,12 @@ describe('in-game screens', () => {
         await waitFor(() => expect(screen.getByText(/Queue 2 more tracks/i)).toBeTruthy());
         const stage = document.querySelector('.stage')!;
 
-        // The count rides on the title rather than heading a section of its own.
-        expect(stage.querySelector('.stage__title')!.textContent).toContain('1/3');
+        // The count rides on the block's legend rather than heading a section
+        // of its own.
+        const queue = [...stage.querySelectorAll('.label')].find(label =>
+            label.textContent?.includes('Queue 2 more tracks'),
+        )!;
+        expect(queue.querySelector('.label__count')!.textContent).toBe('1/3');
         expect(screen.queryByText(/Nothing queued yet/i)).toBeNull();
         // Settings are a label and a control, with the reasoning left to Rules.
         expect(document.querySelectorAll('.setting__hint')).toHaveLength(0);
@@ -459,7 +392,7 @@ describe('in-game screens', () => {
         await mountWith(lobbyView({ phase: 'listening', setlistLength: 4, round: round() }));
 
         await waitFor(() => expect(screen.getByRole('group', { name: 'Whose is it?' })).toBeTruthy());
-        expect(screen.getByText('Track 2 of 4')).toBeTruthy();
+        expect(screen.getByText('Track 2 / 4')).toBeTruthy();
         expect(screen.getByRole('button', { name: /Bo/ })).toBeTruthy();
 
         // Zero through five — zero is a real answer, not an abstention.
@@ -524,12 +457,18 @@ describe('in-game screens', () => {
         await mountWith(lobbyView({ phase: 'listening', setlistLength: 4, round: round() }));
 
         await waitFor(() => expect(screen.getByRole('button', { name: /^Done$/ })).toBeTruthy());
-        const racks = [...document.querySelectorAll('.rack')];
-        const guessRack = racks.findIndex(rack => rack.querySelector('.pick'));
-        const doneRack = racks.findIndex(rack => rack.textContent?.includes('finished.'));
 
-        expect(guessRack).toBeGreaterThanOrEqual(0);
-        expect(doneRack).toBeGreaterThan(guessRack);
+        // Your answer is one card, read top to bottom: the number and the
+        // toggles, then who you think it was, then the button that finishes
+        // both. Done is last because it is what the other two are for.
+        const card = document.querySelector('.answer-card')!;
+        const parts = [...card.children].map(child => child.className);
+        const guess = parts.findIndex(name => name.includes('pick'));
+        const done = parts.findIndex(name => name.includes('answer-card__foot'));
+
+        expect(parts[0]).toContain('answer');
+        expect(guess).toBeGreaterThanOrEqual(0);
+        expect(done).toBeGreaterThan(guess);
     });
 
     it('stacks the answer instead of letting it wrap across the rack', async () => {
@@ -545,9 +484,8 @@ describe('in-game screens', () => {
         expect(answer.children[0].className).toContain('rate');
         expect(answer.children[1].className).toContain('bets');
         expect(answer.children[2].className).toContain('answer__note');
-        // The whole block is one child of the rack, not three.
-        expect(answer.parentElement!.className).toContain('rack');
-        expect(answer.parentElement!.children).toHaveLength(1);
+        // The whole block is one child of the answer card, not three.
+        expect(answer.parentElement!.className).toContain('answer-card');
     });
 
     it('lights the scale up to the number you chose', async () => {
@@ -756,11 +694,18 @@ describe('in-game screens', () => {
             }),
         );
 
-        await waitFor(() => expect(screen.getByText(/Yours/)).toBeTruthy());
+        await waitFor(() => expect(screen.getByText(/This one is yours/i)).toBeTruthy());
         // Their own track: no guess, no answer, and no decoy any more either.
         expect(screen.queryByRole('group', { name: 'Whose is it?' })).toBeNull();
         expect(screen.queryByRole('radiogroup', { name: 'How much did you like it?' })).toBeNull();
         expect(document.querySelector('.pick')).toBeNull();
+
+        // They are the only person in the room on the other side of the bar,
+        // and the screen says so rather than just going quiet.
+        expect(screen.getByText(/Nothing to do but watch them work it out/i)).toBeTruthy();
+        // The answers are sealed for them too — even though they are the one
+        // person who already knows which name is missing from them.
+        expect(document.querySelector('.answers__row .redact__cover')).toBeTruthy();
     });
 
     it('shows every arithmetic step of the reveal, not just the total', async () => {
@@ -798,32 +743,58 @@ describe('in-game screens', () => {
         );
 
         await waitFor(() => expect(document.querySelector('.ledger')).toBeTruthy());
-        const ledger = document.querySelector('.ledger')!.textContent!;
+        const ledger = () => document.querySelector('.ledger')!.textContent!;
+        const rows = () => [...document.querySelectorAll('.ledger__row')];
+
+        // Five steps in a fixed order, and every one of them starts covered:
+        // the working *steps*, one row per press, rather than arriving as a
+        // finished block nobody read.
+        expect(rows()).toHaveLength(4);
+        for (const row of rows()) {
+            expect(row.getAttribute('data-open')).toBe('false');
+        }
+        // The total is withheld until the working that produced it has been.
+        expect(document.querySelector('.ledger__banked')!.textContent).toBe('—');
+
+        // Host-paced, never a timed cascade: a room that wants to argue about a
+        // row can sit on it.
+        const step = screen.getByRole('button', { name: /next step/i });
+        for (let press = 0; press < 4; press++) fireEvent.click(step);
+        await waitFor(() => expect(rows().every(row => row.getAttribute('data-open') === 'true')).toBe(true));
 
         // Each listener's own sum, then how those become the room's verdict.
-        expect(ledger).toContain('7 + 3');
-        expect(ledger).toContain('10 ÷ 2 answered × 2 listening');
-        // Each multiplier step names the number it started from and the number
-        // it left behind: "×0.5" never said half of what.
-        expect(ledger).toContain('10 → 8');
-        expect(ledger).toContain('8 → 12');
+        expect(ledger()).toContain('7 + 3');
+        expect(ledger()).toContain('10 ÷ 2 answered × 2 listening');
+        // Each step names the number it started from and the number it left
+        // behind: "×0.5" never said half of what.
+        expect(ledger()).toContain('10 → 8');
+        expect(ledger()).toContain('8 → 12');
         // ...and why it moved.
-        expect(ledger).toContain('1 of 2 called it popular');
-        expect(ledger).toContain('2 of 2 had not heard it');
+        expect(ledger()).toContain('1 of 2 called it popular');
         // And the number all of that adds up to.
-        expect(ledger).toContain('Cy banks');
-        expect(ledger).toContain('12');
+        expect(ledger()).toContain('Cy banks');
+        expect(document.querySelector('.ledger__banked')!.textContent).toBe('12');
+
+        // The claim's own evidence stays on the claim card, in the claim's own
+        // terms, rather than being restated as a ledger detail.
+        expect(document.querySelector('.claim-card')!.textContent).toContain('2 of 2 had not heard it');
+
+        // ♥ and ★ are both printed, and they are never the same number twice:
+        // ♥ ranks the finale, ★ ranks nothing.
+        const tallies = [...document.querySelectorAll('.tally__value')].map(node => node.textContent);
+        expect(tallies).toEqual(['10', '12']);
 
         // One row per listener: what they guessed and what they made of the
         // track, rather than the same people listed twice.
-        const rows = [...document.querySelectorAll('.answers__row')];
-        expect(rows).toHaveLength(2);
-        expect(rows[0].textContent).toContain('Ana');
-        expect(rows[0].querySelector('.answers__guess')!.textContent).toContain('Cy');
-        // A correct guess is worth a point again, and the row says so.
-        expect(rows[0].querySelector('.answers__guess')!.textContent).toContain('+1');
+        const answers = [...document.querySelectorAll('.answers__row')];
+        expect(answers).toHaveLength(2);
+        expect(answers[0].textContent).toContain('Ana');
+        expect(answers[0].querySelector('.answers__guess')!.textContent).toContain('Cy');
+        expect(answers[0].querySelector('.answers__guess')!.className).toContain('is-correct');
         // Bo answered but never guessed, so that half of the row is simply absent.
-        expect(rows[1].querySelector('.answers__guess')).toBeNull();
+        expect(answers[1].querySelector('.answers__guess')).toBeNull();
+        // What a tick is worth is said once, under the table.
+        expect(document.querySelector('.answers__key')!.textContent).toContain('+1 to them');
     });
 
     it('shows a rating on the reveal as a scale, not a bare number', async () => {
@@ -867,15 +838,25 @@ describe('in-game screens', () => {
         );
 
         await waitFor(() => expect(document.querySelector('.award')).toBeTruthy());
-        const card = document.querySelector('.award')!;
+        const cards = [...document.querySelectorAll('.award')];
+        const ghost = cards.find(card => card.textContent?.includes('The Ghost'))!;
 
         // Winners stack one per line: inline wrapping is what turned a shared
-        // award into an unreadable pile of avatars.
-        const winners = card.querySelector('.award__winners')!;
-        expect(winners.children).toHaveLength(2);
+        // award into an unreadable pile of names. Ties are shared, never broken.
+        expect(ghost.querySelector('.award__winners')!.children).toHaveLength(2);
         // ...and the value is the last thing in the card, so it lines up with
         // the value of every other card in the row.
-        expect(card.lastElementChild!.className).toContain('award__value');
+        expect(ghost.lastElementChild!.className).toContain('award__value');
+
+        // Every award has a card, whether or not anybody won it. A trophy
+        // nobody earned is printed as "Not given" *with the reason on it* —
+        // omitting it would leave a hole the reader has to explain to
+        // themselves, and the explanation is the interesting part.
+        expect(cards).toHaveLength(5);
+        const shazam = cards.find(card => card.textContent?.includes('Human Shazam'))!;
+        expect(shazam.className).toContain('award--none');
+        expect(shazam.textContent).toContain('Not given');
+        expect(shazam.textContent).toContain('nobody named a single DJ right');
     });
 
     it('renders the awards, the chart and your own takeaway at the finale', async () => {
@@ -940,34 +921,42 @@ describe('in-game screens', () => {
             }),
         );
 
-        await waitFor(() => expect(screen.getByText('Track of the Night')).toBeTruthy());
-        expect(screen.getByText('7 points')).toBeTruthy();
-        expect(screen.getByText('Gut Punch')).toBeTruthy();
+        await waitFor(() => expect(screen.getByText(/Track of the Night/)).toBeTruthy());
+        const trophy = [...document.querySelectorAll('.award')].find(card =>
+            card.textContent?.includes('Track of the Night'),
+        )!;
+        expect(trophy.textContent).toContain('Blue Monday');
+        expect(trophy.textContent).toContain('7 points');
+        expect(screen.getByText(/Gut Punch/)).toBeTruthy();
 
         // No leaderboard: the night is not a competition to win.
         expect(screen.queryByText('The night')).toBeNull();
         expect(document.querySelector('.scores')).toBeNull();
 
         // What you actually walk out with: what *you* rated 4 or more.
-        const takeaway = screen.getByText('Your takeaway').closest('section')!;
+        const takeaway = screen.getByText(/What you're taking home/).closest('section')!;
         expect(within(takeaway).getAllByRole('listitem')[0].textContent).toContain('Blue Monday');
 
-        // The setlist is the night's chart, not its running order: the track
+        // The chart is ranked by the room, not by the running order: the track
         // the room rated higher comes first.
-        const setlist = screen.getByText('The setlist').closest('section')!;
-        const rows = within(setlist).getAllByRole('listitem');
+        const chart = screen.getByText(/Ranked by what the room gave/).closest('section')!;
+        const rows = within(chart).getAllByRole('listitem');
         expect(rows[0].textContent).toContain('Blue Monday');
         expect(rows[1].textContent).toContain('Ceremony');
         // ...and each row still says when it actually played.
-        expect(rows[1].textContent).toContain('2');
+        expect(rows[1].querySelector('.final-list__played')!.textContent).toContain('02');
 
-        // Two numbers, kept apart: 5 + 1 new + 2 moved = 8 from the room, and
-        // no claim, so 8 is also what it banked.
-        expect(rows[0].querySelector('.track__meta--love')!.textContent).toBe('♥8');
-        expect(rows[0].querySelector('.track__meta--score')!.textContent).toBe('★8');
+        // Two numbers, kept apart, and never in the same column: 5 + 1 new + 2
+        // moved = 8 from the room, and no claim, so 8 is also what it banked.
+        expect(rows[0].querySelector('.final-list__love')!.textContent).toBe('♥ 8');
+        expect(rows[0].querySelector('.final-list__banked')!.textContent).toBe('★ 8');
         // Ceremony: 1 + 1 new = 2 from the room, ×1.5 for a claim that landed.
-        expect(rows[1].querySelector('.track__meta--love')!.textContent).toBe('♥2');
-        expect(rows[1].querySelector('.track__meta--score')!.textContent).toBe('★3');
+        expect(rows[1].querySelector('.final-list__love')!.textContent).toBe('♥ 2');
+        expect(rows[1].querySelector('.final-list__banked')!.textContent).toBe('★ 3');
+        // ♥ decides the order, so it leads; ★ ranks nothing and comes after it.
+        expect(rows[0].querySelector('.final-list__love')!.compareDocumentPosition(
+            rows[0].querySelector('.final-list__banked')!,
+        ) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 
         // Queueing more than plays only pays off if you find out what you sat on.
         expect(screen.getByText('The ones that got away')).toBeTruthy();

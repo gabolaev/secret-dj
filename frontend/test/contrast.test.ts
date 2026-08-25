@@ -4,9 +4,14 @@ import { describe, expect, it } from 'vitest';
 /**
  * Contrast, measured rather than eyeballed.
  *
- * The previous skin set mid-tone text on gradients, which reads fine in the
- * editor and badly on a real screen. Every gradient endpoint is a token now,
- * so each pairing can be checked against the *worst* end of its ramp.
+ * The design ships a contrast table and this is it, executable. Every number
+ * below appears in the handoff; if a token moves, the pairing it was chosen
+ * for fails here rather than six months later on somebody's laptop in a bar.
+ *
+ * The rule the table encodes: **the hot colour is a fill, not an ink.**
+ * `--signal` only ever has to read as a *shape* — a key, an avatar, a timer
+ * block — so it is held to the 3:1 that non-text graphics need. Red used as
+ * *words* is `--signal-text`, which is darkened and held to the full 4.5.
  */
 const css = readFileSync(new URL('../src/styles/theme.css', import.meta.url), 'utf8');
 
@@ -32,32 +37,19 @@ function contrast(a: string, b: string): number {
     return (hi + 0.05) / (lo + 0.05);
 }
 
-/**
- * [foreground, background, minimum, why].
- *
- * There is one text context now — light on dark — so every pairing is checked
- * against all three surface rungs. The previous design had two contexts and
- * every legibility bug came from a colour crossing between them.
- */
-const SURFACES = ['bg', 'surface', 'surface-2', 'surface-3'] as const;
-
+/** [foreground, background, minimum, why]. */
 const PAIRS: Array<[string, string, number, string]> = [
-    ...SURFACES.map(s => ['text', s, 7, 'body text'] as [string, string, number, string]),
-    ...SURFACES.map(s => ['muted', s, 4.5, 'secondary text'] as [string, string, number, string]),
-    ...SURFACES.map(s => ['faint', s, 3, 'captions and meta'] as [string, string, number, string]),
-    // Orange is paint, not ink. As a fill it only has to read as a shape, so it
-    // is held to the 3:1 that graphics need; the words that happen to be orange
-    // use the darkened `accent-text`, which is held to the full 4.5.
-    ['accent', 'surface', 3, 'the orange fill, as a shape'],
-    ['accent-text', 'surface', 4.5, 'orange used as words'],
-    ['accent-ink', 'accent', 4.5, 'the legend on an orange key'],
-    ['love', 'surface', 4.5, 'rating figures'],
-    ['detective', 'surface', 4.5, 'people awards'],
-    ['good', 'surface', 4.5, 'correct guesses'],
-    ['bad', 'surface', 4.5, 'errors'],
-    // The display is its own darker panel.
-    ['screen-ink', 'screen', 7, 'primary readout'],
-    ['screen-dim', 'screen', 4.5, 'readout captions — dim in feel, not in legibility'],
+    ['ink', 'bone', 7, 'body text on the page'],
+    ['ink', 'paper', 7, 'body text on a row'],
+    ['ink-2', 'paper', 4.5, 'every 11px mono annotation'],
+    ['ink-2', 'bone', 4.5, 'annotation on the page'],
+    ['signal', 'bone', 3, 'the hot colour as a fill — never as small text'],
+    ['signal-text', 'paper', 4.5, 'red used as words'],
+    ['signal-text', 'bone', 4.5, 'red used as words, on the page'],
+    ['signal-ink', 'signal', 4.5, "the primary key's label"],
+    ['on-ink', 'ink', 7, 'the reversed DJ band'],
+    ['on-ink-2', 'ink', 4.5, 'secondary text on ink'],
+    ['redact-label', 'redact', 4.5, 'the SEALED legend on a bar'],
 ];
 
 describe('colour contrast', () => {
@@ -65,10 +57,24 @@ describe('colour contrast', () => {
         expect(Number(contrast(token(fg), token(bg)).toFixed(2))).toBeGreaterThanOrEqual(min);
     });
 
-    it('keeps the surface ladder monotonic, so depth reads as depth', () => {
-        const steps = SURFACES.map(name => luminance(token(name)));
-        for (let i = 1; i < steps.length; i++) {
-            expect(steps[i], SURFACES[i]).toBeGreaterThan(steps[i - 1]);
-        }
+    it('keeps the two paper tones apart, so a row reads as raised off the page', () => {
+        // They are close on purpose — this is paper on paper, not a panel on a
+        // background — but they must not be the same colour.
+        expect(luminance(token('paper'))).toBeGreaterThan(luminance(token('bone')));
+    });
+
+    it('keeps a redaction bar darker than the ink it sits among', () => {
+        // A bar that is *lighter* than the text around it reads as a highlight.
+        // It has to read as something laid over the page.
+        expect(luminance(token('redact'))).toBeLessThan(luminance(token('ink')));
+    });
+
+    it('keeps a separate, darker red for words', () => {
+        // `--signal` measures 4.6:1 on the page — fine for a fill and for text
+        // at 19px and up, but the product sets red at 11px in hint copy and
+        // failed-lookup labels. `--signal-text` exists for exactly that, so the
+        // invariant worth guarding is that it stays the darker of the two.
+        expect(luminance(token('signal-text'))).toBeLessThan(luminance(token('signal')));
+        expect(contrast(token('signal-text'), token('paper'))).toBeGreaterThanOrEqual(4.5);
     });
 });

@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { LIMITS, type GameView } from '@secret-dj/common';
 import type { SecretDj } from '../hooks/useSecretDj';
+import { Block } from '../components/Block';
+import { ClaimHand } from '../components/ClaimHand';
 import { ClaimPicker, spentClaims } from '../components/ClaimPicker';
 import { UrlField } from '../components/UrlField';
 import { TrackList } from '../components/TrackList';
-import { Window } from '../components/Window';
 import { useT } from '../i18n';
 
 interface LobbyScreenProps {
@@ -12,6 +13,13 @@ interface LobbyScreenProps {
     game: SecretDj;
 }
 
+/**
+ * The warm-up, in the order the decisions are actually made.
+ *
+ * The hand comes first, then the queue the cards get spent on, then the
+ * settings that decide which cards are even in play. Everything on this screen
+ * is downstream of the allocation, so the allocation goes at the top.
+ */
 export function LobbyScreen({ view, game }: LobbyScreenProps) {
     const t = useT();
     const [url, setUrl] = useState('');
@@ -37,7 +45,7 @@ export function LobbyScreen({ view, game }: LobbyScreenProps) {
     };
 
     // Only says something once there is something to say. While you are still
-    // queueing, the title and the counter have already said it.
+    // queueing, the heading and the counter have already said it.
     const status =
         remaining > 0
             ? null
@@ -49,28 +57,15 @@ export function LobbyScreen({ view, game }: LobbyScreenProps) {
 
     return (
         <div className="stage">
-            <Window title={t.lobby.title}>
-                <header className="stage__head">
-                    {/* Title and count on one line: "add three more" and
-                        "0 of 3" were saying the same thing in two places, with
-                        an empty-state sentence underneath saying it a third. */}
-                    <h2 className="stage__title">
-                        {remaining > 0 ? t.lobby.queueMore(remaining) : t.lobby.setReady}
-                        <span className="stage__count">
-                            {mine.length}/{tracksPerPlayer}
-                        </span>
-                    </h2>
-                    {status && <p className="stage__sub">{status}</p>}
-                </header>
+            <ClaimHand view={view} />
 
-                {remaining > 0 && (
-                    <div className="rack rack--stack">
-                        <UrlField value={url} onChange={setUrl} onSubmit={() => void submit()} busy={busy} />
-                    </div>
-                )}
+            <Block
+                label={remaining > 0 ? t.lobby.queueMore(remaining) : t.lobby.setReady}
+                count={`${mine.length}/${tracksPerPlayer}`}
+            >
+                {status && <p className="stage__sub">{status}</p>}
 
                 {mine.length > 0 && (
-                <div className="rack rack--stack">
                     <TrackList
                         tracks={mine}
                         onRemove={trackId => void game.removeTrack(trackId)}
@@ -88,53 +83,57 @@ export function LobbyScreen({ view, game }: LobbyScreenProps) {
                             />
                         )}
                     />
-                </div>
                 )}
-            </Window>
+
+                {remaining > 0 && (
+                    <UrlField value={url} onChange={setUrl} onSubmit={() => void submit()} busy={busy} />
+                )}
+            </Block>
 
             {isHost && (
-                <Window
-                    title={t.lobby.settings}
-                    actions={<span className="win__note">{t.lobby.setlistLength(active.length * tracksPlayedPerPlayer)}</span>}
-                >
-                    <div className="setting">
-                        <span className="setting__name">{t.lobby.tracksQueued}</span>
-                        <Stepper
-                            value={tracksPerPlayer}
-                            min={LIMITS.tracksPerPlayerMin}
-                            max={LIMITS.tracksPerPlayerMax}
-                            decreaseLabel={t.lobby.fewer}
-                            increaseLabel={t.lobby.more}
-                            onChange={next => void game.updateSettings({ tracksPerPlayer: next })}
-                        />
-                    </div>
+                <Block label={t.lobby.settings} count={t.lobby.setlistLength(active.length * tracksPlayedPerPlayer)}>
+                    <div className="settings list">
+                        <div className="setting">
+                            <span className="setting__name">{t.lobby.tracksQueued}</span>
+                            <Stepper
+                                value={tracksPerPlayer}
+                                min={LIMITS.tracksPerPlayerMin}
+                                max={LIMITS.tracksPerPlayerMax}
+                                decreaseLabel={t.lobby.fewer}
+                                increaseLabel={t.lobby.more}
+                                onChange={next => void game.updateSettings({ tracksPerPlayer: next })}
+                            />
+                        </div>
 
-                    <div className="setting">
-                        <span className="setting__name">{t.lobby.tracksPlayed}</span>
-                        <Stepper
-                            value={tracksPlayedPerPlayer}
-                            min={1}
-                            max={tracksPerPlayer}
-                            decreaseLabel={t.lobby.fewer}
-                            increaseLabel={t.lobby.more}
-                            onChange={next => void game.updateSettings({ tracksPlayedPerPlayer: next })}
-                        />
-                    </div>
+                        <div className="setting">
+                            <span className="setting__name">{t.lobby.tracksPlayed}</span>
+                            <Stepper
+                                value={tracksPlayedPerPlayer}
+                                min={1}
+                                max={tracksPerPlayer}
+                                decreaseLabel={t.lobby.fewer}
+                                increaseLabel={t.lobby.more}
+                                onChange={next => void game.updateSettings({ tracksPlayedPerPlayer: next })}
+                            />
+                        </div>
 
-                    <div className="setting">
-                        <span className="setting__name">{t.lobby.guessing}</span>
-                        <button
-                            type="button"
-                            className={`toggle${guessingEnabled ? ' toggle--on' : ''}`}
-                            role="switch"
-                            aria-checked={guessingEnabled}
-                            aria-label={t.lobby.guessing}
-                            onClick={() => void game.updateSettings({ guessingEnabled: !guessingEnabled })}
-                        >
-                            <span className="toggle__thumb" />
-                        </button>
+                        <div className="setting">
+                            <span className="setting__name">{t.lobby.guessing}</span>
+                            {/* A word, not a coloured pill: the state has to be
+                                readable in greyscale like every other state. */}
+                            <button
+                                type="button"
+                                className={`toggle${guessingEnabled ? ' toggle--on' : ''}`}
+                                role="switch"
+                                aria-checked={guessingEnabled}
+                                aria-label={t.lobby.guessing}
+                                onClick={() => void game.updateSettings({ guessingEnabled: !guessingEnabled })}
+                            >
+                                {guessingEnabled ? t.lobby.on : t.lobby.off}
+                            </button>
+                        </div>
                     </div>
-                </Window>
+                </Block>
             )}
 
             {isHost && (
@@ -172,7 +171,7 @@ function Stepper({ value, min, max, decreaseLabel, increaseLabel, onChange }: St
             <button type="button" onClick={() => onChange(value - 1)} disabled={value <= min} aria-label={decreaseLabel}>
                 −
             </button>
-            <span className="stepper__value">{value}</span>
+            <span className="stepper__value num">{value}</span>
             <button type="button" onClick={() => onChange(value + 1)} disabled={value >= max} aria-label={increaseLabel}>
                 +
             </button>

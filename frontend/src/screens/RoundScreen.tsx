@@ -1,12 +1,15 @@
 import type { GameView } from '@secret-dj/common';
 import type { SecretDj } from '../hooks/useSecretDj';
-import { TrackEmbed } from '../components/TrackEmbed';
-import { ChipPicker } from '../components/ChipPicker';
-import { RevealPanel } from '../components/RevealPanel';
 import { AnswerBar } from '../components/AnswerBar';
-import { Window } from '../components/Window';
+import { AnswerTable } from '../components/AnswerTable';
+import { Block } from '../components/Block';
+import { ChipPicker } from '../components/ChipPicker';
+import { ClaimCard } from '../components/ClaimCard';
+import { DjBand } from '../components/DjBand';
+import { RevealPanel } from '../components/RevealPanel';
+import { TrackEmbed } from '../components/TrackEmbed';
 import { serviceBadgeByName } from '../lib/serviceLogos';
-import { formatCountdown, useCountdown } from '../hooks/useCountdown';
+import { trackLabel } from '../lib/format';
 import { useT } from '../i18n';
 
 interface RoundScreenProps {
@@ -15,20 +18,18 @@ interface RoundScreenProps {
 }
 
 /**
- * The round: one card, the player at the top of it.
+ * The round, and the reveal — deliberately the same page with fewer covers.
  *
- * The live counts live in the card's header rather than in a display panel of
- * their own. A header is where this UI already puts context, so the counters
- * follow the structure instead of importing a second visual language for
- * themselves.
+ * Every withheld thing on this screen is rendered by the element that will
+ * eventually hold it: the DJ band, the claim, the answers. The reveal does not
+ * swap one layout for another, it lifts the covers off this one. That is why
+ * the band, the claim card and the answer table live here across both phases
+ * rather than inside a reveal-only panel — a component that unmounts cannot be
+ * wiped, it can only be replaced, and a replacement reflows.
  */
 export function RoundScreen({ view, game }: RoundScreenProps) {
     const t = useT();
     const round = view.round;
-    // Above the early return: a hook cannot be called conditionally, and there
-    // is no round to count down between tracks anyway.
-    const secondsLeft = useCountdown(round?.endsAt ?? 0, view.now);
-    const overtime = secondsLeft < 0;
 
     if (!round) return <p className="muted">{t.round.waitingForNext}</p>;
 
@@ -36,96 +37,91 @@ export function RoundScreen({ view, game }: RoundScreenProps) {
     const badge = serviceBadgeByName(round.track.service);
     const isFinalRound = round.number >= round.total;
     const others = view.players.filter(player => player.presence !== 'left' && player.id !== view.you.id);
-    // Absent for everyone but the DJ until the reveal, and the banner simply
-    // does not exist while it is.
-    const claim = round.track.claim;
-
-    const stats = (
-        <span className="stats">
-            {!revealed && (
-                <span
-                    className={`timer${overtime ? ' timer--over' : ''}`}
-                    role="timer"
-                    aria-label={t.round.timeLeft}
-                >
-                    {formatCountdown(secondsLeft)}
-                </span>
-            )}
-            {round.isMine && <span className="stat stat--mine">{t.round.titleMine}</span>}
-            <span className="stat stat--rated" title={t.round.answered(round.answersIn)}>
-                <i aria-hidden="true">✓</i>
-                {round.answersIn}/{round.answersExpected}
-            </span>
-            {view.settings.guessingEnabled && !revealed && (
-                <span className="stat" title={t.round.voted(round.votesIn, round.votersExpected)}>
-                    {round.votesIn}/{round.votersExpected}
-                </span>
-            )}
-        </span>
-    );
+    const failed = round.track.metadata === 'failed';
 
     return (
         <>
-            {/* Keyed on the track: revealing the DJ must not remount the player
-                and restart the music underneath everyone. */}
-            <Window title={t.round.position(round.number, round.total)} actions={stats} key={round.track.id}>
-                <div className="screen">
-                    <TrackEmbed url={round.track.url} />
+            {/* Quarantined, not integrated: an ink passe-partout with a printed
+                caption strip above it. Framing a foreign object admits that it
+                is foreign — trying to blend it is how you get a design that
+                only works for one provider. */}
+            <figure className="embed-frame">
+                <figcaption className="embed-frame__strip num">
+                    <span>{t.round.nowPlaying}</span>
+                    <span className="embed-frame__service">
+                        {badge?.name ? t.round.embedOf(badge.name) : t.round.embedGeneric}
+                    </span>
+                </figcaption>
+                <div className="embed-frame__mat">
+                    {/* Keyed on the track: revealing the DJ must not remount the
+                        player and restart the music underneath everyone. */}
+                    <TrackEmbed url={round.track.url} key={round.track.id} />
                 </div>
-
-                {claim && (
-                    <p className={`banner banner--${claim.id}`}>
-                        <strong>{t.claims[claim.id].title}</strong>
-                        <span className="banner__blurb">
-                            {revealed ? t.claims[claim.id].blurb : t.claims.yoursOnly}
-                        </span>
-                    </p>
-                )}
-
-                <div className="deck__meta">
-                    {badge?.logo && <img src={badge.logo} alt="" aria-hidden="true" />}
-                    {badge?.name}
-                    <a href={round.track.url} target="_blank" rel="noopener noreferrer">
+                <div className="embed-frame__title">
+                    {/* A failed lookup is a designed state, not an apology: the
+                        raw URL *is* the content, and we never invent a title. */}
+                    <span className={`embed-frame__name clip${failed ? ' embed-frame__name--raw' : ''}`}>
+                        {trackLabel(round.track)}
+                    </span>
+                    <a className="num" href={round.track.url} target="_blank" rel="noopener noreferrer">
                         {t.common.open}
                     </a>
                 </div>
+                {failed && <p className="embed-frame__failed num">{t.round.lookupFailed}</p>}
+            </figure>
 
-                {!revealed && round.canAnswer && (
-                    <div className="rack">
+            {round.isMine && !revealed && (
+                <Block className="yours">
+                    <span className="yours__eyebrow num">{t.round.yoursEyebrow}</span>
+                    <p className="yours__lead">{t.round.yoursLead}</p>
+                    <p className="muted">{t.round.yoursBody}</p>
+                </Block>
+            )}
+
+            <Block label={t.round.whoPutThisOn}>
+                <DjBand view={view} />
+            </Block>
+
+            <ClaimCard view={view} />
+
+            <AnswerTable view={view} />
+
+            {!revealed && round.canAnswer && (
+                <Block label={t.round.yourAnswer} count={<span className="stamp">{t.round.signed}</span>}>
+                    <div className="card answer-card">
                         <AnswerBar answer={round.myAnswer} onAnswer={patch => void game.answer(patch)} />
-                    </div>
-                )}
 
-                {!revealed && round.canVote && (
-                    <div className="rack">
-                        <ChipPicker
-                            label={t.guess.title}
-                            options={others}
-                            value={round.myGuess}
-                            onSelect={playerId => void game.vote(playerId)}
-                        />
-                    </div>
-                )}
+                        {round.canVote && (
+                            <>
+                                <span className="divider" />
+                                <ChipPicker
+                                    label={t.guess.title}
+                                    options={others}
+                                    value={round.myGuess}
+                                    onSelect={playerId => void game.vote(playerId)}
+                                />
+                            </>
+                        )}
 
-                {!revealed && round.canAnswer && (
-                    <div className="rack">
                         {/* The normal way a round ends. The host's own button is
                             the fallback for a room where somebody never gets
-                            round to pressing this. */}
-                        <button
-                            type="button"
-                            className={`button button--lg button--block${round.myDone ? '' : ' button--primary'}`}
-                            aria-pressed={round.myDone}
-                            onClick={() => void game.markDone(!round.myDone)}
-                        >
-                            {round.myDone ? t.round.undone : t.round.done}
-                        </button>
-                        <p className="muted">{t.round.doneCount(round.doneIn, round.doneExpected)}</p>
+                            round to pressing this. Nobody is ever cut off. */}
+                        <div className="answer-card__foot">
+                            <button
+                                type="button"
+                                className={`button button--lg button--block${round.myDone ? '' : ' button--primary'}`}
+                                aria-pressed={round.myDone}
+                                onClick={() => void game.markDone(!round.myDone)}
+                            >
+                                {round.myDone ? t.round.undone : t.round.done}
+                            </button>
+                            <p className="muted">{t.round.doneCount(round.doneIn, round.doneExpected)}</p>
+                        </div>
                     </div>
-                )}
+                </Block>
+            )}
 
-                {revealed && <RevealPanel view={view} />}
-            </Window>
+            {revealed && <RevealPanel view={view} />}
 
             {view.you.isHost ? (
                 <div className="cta">

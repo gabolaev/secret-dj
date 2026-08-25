@@ -2,9 +2,17 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 /**
- * The skin's type is small by nature — pixel and LCD faces at chrome sizes —
- * so it is easy to drift back into unreadable territory one hardcoded value at
- * a time. Sizes must come from the scale, and the scale has a floor.
+ * The type system has three faces and six steps, and each face has a job:
+ *
+ * - **Archivo** (`--font-ui`) — everything you read.
+ * - **IBM Plex Mono** (`--font-num`) — every number, label and annotation. Mono
+ *   is earned here: the product's payoff is an arithmetic receipt, and tabular
+ *   figures are why `27 → 4.5` reads at four feet.
+ * - **Instrument Serif** (`--font-disp`) — display only, one or two per screen,
+ *   never in a table. It does not cover Cyrillic, so RU falls back to Archivo —
+ *   which is why nothing load-bearing may depend on it.
+ *
+ * A fourth face, or a hardcoded size, is how a type system stops being one.
  */
 const theme = readFileSync(new URL('../src/styles/theme.css', import.meta.url), 'utf8');
 const app = readFileSync(new URL('../src/styles/app.css', import.meta.url), 'utf8');
@@ -18,10 +26,15 @@ function scale(): Record<string, number> {
 }
 
 describe('type scale', () => {
-    it('defines every step', () => {
-        const sizes = scale();
-        // Four. A scale with a step per component is not a scale.
-        expect(Object.keys(sizes).sort()).toEqual(['fs-base', 'fs-hero', 'fs-lg', 'fs-micro']);
+    it('defines every step, and only those steps', () => {
+        expect(Object.keys(scale()).sort()).toEqual([
+            'fs-base',
+            'fs-display',
+            'fs-fig',
+            'fs-lead',
+            'fs-micro',
+            'fs-name',
+        ]);
     });
 
     it('never drops below a legible floor', () => {
@@ -30,44 +43,84 @@ describe('type scale', () => {
         }
     });
 
-    it('keeps the steps clearly apart, so each has an obvious job', () => {
+    it('keeps the reading steps clearly apart, so each has an obvious job', () => {
         const sizes = scale();
-        expect(sizes['fs-base']).toBeGreaterThan(sizes['fs-micro'] * 1.2);
-        expect(sizes['fs-lg']).toBeGreaterThan(sizes['fs-base'] * 1.2);
-        expect(sizes['fs-hero']).toBeGreaterThan(sizes['fs-lg'] * 1.5);
+        expect(sizes['fs-base']).toBeGreaterThan(sizes['fs-micro']);
+        expect(sizes['fs-lead']).toBeGreaterThan(sizes['fs-base']);
+        expect(sizes['fs-fig']).toBeGreaterThan(sizes['fs-lead']);
+        // The name is the largest thing on the screen at the moment it lands.
+        expect(sizes['fs-name']).toBeGreaterThan(sizes['fs-fig'] * 1.5);
     });
 
-    it('sets the whole product in one face', () => {
-        // A dot-matrix display face used to set the room code and the code
-        // field. Beside a UI face everywhere else it read as a costume rather
-        // than a design, and it was the loudest inconsistency in the interface.
-        expect(theme + app).not.toContain('--font-display');
-        expect(theme).not.toContain('Handjet');
-
+    it('sets the product in exactly the three declared faces', () => {
         const families = [...(theme + app).matchAll(/font-family:\s*([^;]+);/g)].map(match =>
             match[1].trim(),
         );
         for (const family of families) {
-            expect(family, 'a second face crept back in').toMatch(/var\(--font-ui\)|inherit/);
+            expect(family, 'a fourth face crept in').toMatch(
+                /var\(--font-(ui|num|disp)\)|inherit|^'Archivo'|^'IBM Plex Mono'|^'Instrument Serif'/,
+            );
+        }
+        // The three roots are declared once each, in the theme.
+        for (const name of ['--font-ui', '--font-num', '--font-disp']) {
+            expect(theme).toContain(`${name}:`);
         }
     });
 
-    it('sizes the wordmark from the scale', () => {
-        // It was `calc(var(--logo-size) * 0.46)` — 10px beside a 22px mark,
-        // smaller than the smallest step in the system.
-        for (const rule of ['.logo--bar {', '.logo--hero {']) {
-            const block = app.slice(app.indexOf(rule));
-            expect(block.slice(0, block.indexOf('}')), rule).toMatch(/font-size: var\(--fs-/);
+    it('has no rounded corners outside the two the design allows', () => {
+        // Radius zero everywhere. The outer frame and the room-code chip are the
+        // only exceptions, and they are tokens so they can be counted.
+        const radii = [...(theme + app).matchAll(/border-radius:\s*([^;]+);/g)].map(m => m[1].trim());
+        for (const radius of radii) {
+            expect(radius, 'a stray corner radius').toMatch(/var\(--r-(frame|chip)\)|^0$/);
         }
     });
 
-    it('has no hardcoded font sizes left in either stylesheet', () => {
-        for (const [label, css] of [
-            ['theme.css', theme],
-            ['app.css', app],
-        ] as const) {
-            const strays = [...css.matchAll(/font-size:\s*\d+px|font:\s*\d+\s+\d+px/g)].map(m => m[0]);
-            expect(strays, label).toEqual([]);
+    it('has no shadows or gradients anywhere: depth is a hairline or an ink fill', () => {
+        const shadows = [...app.matchAll(/box-shadow:\s*([^;]+);/g)].map(m => m[1].trim());
+        // The one survivor is the keyline holding the chosen rating key off the
+        // inked keys beside it — an inset ring, not an elevation.
+        expect(shadows).toEqual(['inset 0 0 0 2px var(--paper)']);
+        expect(theme).not.toContain('box-shadow');
+        expect(theme + app).not.toContain('linear-gradient(to');
+        expect(theme + app).not.toContain('radial-gradient');
+    });
+
+    it('keeps the theme on the scale, bar two constants that are not type steps', () => {
+        // 12px: the tracked uppercase mono legend on a key. It sits between the
+        // annotation step and the body step because tracking makes it measure
+        // wider than either — it is a legend, not a size in the reading scale.
+        //
+        // 16px: form inputs. Below 16px mobile Safari zooms the page on focus,
+        // which is a layout bug wearing a typographic costume.
+        const strays = [...theme.matchAll(/font-size:\s*(\d+)px/g)].map(m => m[1]);
+        expect(strays.sort()).toEqual(['12', '16', '16']);
+    });
+});
+
+describe('motion', () => {
+    it('animates covers and nothing else', () => {
+        // "If something is moving, a secret is being opened." Everything else is
+        // allowed to change background on hover, and that is the whole budget.
+        const transitions = [...(theme + app).matchAll(/transition:\s*([^;]+);/g)].map(m => m[1]);
+        for (const transition of transitions) {
+            expect(transition, 'a second moving part').toMatch(
+                /^(clip-path|background|background-color|color|border-color)\b/,
+            );
         }
+    });
+
+    it('uses one easing and the declared durations', () => {
+        expect(theme).toContain('--ease: cubic-bezier(0.2, 0.8, 0.2, 1)');
+        expect(theme).toContain('--dur-wipe: 420ms');
+        const easings = [...(theme + app).matchAll(/cubic-bezier\([^)]*\)/g)].map(m => m[0]);
+        for (const easing of easings) {
+            expect(easing).toBe('cubic-bezier(0.2, 0.8, 0.2, 1)');
+        }
+    });
+
+    it('cuts instead of wiping under reduced motion', () => {
+        expect(theme).toContain('prefers-reduced-motion: reduce');
+        expect(theme).toMatch(/transition-duration:\s*1ms\s*!important/);
     });
 });

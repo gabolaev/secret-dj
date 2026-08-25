@@ -1,10 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { Block } from './Block';
 import { useT } from '../i18n';
 
 const VOICES = ['KICK', 'SNARE', 'HAT', 'PERC'] as const;
 const STEPS = 8;
+/** Eighth notes at 120bpm: fast enough to feel like a machine, slow enough to read. */
+const TICK_MS = 250;
 
-/** Something already playing when you open it: an empty grid is not a toy. */
+/** Something already on the card when you open it: an empty grid is not a toy. */
 const SEED: readonly (readonly boolean[])[] = [
     [true, false, false, false, true, false, false, false],
     [false, false, true, false, false, false, true, false],
@@ -12,120 +15,70 @@ const SEED: readonly (readonly boolean[])[] = [
     [false, false, false, false, false, true, false, false],
 ];
 
-const TEMPO_MIN = 70;
-const TEMPO_MAX = 160;
-const TEMPO_STEP = 10;
-
 /**
- * A drum machine that makes no sound.
+ * A drum machine that makes no sound, redrawn as a punched card.
  *
- * It exists because a listening party has three minutes of nothing to do with
- * your hands, and a grid of lights running in time is the most satisfying
- * nothing there is. Deliberately silent: a room of people are listening to
- * somebody's track, and a toy that could talk over it would be a bad toy.
+ * It survived the cull. A listening party has three minutes an hour where your
+ * hands have nothing to do, and a grid running in time is the best nothing
+ * there is.
  *
- * Entirely local — no socket, no server, nobody else sees your pattern. It is a
- * fidget, not a feature of the game.
+ * Kept **silent** — eight people are listening to somebody's track and a toy
+ * that could talk over it is a bad toy. Kept **local** — no socket, nobody sees
+ * your pattern, it is worth no points. And it **never auto-runs**: this is the
+ * one moving thing in a design whose rule is that only covers animate, so it
+ * only ever moves because somebody pressed RUN. That is also what keeps it
+ * honest with `prefers-reduced-motion`, which cannot be respected by something
+ * that starts itself.
+ *
+ * An armed step is the same solid ink as a redaction, so the one thing on
+ * screen that is allowed to move is also the only thing on screen with nothing
+ * to hide. That is the joke, and it is the whole reason to keep it.
  */
 export function DrumMachine() {
     const t = useT();
     const [pattern, setPattern] = useState<boolean[][]>(() => SEED.map(row => [...row]));
-    const [tempo, setTempo] = useState<number>(120);
-    const [running, setRunning] = useState(true);
+    const [running, setRunning] = useState(false);
     const [step, setStep] = useState(0);
-    /**
-     * Pads struck in the last moment, so a click reads as an *event* and not
-     * only as a change of state. Without this, hitting a pad on a stopped
-     * machine produced no feedback at all beyond the cap changing colour.
-     */
-    const [hits, setHits] = useState<ReadonlySet<string>>(new Set());
-    const timers = useRef(new Set<number>());
-
-    useEffect(() => {
-        const pending = timers.current;
-        return () => {
-            for (const timer of pending) window.clearTimeout(timer);
-            pending.clear();
-        };
-    }, []);
 
     useEffect(() => {
         if (!running) return;
-        // Eighth notes: fast enough to feel like a machine, slow enough to read.
-        // Keyed on tempo alone, so changing it does not reset the bar.
-        const interval = window.setInterval(() => setStep(current => (current + 1) % STEPS), 30_000 / tempo);
+        const interval = window.setInterval(() => setStep(current => (current + 1) % STEPS), TICK_MS);
         return () => window.clearInterval(interval);
-    }, [running, tempo]);
+    }, [running]);
 
     const strike = (voice: number, index: number) => {
-        const key = `${voice}:${index}`;
-        setHits(current => new Set(current).add(key));
         // A tick you can feel, where the hardware would have given you one.
         // Silent, brief, and absent on anything that cannot vibrate.
         navigator.vibrate?.(8);
-
-        const timer = window.setTimeout(() => {
-            timers.current.delete(timer);
-            setHits(current => {
-                const next = new Set(current);
-                next.delete(key);
-                return next;
-            });
-        }, 220);
-        timers.current.add(timer);
-
         setPattern(current =>
             current.map((row, r) => (r === voice ? row.map((on, i) => (i === index ? !on : on)) : row)),
         );
     };
 
-    /** Lit by the playhead, or by a pad you just hit in that column. */
-    const columnLit = (index: number) =>
-        (running && step === index) || [...hits].some(key => key.endsWith(`:${index}`));
-
     const bar = Math.floor(step / 4) + 1;
     const beat = (step % 4) + 1;
 
     return (
-        <div className="dm">
-            {/* The readout strip: the one black surface, the way the hardware
-                puts its numbers behind glass rather than on the panel. */}
-            <div className="dm__display">
-                <span className="dm__glyph" aria-hidden="true">
-                    {running ? '▶' : '■'}
-                </span>
-                <span className="dm__bpm-read">
-                    {tempo}
-                    <i>BPM</i>
-                </span>
-                <span className="dm__spacer" />
-                <span className="dm__bpm-read dm__bpm-read--dim">
-                    {bar}.{beat}
-                    <i>BAR</i>
-                </span>
-            </div>
+        <Block label={t.drums.title} count={t.drums.silent} className="dm">
+            <div className="dm__card">
+                {/* The playhead, as a row of ticks above the card rather than a
+                    light inside each cell: a cell is either punched or it is
+                    not, and nothing else may change its appearance. */}
+                <div className="dm__head" aria-hidden="true">
+                    <span className="dm__voice" />
+                    {Array.from({ length: STEPS }, (_, index) => (
+                        <span key={index} className={`dm__tick${running && step === index ? ' is-now' : ''}`} />
+                    ))}
+                </div>
 
-            {/* A row of lamps above the grid rather than lighting the pads
-                themselves: on the hardware the indicators are their own parts,
-                and the blink reads far better when it is not fighting a keycap. */}
-            <div className="dm__lights" aria-hidden="true">
-                {Array.from({ length: STEPS }, (_, index) => (
-                    <span
-                        key={index}
-                        className={`dm__led${columnLit(index) ? ' is-lit' : ''}${index % 4 === 0 ? ' is-downbeat' : ''}`}
-                    />
-                ))}
-            </div>
-
-            <div className="dm__grid">
                 {VOICES.map((voice, row) => (
                     <div className="dm__row" key={voice}>
-                        <span className="dm__voice">{voice}</span>
+                        <span className="dm__voice num">{voice}</span>
                         {pattern[row].map((on, index) => (
                             <button
                                 key={index}
                                 type="button"
-                                className={`dm__pad${on ? ' is-on' : ''}${running && step === index ? ' is-now' : ''}${hits.has(`${row}:${index}`) ? ' is-hit' : ''}`}
+                                className={`dm__cell${on ? ' is-on' : ''}`}
                                 aria-pressed={on}
                                 aria-label={`${voice} ${index + 1}`}
                                 onClick={() => strike(row, index)}
@@ -133,50 +86,28 @@ export function DrumMachine() {
                         ))}
                     </div>
                 ))}
-            </div>
 
-            <div className="dm__bar">
-                <button
-                    type="button"
-                    className={`dm__transport${running ? ' is-running' : ''}`}
-                    aria-pressed={running}
-                    onClick={() => setRunning(value => !value)}
-                >
-                    {running ? t.drums.stop : t.drums.play}
-                </button>
-
-                {/* Two keys, not four presets: the number they set is already
-                    on the display above, and four buttons repeating it is what
-                    pushed CLEAR off the end of the row. */}
-                <span className="dm__tempo" role="group" aria-label={t.drums.tempo}>
+                <div className="dm__bar">
                     <button
                         type="button"
-                        className="dm__bpm"
-                        aria-label={t.drums.slower}
-                        disabled={tempo <= TEMPO_MIN}
-                        onClick={() => setTempo(value => Math.max(TEMPO_MIN, value - TEMPO_STEP))}
+                        className={`dm__transport${running ? ' is-running' : ''}`}
+                        aria-pressed={running}
+                        onClick={() => setRunning(value => !value)}
                     >
-                        −
+                        {running ? t.drums.stop : t.drums.play}
                     </button>
                     <button
                         type="button"
-                        className="dm__bpm"
-                        aria-label={t.drums.faster}
-                        disabled={tempo >= TEMPO_MAX}
-                        onClick={() => setTempo(value => Math.min(TEMPO_MAX, value + TEMPO_STEP))}
+                        className="dm__clear"
+                        onClick={() => setPattern(VOICES.map(() => Array<boolean>(STEPS).fill(false)))}
                     >
-                        +
+                        {t.drums.clear}
                     </button>
-                </span>
-
-                <button
-                    type="button"
-                    className="dm__clear"
-                    onClick={() => setPattern(VOICES.map(() => Array<boolean>(STEPS).fill(false)))}
-                >
-                    {t.drums.clear}
-                </button>
+                    <span className="dm__count num">
+                        {bar}.{beat}
+                    </span>
+                </div>
             </div>
-        </div>
+        </Block>
     );
 }
