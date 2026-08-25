@@ -98,6 +98,25 @@ describe('type scale', () => {
     });
 });
 
+describe('the wordmark', () => {
+    it('separates the halves with the interpunct alone, symmetrically', () => {
+        // The interpunct's own margins were always symmetric; what broke the
+        // mark was the literal space beside it, which contributed its advance
+        // *and* a letter-spacing step to the left of the dot and nothing to
+        // the right. The space element has to stay zero-width for the two
+        // sides to match.
+        const space = app.match(/\.logo__space\s*\{([^}]*)\}/);
+        expect(space, 'the zero-width word break is gone').not.toBeNull();
+        expect(space![1]).toMatch(/font-size:\s*0\s*;/);
+
+        const dot = app.match(/\.logo em::before\s*\{([^}]*)\}/)![1];
+        const margin = dot.match(/margin:\s*([^;]+);/)![1].trim().split(/\s+/);
+        // A one- or two-value margin is symmetric by definition; three or four
+        // values could quietly put a different gap on each side of the dot.
+        expect(margin.length).toBeLessThanOrEqual(2);
+    });
+});
+
 describe('the join column', () => {
     it('keeps the sheet and the footnote under it on one text column', () => {
         // The footnote is a centred *sibling* of the sheet, not a child, so it

@@ -32,7 +32,24 @@
     font-style: normal;
 }
 
-/* The interpunct is the only ornament in the product, and it is a character. */
+/*
+ * The word break, for reading aloud and for copy-paste, with no width of its
+ * own. `font-size: 0` collapses the space itself *and* the tracking step that
+ * would follow it, which is what makes the two sides of the interpunct equal:
+ * a bare space contributed its own advance plus a letter-spacing step to the
+ * left of the dot and nothing to the right, so the gap there was about four
+ * times the one after it.
+ *
+ * Zeroing the size rather than subtracting a negative margin keeps this exact
+ * in any fallback face — a magic offset would only be right in the metrics it
+ * was measured against.
+ */
+.logo__space {
+    font-size: 0;
+}
+
+/* The interpunct is the only ornament in the product, and it is a character.
+   Its margins are symmetric, and now nothing else is added to one side. */
 .logo em::before {
     content: '·';
     margin: 0 0.1em;

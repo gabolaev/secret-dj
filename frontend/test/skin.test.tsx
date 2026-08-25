@@ -106,4 +106,19 @@ describe('logo', () => {
         expect(logo.className).toContain('logo--hero');
         expect(logo.querySelector('em')!.textContent).toBe('DJ');
     });
+
+    it('keeps the word break in the text but out of the mark', () => {
+        // The two halves are separated visually by the interpunct alone. The
+        // space is still in the DOM — the name has to read and copy as two
+        // words — but it is zero-width, because a tracked space rendered on
+        // one side of the dot only, and the mark read as "SECRET ·DJ".
+        const { container } = render(<Logo />);
+        const logo = container.querySelector('.logo')!;
+
+        expect(logo.textContent).toBe('Secret DJ');
+        const gap = logo.querySelector('.logo__space')!;
+        expect(gap.textContent).toBe(' ');
+        // Nothing but the space lives in it; it is spacing, not content.
+        expect(gap.children).toHaveLength(0);
+    });
 });

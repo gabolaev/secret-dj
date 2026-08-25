@@ -19,7 +19,15 @@ interface LogoProps {
 export function Logo({ size = 'bar', className }: LogoProps) {
     return (
         <span className={`logo logo--${size}${className ? ` ${className}` : ''}`}>
-            Secret <em>DJ</em>
+            Secret
+            {/* A real space, so the name is read and copied as two words — but
+                carrying no width, because the mark is one stamped token and the
+                interpunct is what separates the halves. Left in the text rather
+                than removed and faked, so `textContent` stays "Secret DJ".
+                Without this the tracked space sat on the left of the dot only,
+                and the mark read as "SECRET ·DJ". */}
+            <span className="logo__space"> </span>
+            <em>DJ</em>
         </span>
     );
 }
