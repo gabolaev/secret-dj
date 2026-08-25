@@ -21,9 +21,9 @@ export const ru: Messages = {
     join: {
         tagline:
             'Каждый втайне ставит трек в очередь. Комната оценивает его.',
-        nameLabel: 'Ваше имя — оно будет стоять под каждым вашим ответом',
+        nameLabel: 'Ваше имя',
         namePlaceholder: 'DJ Набе',
-        codeLabel: 'Код комнаты — оставьте пустым, чтобы создать свою',
+        codeLabel: 'Код комнаты',
         codePlaceholder: 'K7QM2',
         create: 'Создать свою',
         join: 'Войти в комнату',

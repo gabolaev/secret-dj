@@ -98,6 +98,31 @@ describe('type scale', () => {
     });
 });
 
+describe('the join column', () => {
+    it('keeps the sheet and the footnote under it on one text column', () => {
+        // The footnote is a centred *sibling* of the sheet, not a child, so it
+        // only lines up if it repeats both the width cap and the side padding.
+        // Match the width alone — which is what shipped — and every line of it
+        // starts one padding step left of the form above it.
+        const block = (selector: string) => {
+            const match = app.match(new RegExp(`\\${selector}\\s*\\{([^}]*)\\}`));
+            if (!match) throw new Error(`missing rule ${selector}`);
+            return match[1];
+        };
+        const declaration = (body: string, property: string) =>
+            body.match(new RegExp(`(?:^|[\\s;])${property}:\\s*([^;]+);`))?.[1].trim();
+
+        const sheet = block('.join__sheet');
+        const services = block('.join__services');
+
+        expect(declaration(services, 'max-width')).toBe(declaration(sheet, 'max-width'));
+        // The sheet's shorthand is `<top> <side> <bottom>`; the footnote only
+        // needs the side to agree.
+        const side = declaration(sheet, 'padding')!.split(/\s+/)[1];
+        expect(declaration(services, 'padding')).toBe(`0 ${side}`);
+    });
+});
+
 describe('overlays', () => {
     it('never sets display on a dialog outside its open state', () => {
         // A closed `<dialog>` is hidden by the UA's own

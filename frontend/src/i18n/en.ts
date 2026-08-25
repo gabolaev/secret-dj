@@ -23,9 +23,9 @@ export const en = {
         tagline:
             'Everyone queues a track in secret. The room rates it.',
         // Labelled with the consequence of filling it in, not with its own name.
-        nameLabel: 'Your name — it goes on every answer you give',
+        nameLabel: 'Your name',
         namePlaceholder: 'DJ Nightshift',
-        codeLabel: 'Room code — leave it empty to start one',
+        codeLabel: 'Room code',
         codePlaceholder: 'K7QM2',
         create: 'Start a new one',
         join: 'Join the room',

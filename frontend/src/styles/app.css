@@ -133,8 +133,17 @@
     border-top: 1px solid var(--rule);
 }
 
+/*
+ * The footnote sits outside the sheet, on the page, but it has to read as the
+ * same column of text. It is a centred sibling of the sheet rather than a
+ * child, so it only lines up if it repeats the sheet's width *and* its side
+ * padding — matching the width alone leaves the text starting one padding step
+ * to the left of everything above it, which is exactly what it did.
+ */
 .join__services {
+    width: 100%;
     max-width: 375px;
+    padding: 0 var(--sp-5);
     color: var(--ink-2);
     font-size: var(--fs-micro);
     line-height: 1.7;
