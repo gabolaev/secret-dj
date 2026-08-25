@@ -44,6 +44,11 @@ export function AwardCard({ id, award, players, lead }: AwardCardProps) {
                 <span aria-hidden="true">{AWARD_GLYPHS[id]}</span> {copy.title}
             </span>
 
+            {/* What the trophy is for, next to its name — five glyphs and five
+                nicknames are not self-explanatory, and a card reading only
+                "Not given" explains nothing at all. One short line. */}
+            <span className="award__blurb">{copy.blurb}</span>
+
             {given ? (
                 <>
                     <span className="award__winners">

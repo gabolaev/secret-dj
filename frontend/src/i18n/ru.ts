@@ -12,7 +12,6 @@ export const ru: Messages = {
         loading: 'Загрузка',
         close: 'Закрыть',
         open: 'открыть ↗',
-        host: 'Ведущий',
         nothingYet: 'Пока пусто.',
     },
 
@@ -49,11 +48,10 @@ export const ru: Messages = {
 
     roster: {
         yourQueue: 'Ваша очередь',
-        here: 'здесь',
-        you: 'вы',
         gone: 'вышел',
         away: 'отошёл',
         ready: 'готов',
+        scoreTitle: 'Сколько собрали ваши треки',
         theRoom: 'Комната',
         setlist: 'Сетлист',
         notPlayedYet: 'ещё не играл',
@@ -288,23 +286,23 @@ export const ru: Messages = {
     awards: {
         'track-of-the-night': {
             title: 'Трек вечера',
-            blurb: 'Трек, который комната оценила выше всех',
+            blurb: 'больше всех ♥ за вечер',
         },
         'deep-cut': {
             title: 'Находка',
-            blurb: 'Принёс трек, который почти никто не слышал, — и он зашёл',
+            blurb: 'никто не слышал — и зашло',
         },
         'gut-punch': {
             title: 'Под дых',
-            blurb: 'Поставил трек, который зацепил больше всех',
+            blurb: 'зацепил больше всех',
         },
         'human-shazam': {
             title: 'Живой Shazam',
-            blurb: 'Чаще всех угадывал диджея',
+            blurb: 'чаще всех угадывал диджея',
         },
         ghost: {
             title: 'Призрак',
-            blurb: 'Его почти ни разу не угадали',
+            blurb: 'его не угадали',
         },
     },
 

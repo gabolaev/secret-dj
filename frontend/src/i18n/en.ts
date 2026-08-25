@@ -13,7 +13,6 @@ export const en = {
         loading: 'Loading',
         close: 'Close',
         open: 'open ↗',
-        host: 'Host',
         nothingYet: 'Nothing here yet.',
     },
 
@@ -53,11 +52,10 @@ export const en = {
         yourQueue: 'Your queue',
         // Presence, and only presence. Anything about answering would name the
         // DJ by omission — see PlayerRoster.
-        here: 'here',
-        you: 'you',
         gone: 'gone',
         away: 'away',
         ready: 'ready',
+        scoreTitle: 'What your tracks have earned',
         theRoom: 'The room',
         setlist: 'Setlist',
         notPlayedYet: 'not played yet',
@@ -315,23 +313,23 @@ export const en = {
     awards: {
         'track-of-the-night': {
             title: 'Track of the Night',
-            blurb: 'The single track that moved the most people',
+            blurb: 'most ♥ of the night',
         },
         'deep-cut': {
             title: 'Deep Cut',
-            blurb: 'Brought the track fewest people had heard — and it landed',
+            blurb: 'new to the room, and it landed',
         },
         'gut-punch': {
             title: 'Gut Punch',
-            blurb: 'Played the track that got to the most people',
+            blurb: 'moved the most people',
         },
         'human-shazam': {
             title: 'Human Shazam',
-            blurb: 'Named the most DJs correctly',
+            blurb: 'named the most DJs',
         },
         ghost: {
             title: 'The Ghost',
-            blurb: 'Slipped past the room unrecognised',
+            blurb: 'went unrecognised',
         },
     } satisfies Record<AwardId, { title: string; blurb: string }>,
 

@@ -26,11 +26,14 @@ interface PlayerRosterProps {
  * HERE / GONE / YOU are words first. Colour and opacity repeat them; they never
  * replace them, and the roster survives greyscale.
  */
-function stateFor(player: PublicPlayer, view: GameView, t: Messages): { label: string; tone: string } {
-    if (player.id === view.you.id) return { label: t.roster.you, tone: 'you' };
+function stateFor(player: PublicPlayer, t: Messages): { label: string; tone: string } | null {
     if (player.presence === 'left') return { label: t.roster.gone, tone: 'gone' };
     if (player.presence === 'offline') return { label: t.roster.away, tone: 'gone' };
-    return { label: t.roster.here, tone: 'here' };
+    // Being in the room is the normal case, and labelling the normal case is
+    // how a list turns into a column of the same word repeated. Silence means
+    // present; only a broken connection is worth a word. Which row is yours is
+    // said by the row's own tint, not by a badge on it.
+    return null;
 }
 
 /** What a player still owes the lobby. Only ever rendered before the music. */
@@ -44,15 +47,24 @@ export function PlayerRoster({ view }: PlayerRosterProps) {
     const t = useT();
     const inLobby = view.phase === 'lobby';
 
-    // Join order, not score order. Ranking the room by ★ would put the DJ's
-    // banked total to work deciding a chart it has no business deciding — ♥ is
-    // what ranks tracks, at the finale, and nothing ranks people at all.
-    const roster = view.players;
+    // The running score, and the order it puts people in. This is safe in a way
+    // answer state is not: nobody's total moves until a reveal, and a reveal
+    // has already named the DJ out loud, so the column can never be read
+    // backwards to work out whose track is playing.
+    //
+    // It stays out of the lobby, where every total is zero and a ranking would
+    // be noise, and out of the finale, which ranks tracks by ♥ rather than
+    // people by ★.
+    const showScores = view.phase !== 'lobby';
+    const roster = showScores
+        ? [...view.players].sort((a, b) => b.score - a.score || a.name.localeCompare(b.name))
+        : view.players;
+    const top = Math.max(0, ...roster.map(player => player.score));
 
     return (
         <ul className="roster">
             {roster.map(player => {
-                const state = inLobby ? lobbyStateFor(player, view, t) : stateFor(player, view, t);
+                const state = inLobby ? lobbyStateFor(player, view, t) : stateFor(player, t);
                 const isYou = player.id === view.you.id;
                 return (
                     <li
@@ -65,12 +77,23 @@ export function PlayerRoster({ view }: PlayerRosterProps) {
                         <span className="roster__name clip" title={player.name}>
                             {player.name}
                         </span>
-                        {player.isHost && (
-                            <span className="roster__host" title={t.common.host} aria-label={t.common.host}>
-                                ★
+                        {/* No host mark here. It was a ★ sitting immediately
+                            beside the ★ of the score, which read as a second
+                            number rather than as a role — and the host is
+                            already the only person holding the buttons. */}
+                        {state && (
+                            <span className={`roster__state roster__state--${state.tone}`}>{state.label}</span>
+                        )}
+                        {showScores && (
+                            <span
+                                className={`roster__score num${
+                                    player.score > 0 && player.score === top ? ' is-top' : ''
+                                }`}
+                                title={t.roster.scoreTitle}
+                            >
+                                ★{player.score}
                             </span>
                         )}
-                        <span className={`roster__state roster__state--${state.tone}`}>{state.label}</span>
                     </li>
                 );
             })}

@@ -22,7 +22,10 @@ interface SidebarProps {
  */
 export function Sidebar({ view }: SidebarProps) {
     const t = useT();
-    const inPlay = view.phase !== 'lobby';
+    // The setlist is a column of secrets you watch shorten, so it has nothing
+    // left to do once the night is over: the finale prints the same tracks in
+    // the middle of the page, in full, ranked, with the DJs on them.
+    const running = view.phase !== 'lobby' && view.phase !== 'finished';
     const present = view.players.filter(player => player.presence !== 'left').length;
 
     // The setlist as a fixed-length column of slots: played ones are printed,
@@ -57,7 +60,7 @@ export function Sidebar({ view }: SidebarProps) {
                 <PlayerRoster view={view} />
             </Block>
 
-            {inPlay && setlist.length > 0 && (
+            {running && setlist.length > 0 && (
                 <Block label={t.roster.setlist} count={`${view.history.length}/${setlist.length}`}>
                     <ul className="setlist list">
                         {setlist.map(slot => (
@@ -85,7 +88,7 @@ export function Sidebar({ view }: SidebarProps) {
                 </Block>
             )}
 
-            {inPlay && view.you.tracks.length > 0 && (
+            {running && view.you.tracks.length > 0 && (
                 <Block label={t.roster.yourQueue} count={view.you.tracks.length}>
                     <TrackList
                         tracks={view.you.tracks}

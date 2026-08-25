@@ -360,10 +360,15 @@ describe('in-game screens', () => {
             expect(['here', 'gone', 'away', 'you']).toContain(state);
         }
 
-        // And no score column: ★ is what a DJ banked on a gamble, and it has no
-        // business ranking the people in the room.
-        expect(document.querySelector('.roster__score')).toBeNull();
-        expect(document.querySelector('.roster__scores')).toBeNull();
+        // The running score is fine and is shown: no total moves until a
+        // reveal, and a reveal has already said the DJ's name out loud, so the
+        // column cannot be read backwards. It is answer state — and only answer
+        // state — that has no safe value during a round.
+        expect(document.querySelectorAll('.roster__score').length).toBeGreaterThan(0);
+        const roster = document.querySelector('.roster')!.textContent!;
+        for (const leak of ['done', 'deciding', 'thinking', 'answered', 'locked']) {
+            expect(roster.toLowerCase(), `the roster leaks answer state: ${leak}`).not.toContain(leak);
+        }
     });
     it('says each thing in the lobby once', async () => {
         // The lobby carried five explanatory subtitles, and the heading, the

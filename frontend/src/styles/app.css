@@ -379,12 +379,6 @@
     font-size: 13px;
 }
 
-.roster__host {
-    flex-shrink: 0;
-    color: var(--ink-2);
-    font-size: 10px;
-}
-
 /* Words first. The colour repeats the word; it never replaces it. */
 .roster__state {
     flex-shrink: 0;
@@ -393,10 +387,6 @@
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--ink-2);
-}
-
-.roster__state--you {
-    color: var(--signal-text);
 }
 
 .roster__state--gone {
@@ -2153,4 +2143,32 @@
 /* Room for two locales side by side in a narrow header. */
 .locale--compact .locale__option {
     padding: 3px 6px;
+}
+
+/* What the trophy is for, sitting with its name. Quiet, one line, and present
+   whether or not anybody won it — a card reading only "Not given" explains
+   nothing, and five glyphs with five nicknames are not self-evident. */
+.award__blurb {
+    color: var(--ink-2);
+    font-size: var(--fs-micro);
+    line-height: 1.45;
+}
+
+.award--lead .award__blurb {
+    color: var(--on-ink-2);
+}
+
+/* The running score. Not a leaderboard — the night does not crown anybody —
+   but the number your own choices moved, in the order it puts the room in. */
+.roster__score {
+    flex-shrink: 0;
+    min-width: 34px;
+    text-align: right;
+    color: var(--ink-2);
+    font-size: var(--fs-micro);
+}
+
+.roster__score.is-top {
+    color: var(--ink);
+    font-weight: 600;
 }
