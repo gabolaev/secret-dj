@@ -95,6 +95,9 @@ function round(overrides: Partial<RoundView> = {}): RoundView {
         votesIn: 1,
         votersExpected: 2,
         isReady: false,
+        myDone: false,
+        doneIn: 0,
+        doneExpected: 2,
         canVote: true,
         canAnswer: true,
         ...overrides,
@@ -279,7 +282,25 @@ describe('in-game screens', () => {
         await waitFor(() => expect(screen.getByRole('button', { name: /Heard it before/ })).toBeTruthy());
         expect(screen.getByRole('button', { name: /Heard it before/ }).getAttribute('aria-pressed')).toBe('true');
         // The toggles are on and it still says the answer is not in.
-        expect(screen.getByText(/toggles alone do not count/)).toBeTruthy();
+        expect(screen.getByText(/Pick a number for your answer to count/)).toBeTruthy();
+    });
+
+    it('stacks the answer instead of letting it wrap across the rack', async () => {
+        // The three parts used to be loose siblings of the rack's flex row, so
+        // the scale, the toggles and the note laid out on one line and broke
+        // wherever the container ran out — clipping a rating button mid-circle.
+        await mountWith(lobbyView({ phase: 'listening', setlistLength: 4, round: round() }));
+
+        await waitFor(() => expect(document.querySelector('.answer')).toBeTruthy());
+        const answer = document.querySelector('.answer')!;
+
+        expect(answer.children).toHaveLength(3);
+        expect(answer.children[0].className).toContain('rate');
+        expect(answer.children[1].className).toContain('bets');
+        expect(answer.children[2].className).toContain('answer__note');
+        // The whole block is one child of the rack, not three.
+        expect(answer.parentElement!.className).toContain('rack');
+        expect(answer.parentElement!.children).toHaveLength(1);
     });
 
     it('lights the scale up to the number you chose', async () => {
@@ -350,7 +371,8 @@ describe('in-game screens', () => {
         await waitFor(() => expect(screen.getByRole('button', { name: /Rules/ })).toBeTruthy());
         fireEvent.click(screen.getByRole('button', { name: /Rules/ }));
 
-        const sheet = await waitFor(() => document.querySelector('.rules-claims')!);
+        await waitFor(() => expect(document.querySelector('.rules-claims')).toBeTruthy());
+        const sheet = document.querySelector('.rules-claims')!;
         const listed = [...sheet.querySelectorAll('strong')].map(node => node.textContent);
 
         // Every bet a player can make, named and explained — driven off CLAIMS,
@@ -494,7 +516,115 @@ describe('in-game screens', () => {
         expect(document.querySelector('.pick')).toBeNull();
     });
 
-    it('renders the scoreboard, the awards and your own takeaway at the finale', async () => {
+    it('shows every arithmetic step of the reveal, not just the total', async () => {
+        await mountWith(
+            lobbyView({
+                phase: 'reveal',
+                setlistLength: 4,
+                players: [
+                    player({ id: 'p1', name: 'Ana', isHost: true }),
+                    player({ id: 'p2', name: 'Bo' }),
+                    player({ id: 'p3', name: 'Cy' }),
+                ],
+                round: round({
+                    track: { ...round().track, claim: { id: 'never-heard' } },
+                    reveal: {
+                        djId: 'p3',
+                        // Ana: 4 + 1 new + 2 moved = 7.  Bo: 2 + 1 new = 3.
+                        answers: [
+                            { listenerId: 'p1', like: 4, heard: false, popular: true, moved: true },
+                            { listenerId: 'p2', like: 2, heard: false, popular: false, moved: false },
+                        ],
+                        votes: [{ voterId: 'p1', guessId: 'p3', correct: true }],
+                        listenerCount: 2,
+                        claimMultiplier: 1.5,
+                        obviousnessDrag: 0.75,
+                        points: [
+                            { playerId: 'p1', points: 1, reason: 'correct-guess' },
+                            { playerId: 'p3', points: 10, reason: 'room-verdict' },
+                            { playerId: 'p3', points: -2, reason: 'obviousness' },
+                            { playerId: 'p3', points: 4, reason: 'claim-landed' },
+                        ],
+                    },
+                }),
+            }),
+        );
+
+        await waitFor(() => expect(document.querySelector('.ledger')).toBeTruthy());
+        const ledger = document.querySelector('.ledger')!.textContent!;
+
+        // Each listener's own sum, then how those become the room's verdict.
+        expect(ledger).toContain('7 + 3');
+        expect(ledger).toContain('10 ÷ 2 answered × 2 listening');
+        // Each multiplier step names the number it started from and the number
+        // it left behind: "×0.5" never said half of what.
+        expect(ledger).toContain('10 → 8');
+        expect(ledger).toContain('8 → 12');
+        // ...and why it moved.
+        expect(ledger).toContain('1 of 2 called it popular');
+        expect(ledger).toContain('2 of 2 had not heard it');
+        // And the number all of that adds up to.
+        expect(ledger).toContain('Cy banks');
+        expect(ledger).toContain('12');
+
+        // A correct guess is worth a point again, and the row says so.
+        const votes = document.querySelector('.reveal__votes')!;
+        expect(votes.textContent).toContain('+1');
+    });
+
+    it('shows a rating on the reveal as a scale, not a bare number', async () => {
+        await mountWith(
+            lobbyView({
+                phase: 'reveal',
+                setlistLength: 4,
+                round: round({
+                    reveal: {
+                        djId: 'p2',
+                        answers: [{ listenerId: 'p1', like: 4, heard: false, popular: true, moved: false }],
+                        votes: [],
+                        listenerCount: 1,
+                        claimMultiplier: 1,
+                        obviousnessDrag: 0.5,
+                        points: [{ playerId: 'p2', points: 5, reason: 'room-verdict' }],
+                    },
+                }),
+            }),
+        );
+
+        await waitFor(() => expect(document.querySelector('.answers__like')).toBeTruthy());
+        const pill = document.querySelector('.answers__like')!;
+        expect(pill.textContent).toBe('4/5');
+        expect(pill.getAttribute('title')).toContain('4 out of 5');
+    });
+
+    it('lays out an award card so the value is anchored, not floating', async () => {
+        await mountWith(
+            lobbyView({
+                phase: 'finished',
+                setlistLength: 2,
+                players: [
+                    player({ id: 'p1', name: 'Ana', isHost: true }),
+                    player({ id: 'p2', name: 'Bo' }),
+                    player({ id: 'p3', name: 'Cy' }),
+                ],
+                awards: [{ id: 'ghost', winners: ['p1', 'p2'], value: 55 }],
+                history: [],
+            }),
+        );
+
+        await waitFor(() => expect(document.querySelector('.award')).toBeTruthy());
+        const card = document.querySelector('.award')!;
+
+        // Winners stack one per line: inline wrapping is what turned a shared
+        // award into an unreadable pile of avatars.
+        const winners = card.querySelector('.award__winners')!;
+        expect(winners.children).toHaveLength(2);
+        // ...and the value is the last thing in the card, so it lines up with
+        // the value of every other card in the row.
+        expect(card.lastElementChild!.className).toContain('award__value');
+    });
+
+    it('renders the awards, the chart and your own takeaway at the finale', async () => {
         await mountWith(
             lobbyView({
                 phase: 'finished',
@@ -504,7 +634,7 @@ describe('in-game screens', () => {
                     player({ id: 'p2', name: 'Bo', score: 7 }),
                 ],
                 awards: [
-                    { id: 'crowd-favourite', winners: ['p2'], value: 7 },
+                    { id: 'track-of-the-night', winners: ['p2'], value: 7, detail: 'Blue Monday' },
                     { id: 'gut-punch', winners: ['p1'], value: 3 },
                 ],
                 history: [
@@ -523,6 +653,22 @@ describe('in-game screens', () => {
                         listenerCount: 1,
                         votes: [{ voterId: 'p1', guessId: 'p2', correct: true }],
                     },
+                    {
+                        number: 2,
+                        track: {
+                            id: 't2',
+                            url: 'https://open.spotify.com/track/ghi',
+                            title: 'Ceremony',
+                            service: 'Spotify',
+                            metadata: 'ready',
+                            // Nobody had heard it, so the claim lands in full.
+                            claim: { id: 'never-heard' },
+                        },
+                        djId: 'p1',
+                        answers: [{ listenerId: 'p2', like: 1, heard: false, popular: false, moved: false }],
+                        listenerCount: 1,
+                        votes: [],
+                    },
                 ],
                 unplayed: [
                     {
@@ -540,17 +686,34 @@ describe('in-game screens', () => {
             }),
         );
 
-        await waitFor(() => expect(screen.getByText('Crowd Favourite')).toBeTruthy());
+        await waitFor(() => expect(screen.getByText('Track of the Night')).toBeTruthy());
         expect(screen.getByText('7 points')).toBeTruthy();
         expect(screen.getByText('Gut Punch')).toBeTruthy();
 
-        // One board now, ranked by the single score.
-        const board = screen.getByText('The night').closest('section')!;
-        expect(within(board).getAllByRole('listitem')[0].textContent).toContain('Bo');
+        // No leaderboard: the night is not a competition to win.
+        expect(screen.queryByText('The night')).toBeNull();
+        expect(document.querySelector('.scores')).toBeNull();
 
-        // And the thing you actually walk out with: what *you* rated 4 or more.
+        // What you actually walk out with: what *you* rated 4 or more.
         const takeaway = screen.getByText('Your takeaway').closest('section')!;
         expect(within(takeaway).getAllByRole('listitem')[0].textContent).toContain('Blue Monday');
+
+        // The setlist is the night's chart, not its running order: the track
+        // the room rated higher comes first.
+        const setlist = screen.getByText('The setlist').closest('section')!;
+        const rows = within(setlist).getAllByRole('listitem');
+        expect(rows[0].textContent).toContain('Blue Monday');
+        expect(rows[1].textContent).toContain('Ceremony');
+        // ...and each row still says when it actually played.
+        expect(rows[1].textContent).toContain('2');
+
+        // Two numbers, kept apart: 5 + 1 new + 2 moved = 8 from the room, and
+        // no claim, so 8 is also what it banked.
+        expect(rows[0].querySelector('.track__meta--love')!.textContent).toBe('♥8');
+        expect(rows[0].querySelector('.track__meta--score')!.textContent).toBe('★8');
+        // Ceremony: 1 + 1 new = 2 from the room, ×1.5 for a claim that landed.
+        expect(rows[1].querySelector('.track__meta--love')!.textContent).toBe('♥2');
+        expect(rows[1].querySelector('.track__meta--score')!.textContent).toBe('★3');
 
         // Queueing more than plays only pays off if you find out what you sat on.
         expect(screen.getByText('The ones that got away')).toBeTruthy();

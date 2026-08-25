@@ -120,7 +120,8 @@ half again, and halve your take if they miss. Which is why queueing something
 everyone will mildly enjoy is never the strongest line.
 
 Meanwhile you're guessing the DJ behind each track. One score, all of it earned
-as a DJ; guessing pays in trophies rather than points.
+as a DJ — and no leaderboard at the end: the score is there to make the choices
+during the night matter, not to rank the people at the end of it.
 At the end everyone walks out with their own playlist of what they liked.
 
 **Rule zero: never lie in your answers.** Three of the four can't be checked by
@@ -147,6 +148,12 @@ hidden in the UI. One file to audit.
 **Nothing user-supplied gets fetched blindly.** Outbound requests are restricted
 to known music hosts, re-checked at every redirect, resolved through DNS and
 rejected if they land on a private address.
+
+**A missing title is admitted, not invented.** Lookups retry transient failures
+(timeouts, 429s, 5xx) with backoff, misses are cached for a minute rather than
+six hours, and unresolved tracks are chased again before the music starts. When
+we genuinely don't know, the track shows its URL — a routing segment is not a
+song called "Watch".
 
 **No prose on the wire.** The server returns error *codes*, and `buildEmbed`
 returns issue codes rather than sentences, so the UI renders every message in

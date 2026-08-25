@@ -3,6 +3,7 @@ import {
     CLAIMS_BY_ID,
     CLAIM_FLOOR,
     claimAvailable,
+    claimEvidence,
     claimMultiplier,
     freshness,
     identificationRate,
@@ -143,20 +144,65 @@ describe('so-me', () => {
 });
 
 describe('divisive', () => {
-    it('peaks on a dead-even split and collapses when one camp is empty', () => {
-        expect(spread(said([[5], [1]]))).toBe(1);
-        expect(spread(said([[5], [4], [1], [0]]))).toBe(1);
+    it('measures how far apart the room actually was', () => {
+        // Root-mean-square distance from the room's own average, against the
+        // widest the scale allows. The old version counted heads either side of
+        // a threshold, which made a 3 and a 4 the difference between everything
+        // and nothing.
+        expect(spread(said([[5], [0]]))).toBe(1);
+        expect(spread(said([[5], [5], [0], [0]]))).toBe(1);
         expect(spread(said([[5], [5], [5], [5]]))).toBe(0);
-        expect(spread(said([[1], [0]]))).toBe(0);
+        expect(spread(said([[3], [3]]))).toBe(0);
     });
 
-    it('cannot be farmed with a track nobody loves', () => {
-        // Three haters and no lovers is not a split, it is a bad track.
-        expect(spread(said([[0], [1], [1]]))).toBe(0);
+    it('reads the size of a disagreement, not just its side', () => {
+        // 5 against 1 is a real argument; 5 against 4 is barely one. The old
+        // threshold count scored both identically.
+        expect(spread(said([[5], [1]]))).toBeGreaterThan(spread(said([[5], [4]])));
+        expect(spread(said([[5], [0]]))).toBeGreaterThan(spread(said([[5], [1]])));
     });
 
-    it('ignores the lukewarm middle, which is neither camp', () => {
-        expect(spread(said([[2], [3]]))).toBe(0);
+    it('sees a split the old thresholds were blind to', () => {
+        // Two who liked it and two who shrugged is disagreement. Counting only
+        // 4-and-up against 1-and-below scored this a flat zero.
+        expect(spread(said([[5], [5], [3], [3]]))).toBeGreaterThan(0);
+    });
+
+    it('needs at least two people to disagree', () => {
+        expect(spread([])).toBe(0);
+        expect(spread(said([[5]]))).toBe(0);
+    });
+
+    it('pays a track nobody liked almost nothing', () => {
+        // Not zero any more — there is a little real spread in 0, 1, 1 — but the
+        // multiplier still lands under ×1, so the claim loses the DJ points on a
+        // track the room simply disliked.
+        const grim = said([[0], [1], [1]]);
+        expect(spread(grim)).toBeLessThan(0.25);
+        expect(claimMultiplier(outcome('divisive', grim))).toBeLessThan(1);
+    });
+});
+
+describe('not-me', () => {
+    it('pays on getting away with it, the exact mirror of so-me', () => {
+        expect(claimMultiplier(outcome('not-me', [], votes(0, 4)))).toBe(1.5);
+        expect(claimMultiplier(outcome('not-me', [], votes(4, 0)))).toBe(CLAIM_FLOOR);
+        expect(claimMultiplier(outcome('not-me', [], votes(2, 2)))).toBe(1);
+
+        // Whatever one of the pair pays, the other pays the opposite.
+        const someVotes = votes(1, 3);
+        const hidden = claimMultiplier(outcome('not-me', [], someVotes));
+        const named = claimMultiplier(outcome('so-me', [], someVotes));
+        expect(hidden + named).toBeCloseTo(2 * CLAIM_FLOOR + 1, 10);
+    });
+
+    it('pays nothing when the room never guessed at all', () => {
+        // Hiding from a room that never looked is not hiding.
+        expect(claimMultiplier(outcome('not-me', []))).toBe(CLAIM_FLOOR);
+    });
+
+    it('reports who looked elsewhere as its reason', () => {
+        expect(claimEvidence(outcome('not-me', [], votes(1, 2)))).toEqual({ kind: 'share', hit: 2, of: 3 });
     });
 });
 
@@ -183,5 +229,31 @@ describe('what a table can play', () => {
         expect(claimAvailable(CLAIMS_BY_ID['so-me'], { players: 5, guessingEnabled: false })).toBe(false);
         // Nothing else is scored off the guesses, so nothing else is affected.
         expect(claimAvailable(CLAIMS_BY_ID.divisive, { players: 5, guessingEnabled: false })).toBe(true);
+    });
+});
+
+describe('claimEvidence', () => {
+    it('counts exactly what the multiplier counted', () => {
+        // The reveal shows these numbers as the reason for the multiplier, so
+        // they have to be the same numbers the multiplier was built from.
+        const answers = said([[5, false, true], [4, true], [1, true]]);
+
+        expect(claimEvidence(outcome('never-heard', answers))).toEqual({ kind: 'share', hit: 1, of: 3 });
+        expect(claimEvidence(outcome('unanimous', answers))).toEqual({ kind: 'share', hit: 2, of: 3 });
+        expect(claimEvidence(outcome('emotional', answers))).toEqual({ kind: 'share', hit: 1, of: 3 });
+        expect(claimEvidence(outcome('divisive', answers))).toEqual({
+            kind: 'spread',
+            percent: Math.round(spread(answers) * 100),
+        });
+        expect(claimEvidence(outcome('so-me', [], votes(2, 1)))).toEqual({ kind: 'share', hit: 2, of: 3 });
+        expect(claimEvidence(outcome('none', answers))).toBeNull();
+    });
+
+    it('agrees with the multiplier it is explaining', () => {
+        const answers = said([[5], [4], [1, true]]);
+        const evidence = claimEvidence(outcome('never-heard', answers));
+        expect(evidence).toEqual({ kind: 'share', hit: 2, of: 3 });
+        // 0.5 + 2/3, which is exactly what the reveal will print as the reason.
+        expect(claimMultiplier(outcome('never-heard', answers))).toBeCloseTo(0.5 + 2 / 3, 10);
     });
 });

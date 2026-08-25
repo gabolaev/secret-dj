@@ -49,6 +49,7 @@ export type FeedEvent =
     | { kind: 'player-online'; playerId: PlayerId; name: string }
     | { kind: 'host-changed'; playerId: PlayerId; name: string }
     | { kind: 'track-answered'; answersIn: number }
+    | { kind: 'round-ready' }
     | { kind: 'vote-cast'; votesIn: number; votersExpected: number }
     | { kind: 'round-started'; number: number; total: number }
     | { kind: 'round-revealed'; number: number; djId: PlayerId }
@@ -79,6 +80,9 @@ export interface ClientToServerEvents {
      * Idempotent: send the answer you want to stand, not a toggle.
      */
     'round:answer': (req: Partial<Answer>, ack: Ack) => void;
+    /** "I am finished." When every listener present has said so, the round
+     *  reveals itself. Idempotent, and revocable until it does. */
+    'round:done': (req: { done: boolean }, ack: Ack) => void;
     'round:reveal': (req: Record<string, never>, ack: Ack) => void;
     'round:next': (req: Record<string, never>, ack: Ack) => void;
 }

@@ -93,7 +93,14 @@ export function emptyAnswer(): Answer {
  * them, really does land with all of them, really moves them, really is
  * recognisably yours, or really does split them.
  */
-export type ClaimId = 'none' | 'never-heard' | 'unanimous' | 'emotional' | 'so-me' | 'divisive';
+export type ClaimId =
+    | 'none'
+    | 'never-heard'
+    | 'unanimous'
+    | 'emotional'
+    | 'so-me'
+    | 'not-me'
+    | 'divisive';
 
 export interface TrackClaim {
     id: ClaimId;
@@ -144,9 +151,8 @@ export interface PublicPlayer {
     submitted: number;
     ready: boolean;
     /**
-     * One number, and you only ever score it as a DJ: what your tracks did to
-     * the room, put through your claim. Reading the room is still played and
-     * still wins trophies — it no longer pays.
+     * One number: what your tracks did to the room put through your claim, plus
+     * a point for every DJ you named correctly.
      */
     score: number;
     // Deliberately absent: any per-player "has voted" flag identifies the DJ.
@@ -164,6 +170,8 @@ export interface VoteRecord {
 }
 
 export type PointReason =
+    /** To a listener, for naming the DJ. */
+    | 'correct-guess'
     /** What the room gave: likes, plus the novelty and emotion bonuses. */
     | 'room-verdict'
     /** What calling it popular took back off. Never positive. */
@@ -214,8 +222,13 @@ export interface RoundView {
     answersExpected: number;
     votesIn: number;
     votersExpected: number;
-    /** True once nobody present still owes a vote or an answer. Gates the reveal. */
+    /** True once nobody present still owes a vote. Gates the host's reveal. */
     isReady: boolean;
+    /** The viewer's own "I am finished". */
+    myDone: boolean;
+    /** How many listeners have finished, and how many are expected to. */
+    doneIn: number;
+    doneExpected: number;
     /** False for the DJ, and when guessing is disabled. */
     canVote: boolean;
     /** False for the DJ, who cannot answer on their own track. */
@@ -245,8 +258,9 @@ export interface UnplayedTrack {
 }
 
 export type AwardId =
-    // What your taste did to the room.
-    | 'crowd-favourite'
+    // What your taste did to the room. Note what is deliberately absent: there
+    // is no "most points" trophy, and no leaderboard at the finale. The score
+    // exists to make choices matter during the night, not to crown anybody.
     | 'track-of-the-night'
     | 'deep-cut'
     | 'gut-punch'

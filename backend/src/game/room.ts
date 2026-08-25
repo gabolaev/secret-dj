@@ -348,13 +348,20 @@ export class GameRoom {
         }
     }
 
+    /** Tracks whose lookup has not produced a title. Fuel for the retry sweep. */
+    unresolvedTracks(): TrackState[] {
+        return [...this.tracks.values()].filter(track => track.metadata !== 'ready');
+    }
+
     /** Applied out-of-band once the metadata service has an answer. */
     applyMetadata(
         trackId: TrackId,
         metadata: { title?: string; artist?: string; artwork?: string } | null,
     ): boolean {
         const track = this.tracks.get(trackId);
-        if (!track || track.metadata !== 'pending') return false;
+        // A failed lookup is retried, so `failed` is not a final state — only a
+        // title we already have is worth protecting from being overwritten.
+        if (!track || track.metadata === 'ready') return false;
 
         if (metadata?.title) {
             track.title = metadata.title;
@@ -419,6 +426,7 @@ export class GameRoom {
             startedAt: this.now(),
             votes: new Map(),
             answers: new Map(),
+            done: new Set(),
         };
         this.phase = 'listening';
         this.touch();
@@ -536,6 +544,42 @@ export class GameRoom {
         return count;
     }
 
+    /**
+     * "I am finished." The round reveals itself once every listener present has
+     * said so, which is the normal way a round ends — the host's own reveal is
+     * the fallback for a room where somebody never gets round to it.
+     */
+    markDone(playerId: PlayerId, done: boolean): FeedEvent[] {
+        const player = this.requirePlayer(playerId);
+        this.requirePhase('listening', 'tallying');
+        const round = this.requireRound();
+        if (player.id === round.djId) throw new GameError('ANSWER_OWN_TRACK');
+
+        if (round.done.has(player.id) === done) return [];
+        if (done) round.done.add(player.id);
+        else round.done.delete(player.id);
+        this.touch();
+
+        const feed: FeedEvent[] = [];
+        feed.push(...this.maybeCloseVoting());
+        if (this.everyoneDone()) {
+            feed.push({ kind: 'round-ready' });
+            feed.push(...this.revealRound());
+        }
+        return feed;
+    }
+
+    /** True when every listener present has pressed done, and there is one. */
+    everyoneDone(): boolean {
+        const round = this.round;
+        if (!round || this.phase === 'reveal' || this.phase === 'finished') return false;
+        const present = this.activePlayers.filter(
+            player => player.id !== round.djId && player.presence === 'online',
+        );
+        // A room with nobody in it has not agreed on anything.
+        return present.length > 0 && present.every(player => round.done.has(player.id));
+    }
+
     /** Listeners entitled to answer the current round, whether they did or not. */
     listenerCount(): number {
         if (!this.round) return 0;
@@ -545,11 +589,23 @@ export class GameRoom {
     reveal(playerId: PlayerId): FeedEvent[] {
         this.requireHost(playerId);
         this.requirePhase('listening', 'tallying');
-        const round = this.requireRound();
+        this.requireRound();
         // The host used to be able to reveal over the top of people still
         // voting. Anyone who actually walks away drops out of `pending()` the
         // moment their socket goes, so waiting can no longer strand the room.
         if (!this.isRoundReady) throw new GameError('ROUND_NOT_READY');
+        return this.revealRound();
+    }
+
+    /**
+     * Banks the round and opens it up.
+     *
+     * Separate from `reveal` because the room can get here two ways: the host
+     * pressing the button, or everybody saying they are finished. Neither path
+     * may skip the banking, so there is one body and two doors.
+     */
+    private revealRound(): FeedEvent[] {
+        const round = this.requireRound();
 
         const votes = [...round.votes.entries()].map(([voterId, guessId]) => ({
             voterId,

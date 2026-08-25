@@ -55,7 +55,13 @@ export interface GatewayDeps {
     metadata: MetadataService;
 }
 
+/** How many times a missing title is chased before the room gives up on it. */
+const METADATA_RETRIES = 4;
+/** Comfortably past the metadata service's own miss cache. */
+const METADATA_RETRY_DELAY_MS = 75_000;
+
 export function attachGateway({ io, store, metadata }: GatewayDeps): () => void {
+    const retryTimers = new Set<ReturnType<typeof setTimeout>>();
     /** Sends every socket in a room the view built for *that* player. */
     function broadcast(room: GameRoom): void {
         const sockets = io.sockets.adapter.rooms.get(room.id);
@@ -158,17 +164,42 @@ export function attachGateway({ io, store, metadata }: GatewayDeps): () => void 
     /**
      * Kicks off metadata lookup and pushes the result to the room when it lands.
      * Fire-and-forget on purpose: track submission must not wait on the network.
+     *
+     * A miss is not the end of it. Between the per-request retries inside the
+     * fetch layer and this sweep, a title that failed once because a service was
+     * having a moment gets several more chances before the track is played —
+     * which is what "most of them don't resolve" actually looked like.
      */
-    function enrich(room: GameRoom, trackId: string, url: string): void {
+    function enrich(room: GameRoom, trackId: string, url: string, attempt = 0): void {
         void metadata
             .lookup(url)
             .then(result => {
                 // The game may have ended, or the track may have been removed.
                 const current = store.get(room.id);
-                if (!current || !current.applyMetadata(trackId, result)) return;
-                broadcast(current);
+                if (!current || !current.tracks.has(trackId)) return;
+                if (current.applyMetadata(trackId, result)) broadcast(current);
+                if (!result && attempt + 1 < METADATA_RETRIES) {
+                    // Spaced past the service's own miss cache, or the retry
+                    // would be answered from memory without asking anybody.
+                    scheduleRetry(() => enrich(room, trackId, url, attempt + 1), METADATA_RETRY_DELAY_MS);
+                }
             })
             .catch(error => log.warn(`metadata lookup failed for ${url}`, error));
+    }
+
+    /** Re-asks for every title the room is still missing. */
+    function retryUnresolved(room: GameRoom): void {
+        for (const track of room.unresolvedTracks()) enrich(room, track.id, track.url);
+    }
+
+    function scheduleRetry(task: () => void, delayMs: number): void {
+        const timer = setTimeout(() => {
+            retryTimers.delete(timer);
+            task();
+        }, delayMs);
+        // Never hold the process open for a title nobody is waiting for.
+        timer.unref?.();
+        retryTimers.add(timer);
     }
 
     io.on('connection', (socket: GameSocket) => {
@@ -242,6 +273,9 @@ export function attachGateway({ io, store, metadata }: GatewayDeps): () => void 
         bind<Record<string, never>, Record<string, never>>(socket, 'game:start', () => {
             const { room, playerId } = context(socket);
             publish(room, room.start(playerId));
+            // Last call for anything still untitled, now that it is about to be
+            // looked at rather than sat in a queue.
+            retryUnresolved(room);
             return {};
         });
 
@@ -257,6 +291,12 @@ export function attachGateway({ io, store, metadata }: GatewayDeps): () => void 
             if (typeof claim !== 'string' || !(claim in CLAIMS_BY_ID)) throw new GameError('CLAIM_INVALID');
             room.setClaim(playerId, req?.trackId ?? '', claim as ClaimId);
             publish(room, []);
+            return {};
+        });
+
+        bind<{ done: unknown }, Record<string, never>>(socket, 'round:done', req => {
+            const { room, playerId } = context(socket);
+            publish(room, room.markDone(playerId, req?.done === true));
             return {};
         });
 
@@ -307,5 +347,9 @@ export function attachGateway({ io, store, metadata }: GatewayDeps): () => void 
     }, 30_000);
     sweeper.unref?.();
 
-    return () => clearInterval(sweeper);
+    return () => {
+        clearInterval(sweeper);
+        for (const timer of retryTimers) clearTimeout(timer);
+        retryTimers.clear();
+    };
 }

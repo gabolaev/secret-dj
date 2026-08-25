@@ -4,9 +4,8 @@ import { nameOf } from '../lib/format';
 import { useT } from '../i18n';
 
 const GLYPHS: Record<Award['id'], string> = {
-    'crowd-favourite': '♥',
     'track-of-the-night': '★',
-    'deep-cut': '☄︎',
+    'deep-cut': '◈',
     'gut-punch': '⚡︎',
     'human-shazam': '◎',
     ghost: '☾',

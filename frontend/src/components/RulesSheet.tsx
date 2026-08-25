@@ -104,6 +104,13 @@ export function RulesSheet({ open, onClose }: RulesSheetProps) {
                 <p className="sheet__lead">{t.rules.scoring.claimTitle}</p>
                 <p className="sheet__note">{t.rules.scoring.claimBody}</p>
 
+                <dl className="scoring">
+                    <div className="scoring__row">
+                        <dt>{t.rules.scoring.guessLine.what}</dt>
+                        <dd>{t.rules.scoring.guessLine.points}</dd>
+                    </div>
+                </dl>
+
                 <p className="sheet__example">{t.rules.scoring.example}</p>
 
                 <p className="sheet__note">{t.rules.note}</p>

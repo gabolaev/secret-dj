@@ -541,8 +541,18 @@
 
 /* ------------------------------------------------------------------ rating */
 
+/* Takes the whole rack row and stacks its own three parts, rather than letting
+   the parent's flex-wrap decide where the answer breaks. */
+.answer {
+    flex: 1 1 100%;
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-3);
+    min-width: 0;
+}
+
 .rate {
-    display: inline-flex;
+    display: flex;
     align-items: flex-start;
     gap: var(--sp-4);
 }
@@ -744,6 +754,12 @@
     flex-wrap: wrap;
 }
 
+.answer__note {
+    color: var(--faint);
+    font-size: var(--fs-micro);
+    line-height: 1.45;
+}
+
 .chip__count {
     margin-left: 0.35rem;
     color: var(--faint);
@@ -778,7 +794,7 @@
 }
 
 .answers__like {
-    min-width: 1.4rem;
+    min-width: 2.4rem;
     padding: 0.1rem 0.4rem;
     border-radius: var(--r-pill);
     background: var(--surface-2);
@@ -837,6 +853,22 @@
     font-weight: 600;
 }
 
+/* The step this row performed, in the units of the score. A bare "×0.5" never
+   said half of what — this says which number became which. */
+.ledger__change {
+    color: var(--text);
+    font-size: var(--fs-micro);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.ledger__change i {
+    margin: 0 0.15rem;
+    color: var(--faint);
+    font-style: normal;
+}
+
 .ledger__detail {
     flex: 1;
     color: var(--faint);
@@ -845,6 +877,36 @@
 
 .ledger__claim {
     border-top: 1px solid var(--line);
+}
+
+.ledger__total {
+    border-top: 1px solid var(--line);
+    font-weight: 600;
+}
+
+/* Not a point delta — the running subtotal the next line operates on. */
+.ledger__sum {
+    color: var(--muted);
+    font-size: var(--fs-micro);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.ledger__nil {
+    color: var(--faint);
+    font-size: var(--fs-micro);
+}
+
+.answers__sum {
+    margin-left: auto;
+    color: var(--muted);
+    font-size: var(--fs-micro);
+    font-variant-numeric: tabular-nums;
+}
+
+.tag--new {
+    background: rgb(255 181 69 / 14%);
+    color: var(--accent);
 }
 
 /* `.chip` keeps a narrow left pad for the avatar a guess chip carries. These
@@ -1223,7 +1285,27 @@
 }
 
 .track__meta--score {
+    color: var(--accent);
+}
+
+/* Two numbers per row, so they need to be told apart at a glance rather than
+   read: the room's verdict in the love colour, the banked total in the accent
+   the claim uses everywhere else. */
+.track__meta--love {
     color: var(--love);
+}
+
+.final-list__scores {
+    display: inline-flex;
+    align-items: baseline;
+    gap: var(--sp-2);
+    font-variant-numeric: tabular-nums;
+}
+
+.final-list__legend {
+    margin-bottom: var(--sp-2);
+    color: var(--faint);
+    font-size: var(--fs-micro);
 }
 
 /* ------------------------------------------------------------------- lobby */
@@ -1418,68 +1500,15 @@
 
 /* ------------------------------------------------------------------ finale */
 
-.boards {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: var(--sp-4);
-}
-
-.board__blurb {
+.takeaway__blurb {
     margin-bottom: var(--sp-3);
     color: var(--faint);
     font-size: var(--fs-micro);
 }
 
-.scores {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-}
-
-.scores li {
-    display: flex;
-    align-items: center;
-    gap: var(--sp-2);
-    padding: 0.45rem 0.55rem;
-    border-radius: var(--r-sm);
-    font-size: var(--fs-base);
-}
-
-.scores li.is-winner {
-    background: var(--surface-2);
-}
-
-.scores__rank {
-    min-width: 1.4em;
-    color: var(--faint);
-    font-size: var(--fs-micro);
-    font-variant-numeric: tabular-nums;
-}
-
-.scores__name {
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.scores__pts {
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
-}
-
-.board--selector .is-winner .scores__pts {
-    color: var(--love);
-}
-
-.board--detective .is-winner .scores__pts {
-    color: var(--detective);
-}
-
 .awards {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
     gap: var(--sp-3);
 }
 
@@ -1487,6 +1516,9 @@
     display: flex;
     flex-direction: column;
     gap: var(--sp-1);
+    /* Wider floor: at 190px the blurb wrapped to three ragged lines and the
+       winners piled up underneath it. */
+    min-width: 0;
     padding: var(--sp-4);
     border: 1px solid var(--line);
     border-radius: var(--r-md);
@@ -1501,7 +1533,7 @@
     color: var(--accent);
 }
 
-.award--detective .award__glyph {
+.award--people .award__glyph {
     font-variant-emoji: text;
     color: var(--detective);
 }
@@ -1517,15 +1549,23 @@
     line-height: 1.45;
 }
 
+/* One winner per line. Wrapping them inline is what produced the pile: with
+   five names they reflowed into a ragged block with no reading order, and every
+   card ended up a different height. */
 .award__winners {
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: flex-start;
     gap: 0.3rem;
     margin-top: var(--sp-2);
+    list-style: none;
 }
 
+/* Pinned to the bottom, so the numbers line up across a row of cards however
+   many winners each of them has. */
 .award__value {
-    margin-top: var(--sp-1);
+    margin-top: auto;
+    padding-top: var(--sp-2);
     color: var(--muted);
     font-size: var(--fs-micro);
     font-weight: 600;
@@ -1766,10 +1806,6 @@
 
 .reveal__votes li.is-wrong {
     color: var(--faint);
-}
-
-.board {
-    min-width: 0;
 }
 
 .locale--compact .locale__option {

@@ -30,7 +30,11 @@ export function AnswerBar({ answer, disabled, onAnswer }: AnswerBarProps) {
     ] as const;
 
     return (
-        <>
+        // One block, laid out top to bottom by itself. Returning the scale, the
+        // toggles and the note as three loose siblings put them on one line of
+        // the parent's flex row, where they jammed together and wrapped at
+        // whatever point the container happened to run out.
+        <div className="answer">
             <div className="rate" role="radiogroup" aria-label={t.answer.likeTitle}>
                 <span className="rate__slot">
                     <span className="rate__stars">
@@ -74,12 +78,8 @@ export function AnswerBar({ answer, disabled, onAnswer }: AnswerBarProps) {
                 })}
             </div>
 
-            {like === undefined ? (
-                <p className="muted">{t.answer.unsigned}</p>
-            ) : (
-                <p className="muted">{t.answer.honesty}</p>
-            )}
-        </>
+            <p className="answer__note">{like === undefined ? t.answer.unsigned : t.answer.honesty}</p>
+        </div>
     );
 }
 

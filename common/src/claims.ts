@@ -17,15 +17,22 @@
  *
  * Pure functions over a round's answers, no game state, fully tested.
  */
-import type { AnswerRecord, ClaimId } from './types.js';
+import { RATING_MAX, type AnswerRecord, type ClaimId } from './types.js';
 
 /** Where a claim that misses bottoms out. Half of what the room actually gave. */
 export const CLAIM_FLOOR = 0.5;
 
 /** A like at or above this counts as "they loved it". */
 export const LOVED_AT = 4;
-/** A like at or below this counts as "they did not". */
-export const HATED_AT = 1;
+
+/**
+ * The widest the room can possibly disagree: half the scale.
+ *
+ * A population standard deviation peaks at half the range, when the answers sit
+ * entirely at both ends — 0s and 5s and nothing between. Dividing by it puts
+ * `spread` on the same 0–1 footing as every other claim's measure.
+ */
+export const MAX_DEVIATION = RATING_MAX / 2;
 
 export interface ClaimDefinition {
     id: ClaimId;
@@ -46,6 +53,9 @@ export const CLAIMS: readonly ClaimDefinition[] = [
     // Scored on identification, so it needs guessing — and needs being named to
     // not be a foregone conclusion.
     { id: 'so-me', limit: 1, minPlayers: 3, needsGuessing: true },
+    // The mirror of it. Nothing stops a player taking both on different tracks:
+    // one you are proud to own, one you would rather nobody pinned on you.
+    { id: 'not-me', limit: 1, minPlayers: 3, needsGuessing: true },
     { id: 'divisive', limit: 1, minPlayers: 3, needsGuessing: false },
 ];
 
@@ -85,18 +95,27 @@ export function freshness(answers: readonly AnswerRecord[]): number {
 }
 
 /**
- * How cleanly the room split, from 0 (unanimous) to 1 (evenly divided).
+ * How far apart the room was, from 0 (unanimous) to 1 (as split as it gets).
  *
- * The product of the two shares peaks at a dead-even split and collapses to zero
- * the moment one camp is empty — so a track nobody dislikes scores nothing here
- * however loved it is, and neither does one nobody loves. There is no way to
- * farm it with something merely annoying.
+ * The root-mean-square distance from the room's own average, normalised against
+ * the widest disagreement the scale allows.
+ *
+ * This replaced counting how many landed either side of a threshold, which was
+ * a step function pretending to be a measure: one listener moving from 3 to 4
+ * swung the multiplier hard, while a room that answered 5, 5, 3, 3 scored zero
+ * despite plainly disagreeing. Deviation reads every answer, and reads the
+ * *size* of each disagreement rather than just which side of a line it fell on.
+ *
+ * A track everybody disliked still barely pays: the deviation is small, and it
+ * multiplies a base that is close to zero anyway.
  */
 export function spread(answers: readonly AnswerRecord[]): number {
-    if (answers.length === 0) return 0;
-    const loved = answers.filter(answer => answer.like >= LOVED_AT).length;
-    const hated = answers.filter(answer => answer.like <= HATED_AT).length;
-    return Math.min(1, (4 * loved * hated) / (answers.length * answers.length));
+    // One answer has nothing to be far from, and cannot split a room.
+    if (answers.length < 2) return 0;
+    const mean = answers.reduce((sum, answer) => sum + answer.like, 0) / answers.length;
+    const variance =
+        answers.reduce((sum, answer) => sum + (answer.like - mean) ** 2, 0) / answers.length;
+    return Math.min(1, Math.sqrt(variance) / MAX_DEVIATION);
 }
 
 export interface ClaimOutcome {
@@ -116,9 +135,63 @@ export function claimMultiplier(outcome: ClaimOutcome): number {
             return CLAIM_FLOOR + shareOf(outcome.answers, answer => answer.moved);
         case 'so-me':
             return CLAIM_FLOOR + identificationRate(outcome.votes);
+        case 'not-me':
+            // Pays on getting away with it, and pays nothing at all if nobody
+            // guessed either way — hiding from a room that never looked is not
+            // the same as hiding from one that did.
+            return outcome.votes.length === 0
+                ? CLAIM_FLOOR
+                : CLAIM_FLOOR + (1 - identificationRate(outcome.votes));
         case 'divisive':
             return CLAIM_FLOOR + spread(outcome.answers);
         case 'none':
             return 1;
+    }
+}
+
+/**
+ * The counts behind a claim's multiplier, so the reveal can show its working.
+ *
+ * Derived here rather than recounted in the UI: if the reveal explained a claim
+ * with numbers the scoring did not actually use, it would be worse than showing
+ * nothing at all.
+ */
+export type ClaimEvidence =
+    | { kind: 'share'; hit: number; of: number }
+    /** How far apart the room was, as a percentage of the widest possible. */
+    | { kind: 'spread'; percent: number }
+    | null;
+
+export function claimEvidence(outcome: ClaimOutcome): ClaimEvidence {
+    const answers = outcome.answers;
+    const share = (predicate: (answer: AnswerRecord) => boolean): ClaimEvidence => ({
+        kind: 'share',
+        hit: answers.filter(predicate).length,
+        of: answers.length,
+    });
+
+    switch (outcome.claim.id) {
+        case 'never-heard':
+            return share(answer => !answer.heard);
+        case 'unanimous':
+            return share(answer => answer.like >= LOVED_AT);
+        case 'emotional':
+            return share(answer => answer.moved);
+        case 'so-me':
+            return {
+                kind: 'share',
+                hit: outcome.votes.filter(vote => vote.correct).length,
+                of: outcome.votes.length,
+            };
+        case 'not-me':
+            return {
+                kind: 'share',
+                hit: outcome.votes.filter(vote => !vote.correct).length,
+                of: outcome.votes.length,
+            };
+        case 'divisive':
+            return { kind: 'spread', percent: Math.round(spread(answers) * 100) };
+        case 'none':
+            return null;
     }
 }

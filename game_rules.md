@@ -76,7 +76,8 @@ gives you, and then they find out what you were playing for.
 | **Everyone will like this** | how many gave it 4 or 5; one holdout costs you | 3+ players |
 | **This will get to you** | how many say it moved them, whether or not they liked it | any table |
 | **You will know it was me** | how many named you correctly — and it makes you easier to name all night | 3+ players, guessing on |
-| **This will split the room** | an even split of loved (4–5) and not (0–1); agreement scores nothing | 3+ players |
+| **You will never guess it was me** | how many looked elsewhere; nothing at all if the room never guessed | 3+ players, guessing on |
+| **This will split the room** | how far apart the answers landed; agreement scores nothing | 3+ players |
 
 Each claim is **one a night**, so the whole decision is which of your tracks
 deserves which bet. A claim that came true completely pays **half as much
@@ -93,14 +94,18 @@ line available.
 
 Three things worth knowing:
 
-- **Splitting the room needs both camps.** Unanimous praise scores nothing here,
-  and so does unanimous contempt — you cannot farm it with something merely
-  annoying.
+- **Splitting the room is measured, not counted.** It is the root-mean-square
+  distance between the answers, so it reads the *size* of each disagreement
+  rather than which side of a line it fell on: 5 against 1 beats 5 against 4, and
+  a room that answered 5, 5, 3, 3 has still disagreed. A track everybody disliked
+  barely pays — the spread is small, and it multiplies a base near zero anyway.
 - **Getting to someone is not the same as being liked.** A track can wreck a
   listener who gives it a 1, and that still pays.
-- **Being recognised cuts both ways.** *You will know it was me* is the one claim
-  that costs you elsewhere: the easier you are to name, the worse you do at being
-  the Ghost.
+- **Being recognised cuts both ways.** *You will know it was me* costs you
+  elsewhere: the easier you are to name, the worse you do at being the Ghost. Its
+  mirror, *you will never guess it was me*, pays for exactly what the first one
+  spends — and pays nothing at all if the room never guessed, because hiding from
+  people who were not looking is not hiding.
 
 Claims are locked when the music starts. It is a bet, made blind, or it is
 nothing.
@@ -119,6 +124,13 @@ The running order is built **once**, when the game starts:
 - each DJ contributes a random subset of what they queued;
 - the order is shuffled, then rearranged so the **same DJ never plays twice in a
   row** whenever that's mathematically possible.
+
+Note what "no two in a row" does *not* mean: the order is not a rotation. Every
+DJ contributes the same number of tracks, so a naive interleave would produce
+ABCABC and hand the room the whole running order after one cycle. Ties are
+broken at random at every step instead. With a small table the constraint still
+forces some of the order — at three players, after two tracks the third is
+determined — and the room gets less predictable the more people are in it.
 
 ### 5. Each round
 
@@ -187,8 +199,7 @@ four called it popular, the 24 would have become 18, and 27 after the claim.
 Everyone except the DJ picks a name. Change your guess as often as you like —
 nothing is locked until the host reveals.
 
-Guessing **wins you no points**. It feeds the DJ's *you will know it was me*
-claim, and it decides two of the trophies at the end. It is played for the fun
+A correct guess is **+1 to you**. It also feeds the DJ's identity claims, and it decides two of the trophies at the end. It is played for the fun
 of being right, which turns out to be enough.
 
 #### If it's your track
@@ -199,8 +210,13 @@ of tension, and the only round of the night you spend as the audience.
 
 ---
 
-**The host cannot reveal until everyone still connected has voted.** Cutting the
-room off mid-vote used to be possible and it threw away real answers.
+**The round ends when everybody presses Done.** No host action, no waiting on
+somebody to notice — the last Done reveals the track.
+
+The host can still reveal by hand, but **not until everyone still connected has
+voted**. That is the fallback for a room where somebody never gets round to
+pressing anything; cutting the room off mid-vote used to be possible and it threw
+away real answers.
 
 Waiting cannot strand the night either: anyone who closes their laptop drops out
 of the count the moment their socket goes, so the round becomes revealable on its
@@ -210,45 +226,71 @@ shows how many are still deciding, so the host can choose to wait.
 
 ### 6. The reveal
 
-Everyone sees who the DJ was, what they claimed, every guess, who fell for the
-whether the claim landed — and **every answer, with a name against it**. That attribution is
-not decoration; it is the only thing holding rule zero up.
+Everyone sees who the DJ was, what they claimed, every guess, whether the claim
+landed — and **every answer, with a name against it**. That attribution is not
+decoration; it is the only thing holding rule zero up.
 
-The score shows its working in three lines: what the room gave, what calling it
-popular took back, and what the claim did to the remainder.
+**The score shows every step of its working**, in the order it happens: what each
+listener's answer came to, those added up, divided by how many answered and
+scaled back to the table, then the popularity tax, then the claim, then the
+total.
+
+Each step that scales the running figure prints **which number became which** —
+`10 → 8` — rather than the multiplier that did it. A bare "×0.5" never said half
+of *what*, and left the reader to work out it meant the line above.
 
 ---
 
-## One score
+## One score, and nobody wins it
 
 Everything you score, you score as a DJ: what your tracks did to the room, put
 through your claim. Nothing else on the night is worth a point. Reading the room
 is still played and still wins trophies — it no longer pays.
 
+**The finale has no leaderboard, and there is no trophy for the highest total.**
+The score exists to make the choices during the night matter — which track, which
+claim — not to rank the people at the end of it. What the finale shows instead is
+the music: which tracks the room rated highest, and which ones you personally are
+taking home.
+
 ## What you take home
 
-The setlist is a record of the night; it is nobody's playlist. So the finale
-also hands each player **their own takeaway** — every track *they* rated four or
+The finale lists every track that played, **ranked by what the room gave it**
+rather than by running order — each row still carries the position it played in,
+and two separate numbers:
+
+- **♥** what the room gave: the likes, plus novelty and emotion.
+- **★** what the DJ banked: that same figure once the popularity tax and their
+  claim had their say.
+
+They are kept apart on purpose. The first is the room's honest verdict on the
+music; the second is the result of a gamble the DJ took before the night began,
+and it has no business moving a track up a chart of what people liked. The
+ranking follows the first.
+
+That is the night's chart, though, not anybody's playlist. So the finale also
+hands each player **their own takeaway** — every track *they* rated four or
 more, with who played it, copyable in one click. That is the part you keep.
 
 ## Awards
 
-Six at the end. **Ties are shared, never broken arbitrarily**, and an award
-nobody earned simply isn't given.
+Five at the end. **Ties are shared, never broken arbitrarily**, an award nobody
+earned simply isn't given — and neither is one the whole room ties for. "Deep
+Cut, 100%, everybody" is a fact about the night, not a trophy.
 
 | Award | Won by |
 |---|---|
-| ♥ **Crowd Favourite** | Scored the most across the night |
 | ★ **Track of the Night** | The single track the room rated highest |
 | ☄ **Deep Cut** | Brought the track fewest people had heard — and it landed |
 | ⚡ **Gut Punch** | Played the track that got to the most people |
 | ◎ **Human Shazam** | Named the most DJs correctly |
 | ☾ **The Ghost** | Lowest *rate* of being correctly identified |
 
-Track of the Night is judged on what the room gave, **before** the DJ's claim
-touches it, so a lucky bet can never crown a track the room liked less. The
-Ghost is scored as a percentage, not a count, so it can't be won by simply
-queueing more tracks than everyone else.
+Every one of them is about a track or a knack, never about a total. Track of the
+Night is judged on what the room gave **before** the DJ's claim touches it, so a
+lucky bet can never crown a track the room liked less. The Ghost is scored as a
+percentage, not a count, so it can't be won by simply queueing more tracks than
+everyone else.
 
 ---
 

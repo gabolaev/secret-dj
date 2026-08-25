@@ -43,6 +43,41 @@ describe('buildSetlist', () => {
         }
     });
 
+    it('does not settle into a fixed rotation', () => {
+        // The bug this guards: the interleave loop consulted the RNG exactly
+        // never. Every DJ contributes the same number of tracks, so the buckets
+        // were always equal and "take the first of the largest" produced a
+        // perfect repeating rotation — ABCABC, every single night. Only the
+        // starting player varied, so after one cycle the room knew the DJ of
+        // every remaining track and the guessing game was over.
+        const input = entries({ ana: 2, bo: 2, cy: 2, di: 2 });
+        const orders = new Set<string>();
+        for (let seed = 0; seed < 400; seed++) {
+            orders.add(buildSetlist(input, seeded(seed)).map(id => id.slice(0, -1)).join(''));
+        }
+
+        // A pure rotation can only ever produce one order per starting
+        // permutation: 4! = 24. Anything near that means the loop is not random.
+        expect(orders.size).toBeGreaterThan(100);
+
+        // ...and specifically, the second half must not simply repeat the first.
+        const rotations = [...orders].filter(order => {
+            const djs = order.match(/.{1,3}/g)!;
+            return djs.slice(0, 4).join('') === djs.slice(4).join('');
+        });
+        expect(rotations.length).toBeLessThan(orders.size / 4);
+    });
+
+    it('keeps the no-repeat guarantee while breaking ties randomly', () => {
+        const input = entries({ ana: 3, bo: 3, cy: 3 });
+        for (let seed = 0; seed < 200; seed++) {
+            const owners = buildSetlist(input, seeded(seed)).map(id => id.slice(0, -1));
+            for (let i = 1; i < owners.length; i++) {
+                expect(owners[i], `seed ${seed}: ${owners.join(' ')}`).not.toBe(owners[i - 1]);
+            }
+        }
+    });
+
     it('still terminates when one DJ dominates the queue', () => {
         // 5 vs 1: adjacency is unavoidable, but it must not hang or drop tracks.
         const setlist = buildSetlist(entries({ ana: 5, bo: 1 }), seeded(3));

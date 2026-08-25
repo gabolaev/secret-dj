@@ -82,6 +82,23 @@ export function RoundScreen({ view, game }: RoundScreenProps) {
                     </div>
                 )}
 
+                {!revealed && round.canAnswer && (
+                    <div className="rack">
+                        {/* The normal way a round ends. The host's own button is
+                            the fallback for a room where somebody never gets
+                            round to pressing this. */}
+                        <button
+                            type="button"
+                            className={`button button--lg button--block${round.myDone ? '' : ' button--primary'}`}
+                            aria-pressed={round.myDone}
+                            onClick={() => void game.markDone(!round.myDone)}
+                        >
+                            {round.myDone ? t.round.undone : t.round.done}
+                        </button>
+                        <p className="muted">{t.round.doneCount(round.doneIn, round.doneExpected)}</p>
+                    </div>
+                )}
+
                 {!revealed && round.canVote && (
                     <div className="rack">
                         <ChipPicker

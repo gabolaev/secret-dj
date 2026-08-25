@@ -62,6 +62,9 @@ export interface RoundState {
     votes: Map<PlayerId, PlayerId>;
     /** Listener -> what they said. An entry without a `like` has not answered. */
     answers: Map<PlayerId, Answer>;
+    /** Listeners who have said they are finished. When all of them have, the
+     *  round reveals itself — no host action required. */
+    done: Set<PlayerId>;
 }
 
 export interface PlayedRound {

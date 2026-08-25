@@ -1,13 +1,13 @@
 /**
  * Scoring and end-of-night awards. Pure functions, no game state, fully tested.
  *
- * One number per player, and everything you score, you score as a DJ. The model
- * exists to make two decisions matter:
+ * One number per player. The model exists to make three decisions matter:
  *  - the **answer** is a verdict, not a like: how much you liked it, whether it
  *    was new to you, whether it moved you, and whether you reckon everybody
  *    already knows it;
  *  - the **claim** is the DJ's own bet, made blind in the lobby, and it is what
- *    stops "queue what they will all mildly enjoy" from being the best line.
+ *    stops "queue what they will all mildly enjoy" from being the best line;
+ *  - the **guess** pays the listener who names the DJ.
  *
  * Reading the room is still played — guessing feeds the DJ's `so-me` claim and
  * still wins trophies — but it no longer pays points.
@@ -29,6 +29,11 @@ import {
  * Small on purpose: bringing something unheard is worth a nudge on every track,
  * and worth a great deal more if you actually claimed it.
  */
+export const POINTS = {
+    /** To the listener, for naming the DJ behind a track. */
+    correctGuess: 1,
+} as const;
+
 export const NOVELTY_BONUS = 1;
 
 /**
@@ -101,7 +106,6 @@ export interface AwardDefinition {
  * catalogue so they can be translated without touching the rules.
  */
 export const AWARDS: readonly AwardDefinition[] = [
-    { id: 'crowd-favourite', group: 'music', unit: 'points', lowerIsBetter: false },
     { id: 'track-of-the-night', group: 'music', unit: 'points', lowerIsBetter: false },
     { id: 'deep-cut', group: 'music', unit: 'percent', lowerIsBetter: false },
     { id: 'gut-punch', group: 'music', unit: 'listeners', lowerIsBetter: false },
@@ -130,6 +134,12 @@ export interface RoundOutcome {
 export function computeRoundPoints(round: RoundOutcome): PointDelta[] {
     const deltas: PointDelta[] = [];
 
+    for (const vote of round.votes) {
+        if (vote.correct) {
+            deltas.push({ playerId: vote.voterId, points: POINTS.correctGuess, reason: 'correct-guess' });
+        }
+    }
+
     const verdict = roomVerdict(round);
     const drag = obviousnessDrag(round.answers);
     const taxed = verdict * drag;
@@ -153,7 +163,6 @@ export function computeRoundPoints(round: RoundOutcome): PointDelta[] {
 }
 
 interface Tally {
-    pointsReceived: number;
     bestTrackPoints: number;
     bestTrackTitle?: string;
     /** Share of the room the DJ's freshest track was new to, as a percentage. */
@@ -168,7 +177,6 @@ interface Tally {
 
 function emptyTally(): Tally {
     return {
-        pointsReceived: 0,
         bestTrackPoints: 0,
         deepestCut: 0,
         mostMoved: 0,
@@ -192,12 +200,10 @@ export function tallyHistory(history: readonly PlayedTrack[], playerIds: readonl
     for (const played of history) {
         const dj = ensure(played.djId);
         const title = played.track.title ?? played.track.url;
-        // Banked points are what you won; the room's verdict is what ranks
-        // tracks against each other, so a lucky claim cannot crown a track the
-        // room liked less than another.
+        // The room's verdict, not what the claim turned it into: a lucky bet
+        // must not crown a track the room liked less than another.
         const verdict = trackVerdict(played);
 
-        dj.pointsReceived += trackScore(played);
         if (verdict > dj.bestTrackPoints) {
             dj.bestTrackPoints = verdict;
             dj.bestTrackTitle = title;
@@ -254,6 +260,11 @@ function pickWinners(
     if (!Number.isFinite(best) || !isMeaningful(best)) return null;
 
     const winners = candidates.filter(candidate => candidate.value === best);
+    // An award the whole room ties for distinguishes nobody. "Deep Cut, 100%,
+    // five winners" is not a trophy, it is a fact about the night — and it
+    // arrived as a wall of avatars nobody could read.
+    if (candidates.length > 1 && winners.length === candidates.length) return null;
+
     return {
         winners: winners.map(candidate => candidate.playerId),
         value: best,
@@ -275,14 +286,6 @@ export function computeAwards(history: readonly PlayedTrack[], playerIds: readon
         if (result) awards.push({ id, ...result });
     };
 
-    add(
-        'crowd-favourite',
-        pickWinners(
-            entries.map(([playerId, tally]) => ({ playerId, value: tally.pointsReceived })),
-            false,
-            best => best > 0,
-        ),
-    );
 
     add(
         'track-of-the-night',

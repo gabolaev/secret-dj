@@ -23,7 +23,14 @@ function seeded(seed: number): () => number {
  * until both are in, so this fills in the half they are not testing.
  */
 function settle(room: GameRoom, hostId: string): void {
-    for (const player of room.pending().toVote) room.vote(player.id, room.round!.djId);
+    for (const player of room.pending().toVote) {
+        // Guess wrong wherever a wrong answer exists: a correct one pays the
+        // guesser, which would turn up in tests about track scoring.
+        const wrong = room.activePlayers.find(
+            other => other.id !== player.id && other.id !== room.round!.djId,
+        );
+        room.vote(player.id, (wrong ?? room.players.get(room.round!.djId)!).id);
+    }
     room.reveal(hostId);
 }
 
@@ -544,6 +551,77 @@ describe('claims', () => {
     });
 });
 
+describe('finishing a round', () => {
+    it('reveals itself once every listener says they are done', () => {
+        const { room, ids } = setup(['ana', 'bo', 'cy']);
+        room.start(ids.ana);
+        const dj = room.round!.djId;
+        const listeners = Object.values(ids).filter(id => id !== dj);
+
+        for (const id of listeners) {
+            room.vote(id, dj);
+            room.answer(id, { like: 4 });
+        }
+        room.markDone(listeners[0], true);
+        expect(room.phase).toBe('tallying');
+
+        // No host action anywhere in this test: the last "done" ends the round.
+        room.markDone(listeners[1], true);
+        expect(room.phase).toBe('reveal');
+        expect(room.history).toHaveLength(1);
+    });
+
+    it('lets a listener take it back until the last one lands', () => {
+        const { room, ids } = setup(['ana', 'bo', 'cy']);
+        room.start(ids.ana);
+        const dj = room.round!.djId;
+        const listeners = Object.values(ids).filter(id => id !== dj);
+
+        room.markDone(listeners[0], true);
+        room.markDone(listeners[0], false);
+        room.markDone(listeners[1], true);
+        expect(room.phase).not.toBe('reveal');
+
+        room.markDone(listeners[0], true);
+        expect(room.phase).toBe('reveal');
+    });
+
+    it('is the listeners\u2019 call, never the DJ\u2019s', () => {
+        const { room, ids } = setup(['ana', 'bo', 'cy']);
+        room.start(ids.ana);
+        expectError('ANSWER_OWN_TRACK', () => room.markDone(room.round!.djId, true));
+    });
+
+    it('does not fire in an empty room', () => {
+        const { room, ids } = setup(['ana', 'bo']);
+        room.start(ids.ana);
+        const listener = Object.values(ids).find(id => id !== room.round!.djId)!;
+
+        room.detachSocket(listener);
+        // Nobody present has agreed to anything, so nothing reveals itself.
+        expect(room.everyoneDone()).toBe(false);
+        expect(room.phase).not.toBe('reveal');
+    });
+
+    it('banks the same points whichever door the reveal came through', () => {
+        const { room, ids } = setup(['ana', 'bo', 'cy'], { tracksPerPlayer: 1, tracksPlayedPerPlayer: 1 });
+        room.start(ids.ana);
+        const dj = room.round!.djId;
+        const listeners = Object.values(ids).filter(id => id !== dj);
+
+        for (const id of listeners) {
+            room.vote(id, dj);
+            room.answer(id, { like: 4, heard: true });
+        }
+        for (const id of listeners) room.markDone(id, true);
+
+        expect(room.phase).toBe('reveal');
+        // 4 + 4 from the room, and a point each for naming the DJ.
+        expect(room.players.get(dj)!.score).toBe(8);
+        for (const id of listeners) expect(room.players.get(id)!.score).toBe(1);
+    });
+});
+
 describe('the tax on the obvious', () => {
     it('takes half when everybody calls it a hit, and nothing when nobody does', () => {
         const { room, ids } = setup(['ana', 'bo', 'cy'], { tracksPerPlayer: 2, tracksPlayedPerPlayer: 2 });
@@ -625,14 +703,15 @@ describe('scoring and progression', () => {
         room.answer(b, { like: 2, heard: true });
         room.reveal(ids.ana);
 
-        // Naming the DJ wins a trophy at the end, never a point on the night.
-        expect(room.players.get(a)!.score).toBe(0);
+        // a named the DJ and banks a point for it; b guessed wrong.
+        expect(room.players.get(a)!.score).toBe(1);
         expect(room.players.get(b)!.score).toBe(0);
         expect(room.players.get(dj)!.score).toBe(6);
 
-        // Revealing twice must not double-score.
+        // Revealing twice must not double-score, on either side.
         expectError('WRONG_PHASE', () => room.reveal(ids.ana));
         expect(room.players.get(dj)!.score).toBe(6);
+        expect(room.players.get(a)!.score).toBe(1);
     });
 
     it('cannot skip a round by calling next at the wrong time', () => {
@@ -663,12 +742,10 @@ describe('scoring and progression', () => {
         expect(new Set(seen).size).toBe(4);
         expect(room.phase).toBe('finished');
         expect(room.history).toHaveLength(4);
-        expect(room.awards().map(award => award.id).sort()).toEqual([
-            'crowd-favourite',
-            'deep-cut',
-            'human-shazam',
-            'track-of-the-night',
-        ]);
+        // A perfectly symmetric night — both players rated everything a 3 and
+        // named every DJ — distinguishes nobody, so it hands out nothing. An
+        // award the whole room ties for is a fact about the night, not a trophy.
+        expect(room.awards()).toEqual([]);
     });
 
     it('leaves the unplayed tracks out of the setlist and reveals them at the end', () => {

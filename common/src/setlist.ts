@@ -8,7 +8,18 @@
  * v2 builds the whole running order once, up front:
  *  1. shuffle each DJ's own tracks (Fisher-Yates, injectable RNG for tests),
  *  2. interleave by repeatedly taking from whoever has the most tracks left,
- *     never twice in a row while an alternative exists.
+ *     never twice in a row while an alternative exists, **breaking ties at
+ *     random**.
+ *
+ * That last part is load-bearing. Taking the first tied bucket instead made the
+ * whole loop deterministic: every DJ contributes the same number of tracks, so
+ * the buckets are always equal, and the order came out as a perfect repeating
+ * rotation — ABCABC, every night. The only entropy was which player started, so
+ * after the first cycle the room knew the DJ of every remaining track and the
+ * guessing game was over.
+ *
+ * Always taking from a *largest* remaining bucket is what keeps a no-adjacent
+ * arrangement reachable; which of the tied largest is free to be random.
  *
  * The result is a fixed-length setlist with no adjacent repeats whenever one is
  * mathematically possible.
@@ -54,7 +65,9 @@ export function buildSetlist<TId>(entries: readonly SetlistEntry<TId>[], rng: Rn
         // Prefer a different DJ; fall back only when one DJ owns everything left.
         const pool = alternatives.length > 0 ? alternatives : available;
         const maxRemaining = Math.max(...pool.map(bucket => bucket.ids.length));
-        const chosen = pool.find(bucket => bucket.ids.length === maxRemaining)!;
+        const contenders = pool.filter(bucket => bucket.ids.length === maxRemaining);
+        // Clamped: an injected rng that ever returns exactly 1 would index past the end.
+        const chosen = contenders[Math.min(contenders.length - 1, Math.floor(rng() * contenders.length))];
 
         setlist.push(chosen.ids.shift()!);
         previousOwner = chosen.ownerId;

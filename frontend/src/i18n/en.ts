@@ -99,6 +99,15 @@ export const en = {
         yoursOnly: 'Your bet — nobody else sees it until the reveal.',
         needsPlayers: (n: number) => `Needs at least ${n} players in the room`,
         needsGuessing: 'Needs guessing switched on',
+        evidence: {
+            'never-heard': (n: number, of: number) => `${n} of ${of} had not heard it`,
+            unanimous: (n: number, of: number) => `${n} of ${of} gave it 4 or more`,
+            emotional: (n: number, of: number) => `${n} of ${of} say it moved them`,
+            'so-me': (n: number, of: number) => `${n} of ${of} named you`,
+            'not-me': (n: number, of: number) => `${n} of ${of} looked elsewhere`,
+            divisive: (n: number, of: number) => `${n} of ${of}`,
+        },
+        evidenceSpread: (percent: number) => `${percent}% as far apart as the room can get`,
         spent: 'Already played tonight',
         none: {
             title: 'No claim',
@@ -120,11 +129,17 @@ export const en = {
             title: 'You will know it was me',
             blurb: 'Pays on being recognised.',
         },
+        'not-me': {
+            title: 'You will never guess it was me',
+            blurb: 'Pays on getting away with it. Nothing if the room never guessed at all.',
+        },
         divisive: {
             title: 'This will split the room',
             blurb: 'Pays on an even split of loved and hated. Agreement scores nothing.',
         },
     } satisfies {
+        evidence: Record<Exclude<ClaimId, 'none'>, (n: number, of: number) => string>;
+        evidenceSpread: (percent: number) => string;
         label: string;
         hint: string;
         spent: string;
@@ -162,6 +177,9 @@ export const en = {
         openLink: 'Open the link',
         answered: (n: number) => `${en2(n, 'listener', 'listeners')} answered`,
         voted: (n: number, total: number) => `${n}/${total} voted`,
+        done: 'Done',
+        undone: 'Not done yet',
+        doneCount: (n: number, total: number) => `${n} of ${total} finished. The reveal happens on its own once everybody has.`,
         hostReveal: 'Reveal the DJ',
         hostNext: 'Next track',
         hostFinish: 'Close out the night',
@@ -182,7 +200,7 @@ export const en = {
         popularHint: 'A well-known track? The more of you say so, the less it scores for the DJ.',
         moved: 'It got to me',
         movedHint: 'Did it move you? Whether you liked it is a separate question.',
-        unsigned: 'Pick a number to lock your answer in — the toggles alone do not count.',
+        unsigned: 'Pick a number for your answer to count.',
         honesty: 'House rule: answer honestly. Nothing here can be checked, and the game is nothing if it is not true.',
     },
 
@@ -197,19 +215,27 @@ export const en = {
         noGuessing: 'No guessing tonight — just the ratings.',
         correct: 'correct',
         wrong: 'wrong',
+        likedIt: (name: string, n: number) => `${name} liked it ${n} out of 5`,
+        sumLabel: 'What each listener gave',
+        nobodyAnswered: 'nobody answered',
+        scaleLabel: 'Averaged, then scaled to the table',
+        scaleWorking: (total: number, answered: number, listeners: number) =>
+            `${total} ÷ ${answered} answered × ${listeners} listening`,
+        nothingToScale: 'nothing to scale',
+        dragWorking: (n: number, of: number) => `${n} of ${of} called it popular`,
+        timesWorking: (m: string) => `multiplied by ${m}`,
+        noClaim: 'no claim, so nothing changes',
+        unchanged: 'unchanged',
+        totalLabel: (name: string) => `${name} banks`,
+        rowWorking: (name: string) => `${name}: their rating, plus a point if it was new to them, plus two if it moved them`,
+        newTag: (n: number) => `new to them +${n}`,
+        movedTag: (n: number) => `moved +${n}`,
         answersTitle: 'What the room said',
-        verdictLabel: 'The room',
         obviousLabel: 'Popularity',
-        claimResult: (multiplier: string) => `landed at ×${multiplier}`,
-        dragResult: (multiplier: string) => `called popular — ×${multiplier}`,
         noDrag: 'nobody called it popular',
-        knewNobody: 'New to everyone who answered',
-        knewCount: (n: number, total: number) => `${n} of ${total} had heard it`,
-        movedCount: (n: number) => `${en2(n, 'listener', 'listeners')} moved`,
         silent: (n: number) => `${en2(n, 'listener', 'listeners')} said nothing`,
         heardTag: 'heard it',
         popularTag: 'popular',
-        movedTag: 'moved',
         toughCrowd: 'Nobody said a word.',
         // Claims can go backwards, so the sign has to come from the number.
         points: (n: number) => (n < 0 ? `−${Math.abs(n)}` : `+${n}`),
@@ -225,8 +251,9 @@ export const en = {
         takeawayEmpty: 'Nothing moved you tonight. Harsh.',
         copyTakeaway: 'Copy your playlist',
         copyTakeawayHeader: (room: string) => `Secret DJ — my takeaway from room ${room}`,
-        board: 'The night',
-        boardBlurb: 'What your tracks did to the room',
+        setlistLegend: '♥ what the room gave · ★ what it came to after the DJ\u2019s claim',
+        loveTitle: 'What the room gave it',
+        totalTitle: 'What it came to after the claim',
         setlist: 'The setlist',
         unplayed: 'The ones that got away',
         leave: 'Leave the room',
@@ -235,10 +262,6 @@ export const en = {
     },
 
     awards: {
-        'crowd-favourite': {
-            title: 'Crowd Favourite',
-            blurb: 'Scored the most across the night',
-        },
         'track-of-the-night': {
             title: 'Track of the Night',
             blurb: 'The single track that moved the most people',
@@ -286,7 +309,7 @@ export const en = {
             },
             {
                 head: 'Zero to five.',
-                body: 'How much you liked it, and it is the signature on your whole answer — the three toggles count for nothing until you pick a number. Say nothing at all and you are simply not counted.',
+                body: 'How much you liked it. Nothing you say about a track counts until you have picked a number, and if you say nothing at all you are simply not counted.',
             },
             {
                 head: 'The popularity tax.',
@@ -294,11 +317,11 @@ export const en = {
             },
             {
                 head: 'Guess the DJ.',
-                body: 'Everyone except the DJ picks a name. It wins you no points — it feeds the DJ\'s claim, and the trophies at the end.',
+                body: 'Everyone except the DJ picks a name. Get it right and you bank a point — and either way it feeds the DJ\'s claim and the trophies at the end.',
             },
             {
                 head: 'One score.',
-                body: 'Everything you score, you score as a DJ: what your tracks did to the room, put through your claim. Nothing else on the night is worth a point.',
+                body: 'Your tracks, put through your claim, plus a point for every DJ you name correctly. There is no leaderboard at the end — the score is there to make the choices matter, not to rank the room.'
             },
         ],
         claimsTitle: 'The claims',
@@ -316,6 +339,7 @@ export const en = {
             obviousBody: 'The more listeners tick "popular", the smaller that total gets. Nobody ticked it — nothing changes. Half of them did — a quarter comes off. All of them did — the track is worth half.',
             claimTitle: 'Then: your claim',
             claimBody: 'Your claim scales whatever is left. It came true completely — half as much again. It half came true — nothing changes. It did not come true at all — the track is worth half. A track with no claim is left alone, which is exactly what makes no claim the safe play.',
+            guessLine: { what: 'You named the DJ correctly', points: '+1, to you' },
             example:
                 'Four listeners, all four answer: 5, 4, 4 and 3 makes 16. None of them had heard it, so +1 each — 20. Two of them were moved, +2 each — 24. Nobody ticked "popular", so it stays 24. The claim "you had never heard this" came true completely, half as much again: 36 points. Had two of the four ticked it, the 24 would have become 18, and 27 after the claim.',
         },

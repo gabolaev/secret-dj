@@ -22,6 +22,23 @@ const DEFAULT_TIMEOUT_MS = 6_000;
 const MAX_REDIRECTS = 5;
 const MAX_BODY_BYTES = 512 * 1024;
 
+/**
+ * Transient failures get another go; permanent ones do not.
+ *
+ * A 404 means the video is gone and will still be gone in a second. A timeout,
+ * a refused connection or a 5xx means we asked at a bad moment — and without a
+ * retry that difference was invisible, because both came back as `null` and the
+ * caller cached the failure for six hours.
+ */
+const RETRY_ATTEMPTS = 3;
+const RETRY_BASE_DELAY_MS = 250;
+
+function isTransientStatus(status: number): boolean {
+    return status === 408 || status === 425 || status === 429 || status >= 500;
+}
+
+const sleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
+
 export class UnsafeUrlError extends Error {
     constructor(message: string) {
         super(message);
@@ -108,6 +125,7 @@ export interface FetchOptions {
     method?: 'GET' | 'HEAD';
     /** Set for user-supplied URLs. Restricts hosts to supported music services. */
     musicHostsOnly?: boolean;
+    accept?: string;
 }
 
 async function guardedFetch(url: URL, options: FetchOptions): Promise<Response> {
@@ -123,7 +141,7 @@ async function guardedFetch(url: URL, options: FetchOptions): Promise<Response> 
             method: options.method ?? 'GET',
             redirect: 'manual',
             signal: controller.signal,
-            headers: { 'user-agent': USER_AGENT, accept: '*/*' },
+            headers: { 'user-agent': USER_AGENT, accept: options.accept ?? '*/*' },
         });
     } finally {
         clearTimeout(timer);
@@ -165,11 +183,36 @@ export async function resolveMusicUrl(rawUrl: string, options: FetchOptions = {}
  * Fetch JSON from an endpoint *we* chose (oEmbed providers, public APIs).
  * Still timed, size-capped and address-checked, but not host-restricted.
  */
+/**
+ * Retries only what is worth retrying, with a widening gap between attempts.
+ *
+ * Returns the last response either way: a permanent status is the caller's
+ * answer, not an error, and a thrown network failure on the final attempt is
+ * still thrown so the caller can tell "no answer" from "an answer of no".
+ */
+async function fetchWithRetry(target: URL, options: FetchOptions): Promise<Response> {
+    let lastError: unknown;
+    for (let attempt = 0; attempt < RETRY_ATTEMPTS; attempt++) {
+        if (attempt > 0) await sleep(RETRY_BASE_DELAY_MS * 2 ** (attempt - 1));
+        try {
+            const response = await guardedFetch(target, options);
+            if (!isTransientStatus(response.status)) return response;
+            await response.body?.cancel().catch(() => undefined);
+            lastError = new Error(`${target.hostname} answered ${response.status}`);
+        } catch (error) {
+            // An unsafe URL is a verdict, not a hiccup — never retry it.
+            if (error instanceof UnsafeUrlError) throw error;
+            lastError = error;
+        }
+    }
+    throw lastError instanceof Error ? lastError : new Error(`${target.hostname} did not answer`);
+}
+
 export async function fetchJson<T>(url: string, options: FetchOptions = {}, redirectsLeft = MAX_REDIRECTS): Promise<T | null> {
     const target = parseUrl(url);
     if (!target) return null;
 
-    const response = await guardedFetch(target, options);
+    const response = await fetchWithRetry(target, options);
     if (response.status >= 300 && response.status < 400) {
         const location = response.headers.get('location');
         await response.body?.cancel().catch(() => undefined);
@@ -217,4 +260,29 @@ async function readCapped(response: Response): Promise<string | null> {
         return null;
     }
     return Buffer.concat(chunks.map(chunk => Buffer.from(chunk))).toString('utf8');
+}
+
+/**
+ * Fetches a page body, capped and guarded exactly like `fetchJson`.
+ *
+ * Exists for services with no metadata API at all: Yandex Music describes a
+ * track only in its OpenGraph tags, and without this every Yandex link in the
+ * room was titled "Track".
+ */
+export async function fetchText(url: string, options: FetchOptions = {}, redirectsLeft = MAX_REDIRECTS): Promise<string | null> {
+    const target = parseUrl(url);
+    if (!target) return null;
+
+    const response = await fetchWithRetry(target, { ...options, accept: 'text/html' });
+    if (response.status >= 300 && response.status < 400) {
+        const location = response.headers.get('location');
+        await response.body?.cancel().catch(() => undefined);
+        if (!location || redirectsLeft <= 0) return null;
+        return fetchText(new URL(location, target).toString(), options, redirectsLeft - 1);
+    }
+    if (!response.ok) {
+        await response.body?.cancel().catch(() => undefined);
+        return null;
+    }
+    return readCapped(response);
 }

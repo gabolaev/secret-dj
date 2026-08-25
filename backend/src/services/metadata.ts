@@ -15,7 +15,7 @@ import {
     parseUrl,
     type ServiceId,
 } from '@secret-dj/common';
-import { fetchJson, resolveMusicUrl } from '../net/safeFetch.js';
+import { fetchJson, fetchText, resolveMusicUrl } from '../net/safeFetch.js';
 
 export interface TrackMetadata {
     title: string;
@@ -29,6 +29,14 @@ interface CacheEntry {
 }
 
 const CACHE_TTL_MS = 6 * 60 * 60_000;
+/**
+ * A miss is remembered for a minute, not six hours.
+ *
+ * Failures used to be cached for the full TTL, so one bad moment — a timeout, a
+ * rate limit — meant that song stayed untitled for the rest of the night and
+ * every retry was answered from the cache without ever asking again.
+ */
+const MISS_TTL_MS = 60_000;
 const CACHE_MAX_ENTRIES = 2_000;
 const MAX_CONCURRENT = 6;
 
@@ -81,7 +89,7 @@ export class MetadataService {
     }
 
     private remember(key: string, value: TrackMetadata | null): void {
-        this.cache.set(key, { value, expiresAt: this.now() + CACHE_TTL_MS });
+        this.cache.set(key, { value, expiresAt: this.now() + (value ? CACHE_TTL_MS : MISS_TTL_MS) });
         while (this.cache.size > CACHE_MAX_ENTRIES) {
             const oldest = this.cache.keys().next();
             if (oldest.done) break;
@@ -125,11 +133,18 @@ export class MetadataService {
             deezer: u => this.fromDeezer(u),
             'apple-music': u => this.fromAppleMusic(u),
             tidal: u => this.fromOEmbed(`https://embed.tidal.com/oembed?url=${encodeURIComponent(u)}`),
-            'yandex-music': async () => null,
+            // Yandex has no metadata API of any kind; the page's OpenGraph tags
+            // are the only description of the track that exists.
+            'yandex-music': u => this.fromOpenGraph(u),
         };
 
         const metadata = await byService[service.id](url).catch(() => null);
-        return metadata ?? titleFromUrl(url);
+        if (metadata) return metadata;
+
+        // Second chance before giving up: plenty of pages carry OpenGraph tags
+        // even when their oEmbed endpoint 404s on that particular item.
+        const og = await this.fromOpenGraph(url).catch(() => null);
+        return og ?? titleFromUrl(url);
     }
 
     private async fromOEmbed(endpoint: string): Promise<TrackMetadata | null> {
@@ -139,6 +154,32 @@ export class MetadataService {
             title: data.title,
             artist: data.author_name,
             artwork: data.thumbnail_url,
+        };
+    }
+
+    /** Reads a page's own OpenGraph description of itself. */
+    private async fromOpenGraph(url: string): Promise<TrackMetadata | null> {
+        const html = await fetchText(url);
+        if (!html) return null;
+
+        const title = metaContent(html, 'og:title') ?? metaContent(html, 'twitter:title');
+        // A shell page describes the *site*, not the song. Accepting that gave
+        // us "Apple Music Web Player" as a track name — the same failure dressed
+        // up as a success that this whole path exists to stop.
+        if (!title || isGenericTitle(title, metaContent(html, 'og:site_name'))) return null;
+
+        // Yandex writes "Track — Artist" into og:title and names the artist in
+        // the description; splitting the title is the only way to separate them.
+        const [name, ...rest] = title.split(' — ');
+        const artist =
+            metaContent(html, 'og:audio:artist') ??
+            metaContent(html, 'music:musician') ??
+            (rest.length > 0 ? rest.join(' — ') : undefined);
+
+        return {
+            title: rest.length > 0 ? name : title,
+            artist,
+            artwork: metaContent(html, 'og:image'),
         };
     }
 
@@ -179,12 +220,45 @@ export class MetadataService {
     }
 }
 
-/** Last resort: make something readable out of the URL's own slug. */
+/**
+ * Routing segments, not titles. `youtube.com/watch` is not a song called
+ * "Watch", and `music.yandex.ru/album/1/track/2` is not one called "Track" —
+ * but that is exactly what this function used to return, for every YouTube and
+ * Yandex link in the room. Worse, returning *something* marked the lookup as
+ * having succeeded, so the failure was invisible and never retried.
+ */
+const ROUTING_SEGMENTS = new Set([
+    'watch', 'track', 'album', 'song', 'video', 'embed', 'playlist', 'set', 'sets',
+    'artist', 'release', 'browse', 'listen', 'music', 'intl', 'episode', 'show',
+]);
+
+/**
+ * True for the opaque ids services put in their URLs.
+ *
+ * `5msuIqHufF7G9Nnz1EbjFU` and `PzDupYdobnU` are not titles either, and dressing
+ * them up as one is worse than admitting we do not know: a player reading
+ * "PzDupYdobnU" has no idea whether that is the song or a bug.
+ */
+function looksLikeAnId(slug: string): boolean {
+    if (/[ _+-]/.test(slug)) return false;
+    if (slug.length >= 11 && /\d/.test(slug) && /[a-z]/i.test(slug)) return true;
+    return /^[0-9a-f]{16,}$/i.test(slug) || /^\d+$/.test(slug);
+}
+
+/** Last resort: make something readable out of the URL's own slug, or admit defeat. */
 export function titleFromUrl(rawUrl: string): TrackMetadata | null {
     const url = parseUrl(rawUrl);
     if (!url) return null;
     const segments = url.pathname.split('/').filter(Boolean);
-    const slug = [...segments].reverse().find(part => !/^\d+$/.test(part) && part.length > 2);
+    const slug = [...segments]
+        .reverse()
+        .find(
+            part =>
+                part.length > 2 &&
+                !ROUTING_SEGMENTS.has(part.toLowerCase()) &&
+                !/^[a-z]{2}(-[a-z]{2})?$/i.test(part) &&
+                !looksLikeAnId(part),
+        );
     if (!slug) return null;
 
     const title = decodeURIComponent(slug)
@@ -195,3 +269,51 @@ export function titleFromUrl(rawUrl: string): TrackMetadata | null {
 
     return title ? { title } : null;
 }
+
+/** `<meta property="og:x" content="y">`, in either attribute order. */
+function metaContent(html: string, property: string): string | undefined {
+    const escaped = property.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const patterns = [
+        new RegExp(`<meta[^>]+(?:property|name)=["']${escaped}["'][^>]*content=["']([^"']*)["']`, 'i'),
+        new RegExp(`<meta[^>]+content=["']([^"']*)["'][^>]*(?:property|name)=["']${escaped}["']`, 'i'),
+    ];
+    for (const pattern of patterns) {
+        const match = pattern.exec(html);
+        if (match?.[1]) return decodeEntities(match[1]).trim() || undefined;
+    }
+    return undefined;
+}
+
+function decodeEntities(value: string): string {
+    return value
+        .replace(/&quot;/g, '"')
+        .replace(/&#0?39;/g, "'")
+        .replace(/&apos;/g, "'")
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&amp;/g, '&');
+}
+
+/** True when a page's OpenGraph title describes the service, not the track. */
+export function isGenericTitle(title: string, siteName?: string): boolean {
+    const normalised = title.trim().toLowerCase();
+    if (siteName && normalised === siteName.trim().toLowerCase()) return true;
+    if (/\bweb player\b/i.test(normalised)) return true;
+    return GENERIC_TITLES.has(normalised);
+}
+
+const GENERIC_TITLES = new Set([
+    'spotify',
+    'youtube',
+    'youtube music',
+    'apple music',
+    'soundcloud',
+    'deezer',
+    'tidal',
+    'bandcamp',
+    'yandex music',
+    'яндекс музыка',
+    'яндекс.музыка',
+    'музыка',
+]);

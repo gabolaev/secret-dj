@@ -116,6 +116,11 @@ function projectRound(room: GameRoom, viewerId: PlayerId): RoundView | undefined
         // come, never which of them, so it cannot single the DJ out.
         answersExpected: Math.max(room.answersIn(), room.listenerCount()),
         isReady: room.isRoundReady,
+        // Aggregates only, like the vote counter: how many are finished, never
+        // which of them, so the DJ cannot be picked out of the pattern.
+        myDone: round.done.has(viewerId),
+        doneIn: round.done.size,
+        doneExpected: Math.max(round.done.size, room.listenerCount()),
         votesIn,
         // A voter who disconnects after voting must not make the counter read 3/2.
         votersExpected: Math.max(votesIn, room.eligibleVoters().length),

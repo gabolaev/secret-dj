@@ -174,7 +174,7 @@ describe('computeRoundPoints', () => {
         expect(points.some(delta => delta.reason === 'obviousness')).toBe(false);
     });
 
-    it('pays nobody for guessing, however many get it right', () => {
+    it('pays a point to whoever named the DJ, and nothing to whoever missed', () => {
         const points = computeRoundPoints({
             djId: 'ana',
             claim: DEFAULT_CLAIM,
@@ -185,7 +185,7 @@ describe('computeRoundPoints', () => {
                 { voterId: 'cy', correct: false },
             ],
         });
-        expect(points).toEqual([]);
+        expect(points).toEqual([{ playerId: 'bo', points: 1, reason: 'correct-guess' }]);
     });
 
     it('awards nothing when nothing happened', () => {
@@ -266,26 +266,22 @@ describe('computeAwards', () => {
             played(1, { dj: 'ana', said: [['bo', 5, { heard: true }], ['cy', 5, { heard: true }]] }),
             played(2, { dj: 'bo', claim: 'never-heard', said: [['ana', 3], ['cy', 3]] }),
         ];
-        const awards = computeAwards(history, players);
-
-        // The room gave ana's track more (10 against 8)...
-        const best = awards.find(award => award.id === 'track-of-the-night');
+        // The room gave ana's track more (10 against 8), even though bo's bet
+        // landed and banked bo more.
+        const best = computeAwards(history, players).find(award => award.id === 'track-of-the-night');
         expect(best?.winners).toEqual(['ana']);
+        expect(best?.value).toBe(10);
         expect(best?.detail).toBe('Track t1');
-
-        // ...but bo's bet landed, so bo banked more across the night.
-        const favourite = awards.find(award => award.id === 'crowd-favourite');
-        expect(favourite?.winners).toEqual(['bo']);
-        expect(favourite?.value).toBe(12);
     });
 
     it('shares ties instead of picking by array order', () => {
         const history = [
-            played(1, { dj: 'ana', said: [['bo', 4, { heard: true }], ['cy', 1, { heard: true }]] }),
-            played(2, { dj: 'bo', said: [['ana', 2, { heard: true }], ['cy', 3, { heard: true }]] }),
+            played(1, { dj: 'ana', said: [['bo', 5, { heard: true }], ['cy', 1, { heard: true }]] }),
+            played(2, { dj: 'bo', said: [['ana', 4, { heard: true }], ['cy', 2, { heard: true }]] }),
         ];
-        const favourite = computeAwards(history, players).find(award => award.id === 'crowd-favourite');
-        expect(favourite?.winners.sort()).toEqual(['ana', 'bo']);
+        const best = computeAwards(history, players).find(award => award.id === 'track-of-the-night');
+        expect(best?.winners.sort()).toEqual(['ana', 'bo']);
+        expect(best?.detail).toBeUndefined();
     });
 
 
@@ -295,5 +291,33 @@ describe('computeAwards', () => {
         // trophies for zero of everything.
         expect(computeAwards([played(1, { dj: 'ana' })], players)).toEqual([]);
         expect(computeAwards([], players)).toEqual([]);
+    });
+});
+
+describe('awards nobody can lose', () => {
+    const players = ['ana', 'bo', 'cy'];
+
+    it('are not handed out at all', () => {
+        // Every DJ brought something nobody had heard: true, and useless as a
+        // trophy. It rendered as five avatars piled into one card.
+        const history = [
+            played(1, { dj: 'ana', said: [['bo', 4], ['cy', 4]] }),
+            played(2, { dj: 'bo', said: [['ana', 4], ['cy', 4]] }),
+            played(3, { dj: 'cy', said: [['ana', 4], ['bo', 4]] }),
+        ];
+        const awards = computeAwards(history, players);
+
+        expect(awards.find(award => award.id === 'deep-cut')).toBeUndefined();
+        expect(awards.find(award => award.id === 'track-of-the-night')).toBeUndefined();
+    });
+
+    it('still shares a tie between some of the room', () => {
+        const history = [
+            played(1, { dj: 'ana', said: [['bo', 5, { heard: true }], ['cy', 5, { heard: true }]] }),
+            played(2, { dj: 'bo', said: [['ana', 5, { heard: true }], ['cy', 5, { heard: true }]] }),
+            played(3, { dj: 'cy', said: [['ana', 0, { heard: true }], ['bo', 0, { heard: true }]] }),
+        ];
+        const best = computeAwards(history, players).find(award => award.id === 'track-of-the-night');
+        expect(best?.winners.sort()).toEqual(['ana', 'bo']);
     });
 });

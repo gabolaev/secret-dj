@@ -1,6 +1,7 @@
 import {
     AWARDS_BY_ID,
     LOVED_AT,
+    roomVerdict,
     trackScore,
     trackVerdict,
     type GameView,
@@ -43,7 +44,17 @@ export function FinaleScreen({ view, onLeave }: FinaleScreenProps) {
         }
     };
 
-    const copyPlaylist = () => copy(t.finale.copyHeader(view.id), view.history);
+    // Two different numbers, so they get two columns: what the room gave, and
+    // what that came to once the DJ's claim had its say.
+    const love = (played: PlayedTrack) => Math.round(roomVerdict(played));
+
+    // Ranked by the room, not by the banked total — a claim is the DJ's gamble,
+    // and it should not move a track up a chart of what people liked.
+    const ranked = [...view.history].sort(
+        (a, b) => love(b) - love(a) || trackScore(b) - trackScore(a) || a.number - b.number,
+    );
+
+    const copyPlaylist = () => copy(t.finale.copyHeader(view.id), ranked);
     const copyTakeaway = () => copy(t.finale.copyTakeawayHeader(view.id), takeaway);
 
     return (
@@ -68,7 +79,7 @@ export function FinaleScreen({ view, onLeave }: FinaleScreenProps) {
                     ) : undefined
                 }
             >
-                <p className="board__blurb">{t.finale.takeawayBlurb}</p>
+                <p className="takeaway__blurb">{t.finale.takeawayBlurb}</p>
                 {takeaway.length === 0 ? (
                     <p className="muted">{t.finale.takeawayEmpty}</p>
                 ) : (
@@ -106,10 +117,6 @@ export function FinaleScreen({ view, onLeave }: FinaleScreenProps) {
                 )}
             </Window>
 
-            <div className="boards">
-                <Board view={view} title={t.finale.board} blurb={t.finale.boardBlurb} />
-            </div>
-
             {awards.length > 0 && (
                 <Window title={t.finale.awards}>
                     <div className="awards">
@@ -138,8 +145,9 @@ export function FinaleScreen({ view, onLeave }: FinaleScreenProps) {
                     </button>
                 }
             >
+                <p className="final-list__legend">{t.finale.setlistLegend}</p>
                 <ol className="final-list">
-                    {view.history.map(played => {
+                    {ranked.map(played => {
                         const badge = serviceBadgeByName(played.track.service);
                         const score = trackScore(played);
                         return (
@@ -164,8 +172,13 @@ export function FinaleScreen({ view, onLeave }: FinaleScreenProps) {
                                     <Avatar id={played.djId} name={nameOf(view.players, played.djId)} size="sm" />
                                     {nameOf(view.players, played.djId)}
                                 </span>
-                                <span className={`track__meta${score > 0 ? ' track__meta--score' : ''}`}>
-                                    {score > 0 ? `★${score}` : ''}
+                                <span className="final-list__scores">
+                                    <span className="track__meta track__meta--love" title={t.finale.loveTitle}>
+                                        ♥{love(played)}
+                                    </span>
+                                    <span className="track__meta track__meta--score" title={t.finale.totalTitle}>
+                                        ★{score}
+                                    </span>
                                 </span>
                             </li>
                         );
@@ -216,28 +229,3 @@ export function FinaleScreen({ view, onLeave }: FinaleScreenProps) {
     );
 }
 
-interface BoardProps {
-    view: GameView;
-    title: string;
-    blurb: string;
-}
-
-function Board({ view, title, blurb }: BoardProps) {
-    const ranked = [...view.players].sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
-
-    return (
-        <Window title={title} className="board board--selector">
-            <p className="board__blurb">{blurb}</p>
-            <ol className="scores">
-                {ranked.map((player, index) => (
-                    <li key={player.id} className={index === 0 && player.score > 0 ? 'is-winner' : undefined}>
-                        <span className="scores__rank">{index + 1}</span>
-                        <Avatar id={player.id} name={player.name} size="sm" />
-                        <span className="scores__name">{player.name}</span>
-                        <span className="scores__pts">{player.score}</span>
-                    </li>
-                ))}
-            </ol>
-        </Window>
-    );
-}
