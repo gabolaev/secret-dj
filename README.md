@@ -119,8 +119,7 @@ it can never lose you anything and never win you anything. The rest pay up to
 half again, and halve your take if they miss. Which is why queueing something
 everyone will mildly enjoy is never the strongest line.
 
-Meanwhile you're guessing the DJ behind each track. One score, all of it earned
-as a DJ — and no leaderboard at the end: the score is there to make the choices
+Meanwhile you're guessing the DJ behind each track. Name them right and that is a point to you. One score in all — and no leaderboard at the end: the score is there to make the choices
 during the night matter, not to rank the people at the end of it.
 At the end everyone walks out with their own playlist of what they liked.
 

@@ -10,7 +10,7 @@
  *  - the **guess** pays the listener who names the DJ.
  *
  * Reading the room is still played — guessing feeds the DJ's `so-me` claim and
- * still wins trophies — but it no longer pays points.
+ * still wins trophies — and it pays the guesser a point for naming the DJ.
  */
 import { DEFAULT_CLAIM, claimMultiplier } from './claims.js';
 import {

@@ -247,9 +247,9 @@ of *what*, and left the reader to work out it meant the line above.
 
 ## One score, and nobody wins it
 
-Everything you score, you score as a DJ: what your tracks did to the room, put
-through your claim. Nothing else on the night is worth a point. Reading the room
-is still played and still wins trophies — it no longer pays.
+Most of what you score, you score as a DJ: what your tracks did to the room, put
+through your claim. The one thing you also score as a listener is naming the DJ, worth a point. Reading the room
+is still played and still wins trophies — it feeds the identity claims too.
 
 **The finale has no leaderboard, and there is no trophy for the highest total.**
 The score exists to make the choices during the night matter — which track, which
