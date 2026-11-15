@@ -1,13 +1,18 @@
-import { useEffect, useState } from 'react';
 import {
+    DEFAULT_CLAIM,
+    EMOTION_BONUS,
+    NOVELTY_BONUS,
+    RATING_MAX,
     answerValue,
+    claimEvidence,
     obviousnessDrag,
     roomVerdict,
+    type ClaimId,
     type GameView,
     type PointReason,
 } from '@secret-dj/common';
+import { Avatar } from './Avatar';
 import { Block } from './Block';
-import { Redacted } from './Redacted';
 import { nameOf } from '../lib/format';
 import { useI18n, useT } from '../i18n';
 
@@ -15,100 +20,61 @@ interface RevealPanelProps {
     view: GameView;
 }
 
-/** Sum, average and scale, popularity, claim. The order is the story. */
-const LEDGER_STEPS = 4;
-
-/** One wipe, so each row is fully open before the next one starts. */
-const STEP_MS = 420;
-
-/**
- * Trims trailing zeroes so a flat multiplier reads "×1", not "×1.00", and uses
- * the reader's decimal separator — the Russian copy writes ×1,5 everywhere else.
- */
+/** Trims trailing zeroes ("×1", not "×1.00") and uses the reader's decimal separator. */
 function multiplier(value: number, locale: string): string {
     return value.toLocaleString(locale, { maximumFractionDigits: 2 });
 }
 
 /**
- * The receipt.
+ * Who it was, what it scored, and what everyone said.
  *
- * A bare `×0.5` never said half of *what*, so the ledger never prints a
- * multiplier on its own: every step carries the figure that came in, the figure
- * that went out, and one plain sentence naming the thing that did it. Five
- * steps, always in this order — sum, average over answerers, scale to the
- * table, popularity tax, claim — because the order the arithmetic happens in
- * is the story of the round.
- *
- * It **runs down** rather than appearing. The rows uncover themselves one after
- * another, a wipe apart, because the order the arithmetic happens in is the
- * story of the round and a block that lands all at once gets read as a total.
- * Nobody has to drive it. Under reduced motion the whole receipt is there from
- * the first frame — a cascade of cuts is still four things arriving in
- * sequence, which is the thing that preference is asking us not to do.
- *
- * ♥ and ★ are kept apart at the bottom, always. ♥ is what the room gave — likes,
- * novelty, emotion, before the tax and before the gamble — and it is the number
- * the finale ranks tracks by. ★ is what the DJ banked; it ranks nothing, and it
- * is set quieter to say so.
- *
- * Every figure here is derived from the same exported functions that banked the
- * points, so the explanation cannot drift from the arithmetic.
+ * Every figure comes from the same shared functions that banked the points,
+ * so the explanation cannot drift from the arithmetic.
  */
 export function RevealPanel({ view }: RevealPanelProps) {
     const t = useT();
     const { locale } = useI18n();
-    const reveal = view.round?.reveal;
-
-    // How many ledger rows have had their cover lifted. Resets per track, so a
-    // new round always starts the working from the top and runs itself down.
-    const [shown, setShown] = useState(0);
-    const trackId = view.round?.track.id;
-
-    // Somebody who has asked for less movement gets the finished receipt, not a
-    // sequence of cuts: a cascade under reduced motion is still four things
-    // arriving one after another.
-    const atOnce =
-        typeof window !== 'undefined' &&
-        window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
-
-    useEffect(() => setShown(atOnce ? LEDGER_STEPS : 0), [trackId, atOnce]);
-
-    useEffect(() => {
-        if (shown >= LEDGER_STEPS) return;
-        const timer = window.setTimeout(() => setShown(value => value + 1), STEP_MS);
-        return () => window.clearTimeout(timer);
-    }, [shown]);
-
-    if (!reveal) return null;
+    const round = view.round;
+    const reveal = round?.reveal;
+    if (!round || !reveal) return null;
 
     const djName = nameOf(view.players, reveal.djId);
+    const claim = round.track.claim ?? DEFAULT_CLAIM;
+    const correct = reveal.votes.filter(vote => vote.correct).length;
+
     const djPoints = new Map(
         reveal.points.filter(delta => delta.playerId === reveal.djId).map(delta => [delta.reason, delta.points]),
     );
-    const pointsFor = (reason: PointReason) => djPoints.get(reason);
+    const pointsFor = (reason: PointReason) => djPoints.get(reason) ?? 0;
 
     const contributions = reveal.answers.map(answerValue);
     const total = contributions.reduce((sum, value) => sum + value, 0);
     const verdict = Math.round(roomVerdict(reveal));
     const drag = obviousnessDrag(reveal.answers);
     const popular = reveal.answers.filter(answer => answer.popular).length;
+    const silent = Math.max(0, reveal.listenerCount - reveal.answers.length);
 
-    // The deltas telescope, so each step can show the number it started from
-    // and the number it left behind instead of a multiplier on its own.
-    const afterTax = verdict + (pointsFor('obviousness') ?? 0);
-    const afterClaim = afterTax + (pointsFor('claim-landed') ?? 0);
+    // The deltas telescope, so each step shows the number it started and ended on.
+    const afterTax = verdict + pointsFor('obviousness');
+    const afterClaim = afterTax + pointsFor('claim-landed');
     const banked = reveal.points
         .filter(delta => delta.playerId === reveal.djId)
         .reduce((sum, delta) => sum + delta.points, 0);
 
-    const rows = [
+    const evidence = claimEvidence({ claim, answers: reveal.answers, votes: reveal.votes });
+    const claimReason =
+        claim.id === 'none' || !evidence
+            ? null
+            : evidence.kind === 'share'
+              ? t.claims.evidence[claim.id as Exclude<ClaimId, 'none'>](evidence.hit, evidence.of)
+              : t.claims.evidenceSpread(evidence.percent);
+
+    const steps = [
         {
             label: t.reveal.sumLabel,
             detail:
                 (contributions.length > 0 ? contributions.join(' + ') : t.reveal.nobodyAnswered) +
-                (reveal.listenerCount > reveal.answers.length
-                    ? ` · ${t.reveal.silent(reveal.listenerCount - reveal.answers.length)}`
-                    : ''),
+                (silent > 0 ? ` · ${t.reveal.silent(silent)}` : ''),
             change: `${total}`,
         },
         {
@@ -121,63 +87,133 @@ export function RevealPanel({ view }: RevealPanelProps) {
         },
         {
             label: t.reveal.obviousLabel,
-            detail: popular === 0 ? t.reveal.noDrag : t.reveal.dragWorking(popular, reveal.answers.length),
+            detail:
+                popular === 0
+                    ? t.reveal.noDrag
+                    : `${t.reveal.dragWorking(popular, reveal.answers.length)} · ×${multiplier(drag, locale)}`,
             change: popular === 0 ? t.reveal.unchanged : `${verdict} → ${afterTax}`,
-            title: popular > 0 ? t.reveal.timesWorking(multiplier(drag, locale)) : undefined,
         },
         {
             label: t.reveal.claimLabel,
-            // What the claim was and whether it landed is already on the claim
-            // card above, in the claim's own terms. This row only owes the
-            // number it moved.
-            detail: afterTax === afterClaim ? t.reveal.noClaim : '',
+            detail:
+                afterTax === afterClaim
+                    ? t.reveal.noClaim
+                    : `${t.claims[claim.id].title} · ×${multiplier(reveal.claimMultiplier, locale)}`,
             change: afterTax === afterClaim ? t.reveal.unchanged : `${afterTax} → ${afterClaim}`,
-            title:
-                afterTax !== afterClaim
-                    ? t.reveal.timesWorking(multiplier(reveal.claimMultiplier, locale))
-                    : undefined,
         },
     ];
 
-    const allShown = shown >= rows.length;
+    // Answers first, so the ratings lead; anyone who only guessed follows.
+    const listeners = [
+        ...reveal.answers.map(answer => ({
+            id: answer.listenerId,
+            answer,
+            vote: reveal.votes.find(v => v.voterId === answer.listenerId),
+        })),
+        ...reveal.votes
+            .filter(vote => !reveal.answers.some(answer => answer.listenerId === vote.voterId))
+            .map(vote => ({ id: vote.voterId, answer: undefined, vote })),
+    ];
 
     return (
         <>
-            <Block label={t.reveal.theWorking}>
-                <div className="ledger list list--strong">
-                    {rows.map((row, index) => (
-                        <Redacted key={row.label} open={index < shown} className="ledger__row">
-                            <span className="ledger__n num">{String(index + 1).padStart(2, '0')}</span>
-                            <span className="ledger__body">
-                                <span className="ledger__label">{row.label}</span>
-                                <span className="ledger__detail num">{row.detail}</span>
-                            </span>
-                            <span className="ledger__change num" title={row.title}>
-                                {row.change}
-                            </span>
-                        </Redacted>
-                    ))}
-                    <p className="ledger__total ink">
-                        <span className="ledger__label">{t.reveal.totalLabel(djName)}</span>
-                        <span className="ledger__banked num">{allShown ? banked : '—'}</span>
-                    </p>
+            <section className="card reveal">
+                <div className="reveal__dj">
+                    <Avatar id={reveal.djId} name={djName} size="lg" />
+                    <div className="reveal__who">
+                        <span className="reveal__eyebrow">{t.round.itWas}</span>
+                        <span className="reveal__name clip">{djName}</span>
+                    </div>
+                    {view.settings.guessingEnabled && (
+                        <span className="reveal__named num">
+                            {t.round.namedBy(correct, reveal.votes.length)}
+                        </span>
+                    )}
                 </div>
-            </Block>
 
-            {/* Two numbers, two weights. ♥ is set solid because it decides the
-                order at the finale; ★ is quiet because it is one person's
-                gamble and has no business moving a chart of what the room
-                liked. They never share a column. */}
-            <div className="tallies">
-                <div className="tally">
-                    <span className="tally__label num">{t.reveal.roomGave}</span>
-                    <span className="tally__value num">{verdict}</span>
-                </div>
-                <div className="tally tally--quiet">
-                    <span className="tally__label num">{t.reveal.djBanked}</span>
-                    <span className="tally__value num">{banked}</span>
-                </div>
-            </div>
+                <dl className="stats">
+                    <div className="stat">
+                        <dt>{t.reveal.roomGave}</dt>
+                        <dd className="stat__value num">{verdict}</dd>
+                    </div>
+                    <div className="stat">
+                        <dt>{t.reveal.claimLabel}</dt>
+                        <dd className="stat__value num">×{multiplier(reveal.claimMultiplier, locale)}</dd>
+                    </div>
+                    <div className="stat stat--total">
+                        <dt>{t.reveal.djBanked}</dt>
+                        <dd className="stat__value num">{banked}</dd>
+                    </div>
+                </dl>
+
+                {claim.id !== 'none' && (
+                    <p className="reveal__claim">
+                        <strong>{t.claims[claim.id].title}</strong>
+                        {claimReason && <span>{claimReason}</span>}
+                    </p>
+                )}
+
+                <details className="ledger">
+                    <summary>{t.reveal.theWorking}</summary>
+                    <ol className="ledger__rows">
+                        {steps.map(step => (
+                            <li key={step.label} className="ledger__row">
+                                <span className="ledger__body">
+                                    <span className="ledger__label">{step.label}</span>
+                                    <span className="ledger__detail num">{step.detail}</span>
+                                </span>
+                                <span className="ledger__change num">{step.change}</span>
+                            </li>
+                        ))}
+                    </ol>
+                </details>
+            </section>
+
+            <Block label={t.reveal.answersTitle} count={t.reveal.answeredSummary(reveal.answers.length, silent)}>
+                {listeners.length === 0 ? (
+                    <p className="muted">{t.reveal.toughCrowd}</p>
+                ) : (
+                    <ul className="answers">
+                        {listeners.map(({ id, answer, vote }) => {
+                            const name = nameOf(view.players, id);
+                            const tags = answer
+                                ? [
+                                      answer.heard ? t.reveal.heardTag : t.reveal.newTag(NOVELTY_BONUS),
+                                      answer.popular ? t.reveal.popularTag : null,
+                                      answer.moved ? t.reveal.movedTag(EMOTION_BONUS) : null,
+                                  ]
+                                      .filter(Boolean)
+                                      .join(' · ')
+                                : t.reveal.saidNothing;
+                            return (
+                                <li key={id} className="answers__row">
+                                    <Avatar id={id} name={name} size="sm" />
+                                    <span className="answers__who">
+                                        <span className="answers__name clip">{name}</span>
+                                        <span className="answers__tags clip">{tags}</span>
+                                    </span>
+                                    {vote && (
+                                        <span
+                                            className={`answers__guess${vote.correct ? ' is-correct' : ''}`}
+                                            title={vote.correct ? t.reveal.correct : t.reveal.wrong}
+                                        >
+                                            {vote.correct && <i aria-hidden="true">✓ </i>}
+                                            {nameOf(view.players, vote.guessId)}
+                                        </span>
+                                    )}
+                                    <b
+                                        className="answers__like num"
+                                        title={answer ? t.reveal.likedIt(name, answer.like) : undefined}
+                                    >
+                                        {answer ? answer.like : '—'}
+                                        <small>/{RATING_MAX}</small>
+                                    </b>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                )}
+            </Block>
         </>
     );
 }

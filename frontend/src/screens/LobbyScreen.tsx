@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { LIMITS, type GameView } from '@secret-dj/common';
 import type { SecretDj } from '../hooks/useSecretDj';
 import { Block } from '../components/Block';
-import { ClaimHand } from '../components/ClaimHand';
 import { ClaimPicker, spentClaims } from '../components/ClaimPicker';
 import { UrlField } from '../components/UrlField';
 import { TrackList } from '../components/TrackList';
@@ -13,13 +12,6 @@ interface LobbyScreenProps {
     game: SecretDj;
 }
 
-/**
- * The warm-up, in the order the decisions are actually made.
- *
- * The hand comes first, then the queue the cards get spent on, then the
- * settings that decide which cards are even in play. Everything on this screen
- * is downstream of the allocation, so the allocation goes at the top.
- */
 export function LobbyScreen({ view, game }: LobbyScreenProps) {
     const t = useT();
     const [url, setUrl] = useState('');
@@ -44,46 +36,42 @@ export function LobbyScreen({ view, game }: LobbyScreenProps) {
         if (result.ok) setUrl('');
     };
 
-    // Only says something once there is something to say. While you are still
-    // queueing, the heading and the counter have already said it.
+    // One line about the room, said once. While you are still queueing the heading says it.
     const status =
         remaining > 0
             ? null
-            : waitingOn.length > 0
-              ? t.lobby.hintWaiting(waitingOn.map(player => player.name).join(', '))
-              : isHost
-                ? t.lobby.hintHostCanStart
-                : t.lobby.hintWaitingForHost;
+            : !enoughPlayers
+              ? t.lobby.needTwo
+              : waitingOn.length > 0
+                ? t.lobby.hintWaiting(waitingOn.map(player => player.name).join(', '))
+                : isHost
+                  ? null
+                  : t.lobby.hintWaitingForHost;
 
     return (
         <div className="stage">
-            <ClaimHand view={view} />
-
             <Block
+                className="card"
                 label={remaining > 0 ? t.lobby.queueMore(remaining) : t.lobby.setReady}
                 count={`${mine.length}/${tracksPerPlayer}`}
             >
-                {status && <p className="stage__sub">{status}</p>}
-
-                {mine.length > 0 && (
-                    <TrackList
-                        tracks={mine}
-                        onRemove={trackId => void game.removeTrack(trackId)}
-                        slot={track => (
-                            <ClaimPicker
-                                track={track}
-                                view={view}
-                                spent={spentClaims(mine, track.id)}
-                                open={openClaim === track.id}
-                                onToggle={() => setOpenClaim(openClaim === track.id ? null : track.id)}
-                                onPick={claim => {
-                                    void game.setClaim(track.id, claim);
-                                    setOpenClaim(null);
-                                }}
-                            />
-                        )}
-                    />
-                )}
+                <TrackList
+                    tracks={mine}
+                    onRemove={trackId => void game.removeTrack(trackId)}
+                    slot={track => (
+                        <ClaimPicker
+                            track={track}
+                            view={view}
+                            spent={spentClaims(mine, track.id)}
+                            open={openClaim === track.id}
+                            onToggle={() => setOpenClaim(openClaim === track.id ? null : track.id)}
+                            onPick={claim => {
+                                void game.setClaim(track.id, claim);
+                                setOpenClaim(null);
+                            }}
+                        />
+                    )}
+                />
 
                 {remaining > 0 && (
                     <UrlField value={url} onChange={setUrl} onSubmit={() => void submit()} busy={busy} />
@@ -91,8 +79,12 @@ export function LobbyScreen({ view, game }: LobbyScreenProps) {
             </Block>
 
             {isHost && (
-                <Block label={t.lobby.settings} count={t.lobby.setlistLength(active.length * tracksPlayedPerPlayer)}>
-                    <div className="settings list">
+                <Block
+                    className="card"
+                    label={t.lobby.settings}
+                    count={t.lobby.setlistLength(active.length * tracksPlayedPerPlayer)}
+                >
+                    <div className="settings">
                         <div className="setting">
                             <span className="setting__name">{t.lobby.tracksQueued}</span>
                             <Stepper
@@ -119,25 +111,23 @@ export function LobbyScreen({ view, game }: LobbyScreenProps) {
 
                         <div className="setting">
                             <span className="setting__name">{t.lobby.guessing}</span>
-                            {/* A word, not a coloured pill: the state has to be
-                                readable in greyscale like every other state. */}
                             <button
                                 type="button"
-                                className={`toggle${guessingEnabled ? ' toggle--on' : ''}`}
+                                className={`switch${guessingEnabled ? ' is-on' : ''}`}
                                 role="switch"
                                 aria-checked={guessingEnabled}
                                 aria-label={t.lobby.guessing}
                                 onClick={() => void game.updateSettings({ guessingEnabled: !guessingEnabled })}
                             >
-                                {guessingEnabled ? t.lobby.on : t.lobby.off}
+                                <span className="switch__knob" />
                             </button>
                         </div>
                     </div>
                 </Block>
             )}
 
-            {isHost && (
-                <div className="cta">
+            <div className="cta">
+                {isHost && (
                     <button
                         type="button"
                         className="button button--primary button--lg button--block"
@@ -146,12 +136,9 @@ export function LobbyScreen({ view, game }: LobbyScreenProps) {
                     >
                         {t.lobby.start}
                     </button>
-                    {!enoughPlayers && <p className="muted">{t.lobby.needTwo}</p>}
-                    {enoughPlayers && waitingOn.length > 0 && (
-                        <p className="muted">{t.lobby.stillQueueing(waitingOn.map(player => player.name).join(', '))}</p>
-                    )}
-                </div>
-            )}
+                )}
+                {status && <p className="muted">{status}</p>}
+            </div>
         </div>
     );
 }

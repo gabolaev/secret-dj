@@ -49,12 +49,15 @@ export function RulesSheet({ open, onClose }: RulesSheetProps) {
                 <p className="sheet__oath">{t.rules.oath}</p>
 
                 <ol className="sheet__list">
-                    {t.rules.items.map((item, index) => (
+                    {/* The number comes from the CSS counter alone. The heading
+                        and body share one wrapper, so the li is exactly two
+                        columns and the heading cannot get squeezed into one. */}
+                    {t.rules.items.map(item => (
                         <li key={item.head}>
-                            <strong>
-                                {String(index + 1).padStart(2, '0')}. {item.head}
-                            </strong>{' '}
-                            {item.body}
+                            <div>
+                                <strong>{item.head}</strong>
+                                <p>{item.body}</p>
+                            </div>
                         </li>
                     ))}
                 </ol>

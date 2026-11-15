@@ -12,16 +12,13 @@ export const en = {
     common: {
         loading: 'Loading',
         close: 'Close',
-        open: 'open ↗',
-        nothingYet: 'Nothing here yet.',
+        open: 'Open ↗',
     },
 
     locale: { label: 'Language', en: 'EN', ru: 'RU' },
 
     join: {
-        tagline:
-            'Everyone queues a track in secret. The room rates it.',
-        // Labelled with the consequence of filling it in, not with its own name.
+        tagline: 'Everyone queues a track in secret. Guess whose is whose.',
         nameLabel: 'Your name',
         namePlaceholder: 'DJ Nightshift',
         codeLabel: 'Room code',
@@ -32,14 +29,12 @@ export const en = {
         reconnecting: 'Reconnecting…',
         howItWorks: 'How it works',
         genericError: 'That did not work.',
-        services:
-            'Works with Spotify, YouTube, Apple Music, Deezer, SoundCloud, TIDAL, Bandcamp and Yandex Music.',
         findingSeat: 'Finding your seat…',
     },
 
     shell: {
-        copyInvite: 'copy link',
-        copied: 'copied!',
+        copyInvite: 'Copy invite link',
+        copied: 'Copied',
         copyPrompt: 'Copy this invite link:',
         rules: 'Rules',
         leave: 'Leave',
@@ -49,24 +44,22 @@ export const en = {
     },
 
     roster: {
-        yourQueue: 'Your queue',
         // Presence, and only presence. Anything about answering would name the
         // DJ by omission — see PlayerRoster.
-        gone: 'gone',
+        gone: 'left',
         away: 'away',
         ready: 'ready',
-        scoreTitle: 'What your tracks have earned',
-        theRoom: 'The room',
+        scoreTitle: 'Points',
+        theRoom: 'Players',
         setlist: 'Setlist',
-        notPlayedYet: 'not played yet',
+        notPlayedYet: '—',
     },
 
     lobby: {
         queueMore: (n: number) => `Queue ${en2(n, 'more track', 'more tracks')}`,
-        setReady: 'Your set is ready',
+        setReady: 'Your tracks',
         hintWaiting: (names: string) => `Waiting on ${names}.`,
-        hintHostCanStart: 'Everyone is ready. Drop the needle whenever you like.',
-        hintWaitingForHost: 'Everyone is ready. Waiting for the host to start.',
+        hintWaitingForHost: 'Everyone is ready. Waiting for the host.',
         setlistLength: (n: number) => `${en2(n, 'track', 'tracks')} tonight`,
         settings: 'Room settings',
         tracksQueued: 'Tracks each DJ queues',
@@ -74,154 +67,96 @@ export const en = {
         fewer: 'Fewer',
         more: 'More',
         guessing: 'Guessing',
-        on: 'On',
-        off: 'Off',
         start: 'Start the night',
-        needTwo: 'Guessing needs at least two DJs — invite someone, or switch to a listening party.',
-        stillQueueing: (names: string) => `Still queueing: ${names}.`,
+        needTwo: 'Guessing needs at least two players.',
     },
 
     claims: {
-        label: 'Your claim',
-        yoursOnly: 'Your bet — nobody else sees it until the reveal.',
-        needsPlayers: (n: number) => `Needs at least ${n} players in the room`,
-        needsGuessing: 'Needs guessing switched on',
+        label: 'Claim',
+        needsPlayers: (n: number) => `Needs ${n}+ players`,
+        needsGuessing: 'Needs guessing on',
         evidence: {
-            'never-heard': (n: number, of: number) => `${n} of ${of} had not heard it`,
-            unanimous: (n: number, of: number) => `${n} of ${of} gave it 4 or more`,
-            emotional: (n: number, of: number) => `${n} of ${of} say it moved them`,
+            'never-heard': (n: number, of: number) => `${n} of ${of} hadn't heard it`,
+            unanimous: (n: number, of: number) => `${n} of ${of} gave it 4+`,
+            emotional: (n: number, of: number) => `${n} of ${of} were moved`,
             'so-me': (n: number, of: number) => `${n} of ${of} named you`,
-            'not-me': (n: number, of: number) => `${n} of ${of} looked elsewhere`,
+            'not-me': (n: number, of: number) => `${n} of ${of} guessed someone else`,
             divisive: (n: number, of: number) => `${n} of ${of}`,
         },
-        evidenceSpread: (percent: number) => `${percent}% as far apart as the room can get`,
-        spent: 'Already played tonight',
-        handLabel: 'Your hand',
-        left: (n: number) => `${n} left`,
-        spentOn: (n: number) => `spent on track ${n}`,
-        // An empty slot is a legitimate finished state. It must never nag.
-        dropCard: 'Drop a card here',
-        orLeaveSafe: 'or leave it safe',
-        sealed: 'sealed',
+        evidenceSpread: (percent: number) => `${percent}% split`,
+        spent: 'Used on another track',
         none: {
             title: 'No claim',
-            blurb: 'Just the track. Whatever the room gives, you keep.',
+            blurb: 'Safe. You keep what the room gives.',
         },
         'never-heard': {
             title: "You've never heard this",
-            blurb: 'Pays on how much of the room it was new to — and it still has to land.',
+            blurb: 'Pays if it is new to the room.',
         },
         unanimous: {
             title: 'Everyone will like this',
-            blurb: 'Pays on how many gave it four or more. One holdout costs you.',
+            blurb: 'Pays if everyone gives it 4+.',
         },
         emotional: {
             title: 'This will get to you',
-            blurb: 'Pays on how many say it moved them. Liking it is a different question.',
+            blurb: 'Pays if it moves people.',
         },
         'so-me': {
             title: 'You will know it was me',
-            blurb: 'Pays on being recognised.',
+            blurb: 'Pays if they guess you.',
         },
         'not-me': {
             title: 'You will never guess it was me',
-            blurb: 'Pays on getting away with it. Nothing if the room never guessed at all.',
+            blurb: 'Pays if nobody guesses you.',
         },
         divisive: {
             title: 'This will split the room',
-            blurb: 'Pays on an even split of loved and hated. Agreement scores nothing.',
+            blurb: 'Pays if ratings split.',
         },
     } satisfies {
         evidence: Record<Exclude<ClaimId, 'none'>, (n: number, of: number) => string>;
         evidenceSpread: (percent: number) => string;
         label: string;
         spent: string;
-        yoursOnly: string;
         needsPlayers: (n: number) => string;
         needsGuessing: string;
-        handLabel: string;
-        left: (n: number) => string;
-        spentOn: (n: number) => string;
-        dropCard: string;
-        orLeaveSafe: string;
-        sealed: string;
-    } & Record<
-        ClaimId,
-        { title: string; blurb: string }
-    >,
+    } & Record<ClaimId, { title: string; blurb: string }>,
 
     url: {
         placeholder: 'Paste a Spotify, YouTube, Apple Music… link',
-        submit: 'Queue it',
-        hintInvalid: 'That does not look like a link yet.',
-        hintUnsupported:
-            'We cannot play that host. Try Spotify, YouTube, Apple Music, Deezer, SoundCloud, TIDAL or Yandex.',
-        hintLooking: 'Looking it up…',
-        hintGood: 'Looks good.',
-        hintReady: 'Ready to queue.',
+        submit: 'Add',
+        hintInvalid: "That's not a link yet.",
+        hintUnsupported: "We can't play links from there.",
         loading: 'Loading…',
     },
 
     tracks: {
         remove: 'Remove',
-        playingNow: 'Playing now',
-    },
-
-    drums: {
-        title: 'Drum Machine',
-        silent: 'silent',
-        play: 'Run',
-        stop: 'Stop',
-        clear: 'Clear',
+        playingNow: 'Now playing',
     },
 
     round: {
         position: (n: number, total: number) => `Track ${n} / ${total}`,
-        inRoom: (n: number) => `${n} in the room`,
-        onFloor: (n: number) => `${n} on the floor`,
+        timeLeft: 'Time left',
+        lookupFailed: "Couldn't read this link.",
 
-        // The embed is framed rather than blended: a printed caption strip over
-        // an ink passe-partout, which admits the thing inside it is foreign.
-        nowPlaying: 'Now playing',
-        embedOf: (service: string) => `${service} · embed`,
-        embedGeneric: 'embed',
-        lookupFailed: "We couldn't read this link. We'll try again before the music starts.",
+        itWas: 'It was',
+        namedBy: (n: number, of: number) => `${n}/${of} guessed`,
 
-        whoPutThisOn: 'Who put this on',
-        sealedDj: (n: number) => `One of the ${n} of you`,
-        putOn: (title: string) => `Put on — ${title}`,
-        namedBy: 'Named by',
-
-        djsClaim: "The DJ's claim",
-        sealedUntilReveal: 'Sealed until the reveal',
-        stampSealed: 'sealed',
-        stampYours: 'yours only',
-        stampLanded: (m: string) => `landed · ×${m}`,
-        stampFlat: 'no change',
-
-        // Counts, never names: the DJ is the one person who cannot answer, so
-        // naming who has would name them by omission.
-        answersSealed: (n: number, of: number) => `Answers sealed — ${n} of ${of}`,
-        answerSlot: (n: number) => `Answer ${String(n).padStart(2, '0')}`,
-        stillOut: (n: number) => `${en2(n, 'answer', 'answers')} still out`,
-
-        yourAnswer: 'Your answer',
-
-        yoursEyebrow: 'This one is yours',
-        yoursLead: 'Nothing to do but watch them work it out.',
+        yoursTitle: 'This one is yours',
+        yourClaim: 'Your claim:',
         findingTrack: 'Finding the track…',
         openIn: (service: string) => `Open in ${service} ↗`,
         openLink: 'Open the link',
         done: 'Done',
         undone: 'Not done yet',
         doneCount: (n: number, total: number) => `${n} of ${total} done`,
-        timeLeft: 'Time left in this round',
         hostReveal: 'Reveal the DJ',
         hostNext: 'Next track',
-        hostFinish: 'Close out the night',
+        hostFinish: 'Finish the night',
         hostWaiting: 'Waiting for the room to finish.',
-        waitingForNext: 'Waiting for the host to cue the next track…',
-        waitingForReveal: 'Everyone has voted. Waiting for the host to reveal…',
+        waitingForNext: 'Waiting for the host…',
+        waitingForReveal: 'Everyone has guessed. Waiting for the host…',
     },
 
     answer: {
@@ -230,13 +165,11 @@ export const en = {
         // One phrase per number, so the same score means the same thing to everybody.
         verdicts: ['Nothing at all', 'Not for me', 'It passed', 'Solid', 'Really good', 'Superb'],
         heard: 'Heard it before',
-        heardHint: 'Had you come across this track before tonight?',
+        heardHint: 'Did you know this track before tonight?',
         popular: 'Popular',
-        popularHint: 'A well-known track? The more of you say so, the less it scores for the DJ.',
-        yes: 'yes',
-        no: 'no',
+        popularHint: 'A well-known track?',
         moved: 'It got to me',
-        movedHint: 'Did it move you? Whether you liked it is a separate question.',
+        movedHint: 'Did it move you?',
         unsigned: 'Pick a number for your answer to count.',
     },
 
@@ -247,67 +180,53 @@ export const en = {
     reveal: {
         correct: 'correct',
         wrong: 'wrong',
-        likedIt: (name: string, n: number) => `${name} liked it ${n} out of 5`,
-        sumLabel: 'What each listener gave',
+        likedIt: (name: string, n: number) => `${name} gave it ${n} out of 5`,
+        sumLabel: 'Ratings plus bonuses',
         nobodyAnswered: 'nobody answered',
-        scaleLabel: 'Averaged, then scaled to the table',
+        scaleLabel: 'Averaged and scaled to the table',
         scaleWorking: (total: number, answered: number, listeners: number) =>
             `${total} ÷ ${answered} answered × ${listeners} listening`,
         nothingToScale: 'nothing to scale',
         dragWorking: (n: number, of: number) => `${n} of ${of} called it popular`,
-        timesWorking: (m: string) => `multiplied by ${m}`,
         noClaim: 'no claim',
-        unchanged: 'unchanged',
-        totalLabel: (name: string) => `${name} banks`,
-        rowWorking: (name: string) => `${name}: their rating, plus a point if it was new to them, plus two if it moved them`,
-        newTag: (n: number) => `new to them +${n}`,
+        unchanged: 'no change',
+        newTag: (n: number) => `new +${n}`,
         movedTag: (n: number) => `moved +${n}`,
         saidNothing: 'said nothing',
-        answersTitle: 'What the room said',
-        obviousLabel: 'Popularity',
+        answersTitle: 'Answers',
+        obviousLabel: 'Popularity tax',
         noDrag: 'nobody called it popular',
-        silent: (n: number) => `${en2(n, 'listener', 'listeners')} said nothing`,
+        silent: (n: number) => `${n} silent`,
         heardTag: 'heard it',
         popularTag: 'popular',
         toughCrowd: 'Nobody said a word.',
         answeredSummary: (answered: number, silent: number) =>
-            `${answered} answered · ${silent} said nothing`,
-        djCouldNotAnswer: (name: string) => `${name} couldn't answer`,
-        namedTheDj: 'named the DJ',
-        guessWorth: '+1 to them',
-
-        // The working, stepped one row at a time.
-        theWorking: 'The working',
-        claimLabel: 'The claim',
-
+            silent > 0 ? `${answered} answered · ${silent} silent` : `${answered} answered`,
+        theWorking: 'How it was scored',
+        claimLabel: 'Claim',
         // ♥ and ★ never share a column, and only ♥ ever ranks anything.
-        roomGave: '♥ What the room gave',
-        djBanked: '★ What the DJ banked',
-        // Claims can go backwards, so the sign has to come from the number.
+        roomGave: '♥ Room',
+        djBanked: '★ Banked',
     },
 
     finale: {
-        thatWasTheNight: 'That was the night.',
+        thatWasTheNight: "That's the night.",
         roomSummary: (tracks: number, players: number) =>
-            `${en2(tracks, 'track', 'tracks')} · ${players} of you`,
+            `${en2(tracks, 'track', 'tracks')} · ${en2(players, 'player', 'players')}`,
         rankedBy: 'Tracks',
         starRanksNothing: '♥ room · ★ DJ',
-        played: (n: number) => `played ${String(n).padStart(2, '0')}`,
         notGiven: 'Not given',
-        youGaveIt: (dj: string, like: number) => `${dj} · ${like}`,
-        copyAll: (n: number) => `copy (${n})`,
+        copyAll: (n: number) => `Copy (${n})`,
 
         awards: 'Awards',
-        takeaway: 'What you keep',
-        takeawayEmpty:
-            "You didn't give anything a 4 tonight. Honest is honest; there's always next week.",
-        copyTakeaway: 'Copy your playlist',
-        copyTakeawayHeader: (room: string) => `Secret DJ — my takeaway from room ${room}`,
+        takeaway: 'Your favourites',
+        takeawayEmpty: 'Nothing got a 4 from you tonight.',
+        copyTakeawayHeader: (room: string) => `Secret DJ — my favourites from room ${room}`,
         loveTitle: 'What the room gave it',
-        totalTitle: 'What it came to after the claim',
-        unplayed: 'The ones that got away',
+        totalTitle: 'What the DJ banked',
+        unplayed: "Didn't make the cut",
         leave: 'Leave the room',
-        copyPrompt: "Copy tonight's setlist:",
+        copyPrompt: 'Copy the list:',
     },
 
     awards: {
@@ -342,57 +261,48 @@ export const en = {
 
     rules: {
         title: 'House rules',
-        oath: 'Never lie in your answers. Whether you had heard it, whether it is popular, whether it got to you — none of it can be checked by anything except the people sitting with you. The game is nothing if the answers are not true. This is not that kind of a competition, it is a shared experience. Be honest, be kind, and have fun.',
+        oath: 'Answer honestly. Nobody can check what you heard or felt except the people in the room, and the game only works if it is true.',
         items: [
             {
                 head: 'Queue in secret.',
-                body: 'Everyone queues the same number of tracks, and only some of them play — chosen at random. Nobody ever sees anyone else\'s queue.',
+                body: 'Everyone queues the same number of tracks. Only some play, picked at random.',
             },
             {
                 head: 'Make a claim.',
-                body: 'Every track you queue carries a bet: safe, or that the room will recognise you, or that nobody has heard it, or that it will split them. The safe one is the floor; the rest pay up to half again — or half as much if they miss.',
+                body: 'Bet on what each track will do to the room. Land it for up to ×1.5, miss for ×0.5. No claim is safe.',
             },
             {
-                head: 'Answer honestly.',
-                body: 'Four questions per track: how much you liked it, whether you had heard it, whether it is popular, whether it got to you. None of it can be checked by anything but the people in the room — and the game is nothing if the answers are not true.',
+                head: 'Rate it 0–5.',
+                body: 'Then tick heard it, popular, or it got to me. Nothing counts until you pick a number.',
             },
             {
-                head: 'Zero to five.',
-                body: 'How much you liked it. Nothing you say about a track counts until you have picked a number, and if you say nothing at all you are simply not counted.',
-            },
-            {
-                head: 'The popularity tax.',
-                body: 'The more of you call a track popular, the less it scores — down to half. A famous banger is never the easy winning move.',
+                head: 'Popular costs.',
+                body: 'The more of you call a track popular, the less it scores — down to half.',
             },
             {
                 head: 'Guess the DJ.',
-                body: 'Everyone except the DJ picks a name. Get it right and you bank a point — and either way it feeds the DJ\'s claim and the trophies at the end.',
-            },
-            {
-                head: 'One score.',
-                body: 'Your tracks, put through your claim, plus a point for every DJ you name correctly. There is no leaderboard at the end — the score is there to make the choices matter, not to rank the room.'
+                body: 'Name who put it on. Right gets you a point.',
             },
         ],
         claimsTitle: 'The claims',
-        claimsBody: 'One of each per night, so the decision is which of your tracks deserves which bet. Every one of them scales the whole total: it came true completely, half as much again; not at all, the track is worth half.',
+        claimsBody: 'Each one once a night. Fully true ×1.5, half true ×1, not at all ×0.5.',
         scoring: {
-            title: 'Where the points come from',
-            addTitle: 'Every listener who answered adds',
+            title: 'Scoring',
+            addTitle: 'Each listener adds',
             add: [
-                { what: 'How much they liked it', points: '0 to 5' },
-                { what: 'They had not heard it before', points: '+1' },
+                { what: 'Their rating', points: '0–5' },
+                { what: 'New to them', points: '+1' },
                 { what: 'It got to them', points: '+2' },
             ],
-            addNote: 'Those are added up, averaged, and multiplied back by how many listeners were at the table — so somebody staying quiet costs the DJ nothing.',
-            obviousTitle: 'Then: the popularity tax',
-            obviousBody: 'The more listeners tick "popular", the smaller that total gets. Nobody ticked it — nothing changes. Half of them did — a quarter comes off. All of them did — the track is worth half.',
-            claimTitle: 'Then: your claim',
-            claimBody: 'Your claim scales whatever is left. It came true completely — half as much again. It half came true — nothing changes. It did not come true at all — the track is worth half. A track with no claim is left alone, which is exactly what makes no claim the safe play.',
-            guessLine: { what: 'You named the DJ correctly', points: '+1, to you' },
-            example:
-                'Four listeners, all four answer: 5, 4, 4 and 3 makes 16. None of them had heard it, so +1 each — 20. Two of them were moved, +2 each — 24. Nobody ticked "popular", so it stays 24. The claim "you had never heard this" came true completely, half as much again: 36 points. Had two of the four ticked it, the 24 would have become 18, and 27 after the claim.',
+            addNote: 'Averaged and scaled to the table, so silence costs the DJ nothing.',
+            obviousTitle: 'Then the popularity tax',
+            obviousBody: 'Nobody ticks popular: no change. Half do: −25%. Everyone: −50%.',
+            claimTitle: 'Then the claim',
+            claimBody: 'Multiplies what is left. No claim leaves it alone.',
+            guessLine: { what: 'You named the DJ', points: '+1' },
+            example: '4 listeners rate 5, 4, 4, 3 = 16. All new: +4 → 20. Two moved: +4 → 24. Nobody said popular: 24. "Never heard this" landed: ×1.5 → 36.',
         },
-        note: 'The host sets the pace: they start the game, reveal each round and move on. If the host disappears, the crown passes automatically so nobody gets stranded.',
+        note: 'The host starts the game and moves each round on. If they leave, someone else takes over.',
     },
 
     feed: {

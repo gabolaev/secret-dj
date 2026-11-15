@@ -13,19 +13,6 @@ interface JoinScreenProps {
     onShowRules: () => void;
 }
 
-/**
- * The first thing the product says is what the game is.
- *
- * No decorative backdrop, no hardware, no card floating over an illustration —
- * a sheet of paper with the name on it and two fields. The name field is
- * labelled with the *consequence* of filling it in ("it goes on every answer
- * you give"), because that is the only thing about it worth knowing and it is
- * the first promise the design makes about attribution.
- *
- * Whichever of the two buttons is actually actionable is the primary one: with
- * a code in the box you are joining, without one you are starting a room. A red
- * key that cannot be pressed is a worse lie than no red key.
- */
 export function JoinScreen({ connection, onCreate, onJoin, onShowRules }: JoinScreenProps) {
     const t = useT();
     const [name, setName] = useState(loadRememberedName);
@@ -64,13 +51,13 @@ export function JoinScreen({ connection, onCreate, onJoin, onShowRules }: JoinSc
 
     return (
         <div className="join">
-            <div className="join__sheet">
-                <div className="join__hero">
-                    <h1 className="join__logo">
+            <div className="join__card">
+                <header className="join__hero">
+                    <h1>
                         <Logo size="hero" />
                     </h1>
                     <p className="join__tagline">{t.join.tagline}</p>
-                </div>
+                </header>
 
                 <form className="join__form" onSubmit={submit}>
                     <label className="field">
@@ -99,6 +86,7 @@ export function JoinScreen({ connection, onCreate, onJoin, onShowRules }: JoinSc
                         />
                     </label>
 
+                    {/* Whichever action the form would actually take is the primary one. */}
                     <div className="join__actions">
                         <button
                             type="button"
@@ -119,24 +107,20 @@ export function JoinScreen({ connection, onCreate, onJoin, onShowRules }: JoinSc
                     </div>
                 </form>
 
-                {/* In situ, bordered, and written as a sentence — never a field
-                    that has quietly turned a colour. */}
                 {error && <p className="join__error">{error}</p>}
                 {offline && (
                     <p className="join__status">
                         <Spinner label={connection === 'connecting' ? t.join.connecting : t.join.reconnecting} />
                     </p>
                 )}
-
-                <div className="join__foot">
-                    <button type="button" className="button button--ghost" onClick={onShowRules}>
-                        {t.join.howItWorks}
-                    </button>
-                    <LocaleToggle />
-                </div>
             </div>
 
-            <p className="join__services num">{t.join.services}</p>
+            <footer className="join__foot">
+                <button type="button" className="button button--ghost" onClick={onShowRules}>
+                    {t.join.howItWorks}
+                </button>
+                <LocaleToggle />
+            </footer>
         </div>
     );
 }

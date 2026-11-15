@@ -1,755 +1,851 @@
-/* ---------------------------------------------------------------------------
-   Secret DJ — components.
+/* Secret DJ — layout and screens. Tokens and primitives live in theme.css. */
 
-   Everything here is printed matter: paper, one ink, one hairline, one hot
-   colour used as a fill. There are no shadows, no gradients and no radii in
-   this file. If a rule below reaches for depth it does it with `--ink` or with
-   a 1px rule, because those are the only two devices the design has.
+/* ---- logo --------------------------------------------------------------- */
 
-   The one thing that animates is a cover being wiped off a secret. See
-   `.redact` in theme.css — nothing in this file may add a second moving part.
-   ------------------------------------------------------------------------- */
-
-.boot {
-    display: grid;
-    place-items: center;
-    min-height: 100dvh;
-}
-
-/* -------------------------------------------------------------------- logo */
-
-/* The name *is* the mark: stamped the way a code is on a case, not drawn. */
 .logo {
-    font-family: var(--font-num);
-    font-weight: 600;
-    letter-spacing: 0.18em;
-    text-indent: 0.18em;
-    text-transform: uppercase;
+    font-weight: 800;
+    font-size: 17px;
+    letter-spacing: -0.02em;
     white-space: nowrap;
 }
 
 .logo em {
     font-style: normal;
-}
-
-/*
- * The word break, for reading aloud and for copy-paste, with no width of its
- * own. `font-size: 0` collapses the space itself *and* the tracking step that
- * would follow it, which is what makes the two sides of the interpunct equal:
- * a bare space contributed its own advance plus a letter-spacing step to the
- * left of the dot and nothing to the right, so the gap there was about four
- * times the one after it.
- *
- * Zeroing the size rather than subtracting a negative margin keeps this exact
- * in any fallback face — a magic offset would only be right in the metrics it
- * was measured against.
- */
-.logo__space {
-    font-size: 0;
-}
-
-/* The interpunct is the only ornament in the product, and it is a character.
-   Its margins are symmetric, and now nothing else is added to one side. */
-.logo em::before {
-    content: '·';
-    margin: 0 0.1em;
-}
-
-.logo--bar {
-    font-size: var(--fs-micro);
+    color: var(--accent);
 }
 
 .logo--hero {
-    font-size: var(--fs-lead);
-    letter-spacing: var(--track-code);
-    text-indent: var(--track-code);
+    font-size: 44px;
+    letter-spacing: -0.035em;
 }
 
-/* -------------------------------------------------------------------- join */
+/* ---- boot --------------------------------------------------------------- */
 
-/*
- * No decorative backdrop at all. The first thing the product says is what the
- * game is, so the page is the sheet and nothing sits behind it.
- */
+.boot {
+    display: grid;
+    min-height: 100dvh;
+    place-items: center;
+}
+
+/* ---- join --------------------------------------------------------------- */
+
 .join {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: var(--sp-3);
+    justify-content: center;
+    gap: 16px;
     min-height: 100dvh;
-    padding: var(--sp-7) var(--sp-5);
+    padding: 24px 16px;
+    background: radial-gradient(60% 50% at 50% 0%, rgb(255 176 32 / 8%), transparent 70%), var(--bg);
 }
 
-.join__sheet {
-    width: 100%;
-    max-width: 375px;
+.join__card {
     display: flex;
     flex-direction: column;
-    gap: var(--sp-4);
-    padding: 22px var(--sp-5) var(--sp-5);
-    border-radius: var(--r-frame);
-    background: var(--bone);
+    gap: 28px;
+    width: min(400px, 100%);
 }
 
 .join__hero {
     display: flex;
     flex-direction: column;
-    gap: var(--sp-2);
+    gap: 8px;
+    text-align: center;
 }
 
-.join__logo {
-    margin: 0;
-    letter-spacing: 0;
-}
-
-/* The one display line on the screen. Instrument Serif does not cover
-   Cyrillic, so RU falls back to Archivo at the same size — which is why this
-   is set by size and leading rather than by anything the serif alone does. */
 .join__tagline {
-    font-family: var(--font-disp);
-    font-size: 30px;
-    font-weight: 400;
-    line-height: 1.1;
-    letter-spacing: -0.005em;
-    text-wrap: balance;
+    color: var(--text-2);
+    font-size: var(--fs-base);
 }
 
 .join__form {
     display: flex;
     flex-direction: column;
-    gap: var(--sp-4);
+    gap: 16px;
 }
 
 .join__actions {
     display: flex;
     flex-direction: column;
-    gap: var(--sp-2);
+    gap: 10px;
+    margin-top: 8px;
 }
 
-/* An error is a bordered note in situ, written as a sentence — never a field
-   that has quietly turned a colour. */
 .join__error {
-    padding: 11px var(--sp-3);
-    border-left: 3px solid var(--signal-text);
-    background: var(--paper);
-    color: var(--ink-2);
-    font-size: 13px;
-    line-height: 1.45;
+    padding: 12px 14px;
+    border-radius: var(--r);
+    background: rgb(248 113 113 / 12%);
+    color: var(--bad);
+    font-size: var(--fs-sm);
 }
 
 .join__status {
     display: flex;
+    justify-content: center;
 }
 
 .join__foot {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: var(--sp-3);
-    padding-top: var(--sp-2);
-    border-top: 1px solid var(--rule);
+    gap: 8px;
 }
 
-/*
- * The footnote sits outside the sheet, on the page, but it has to read as the
- * same column of text. It is a centred sibling of the sheet rather than a
- * child, so it only lines up if it repeats the sheet's width *and* its side
- * padding — matching the width alone leaves the text starting one padding step
- * to the left of everything above it, which is exactly what it did.
- */
-.join__services {
-    width: 100%;
-    max-width: 375px;
-    padding: 0 var(--sp-5);
-    color: var(--ink-2);
-    font-size: var(--fs-micro);
-    line-height: 1.7;
-}
-
-/* ------------------------------------------------------------------- shell */
+/* ---- shell -------------------------------------------------------------- */
 
 .shell {
-    display: flex;
-    flex-direction: column;
     min-height: 100dvh;
 }
 
-/* One printed bar. It carries what is true of the whole room. */
 .shell__bar {
     position: sticky;
     top: 0;
     z-index: 20;
     display: flex;
     align-items: center;
-    gap: var(--sp-3);
-    min-height: var(--header-h);
-    padding: var(--sp-2) var(--sp-5);
-    background: var(--paper);
-    border-bottom: 1px solid var(--rule);
-}
-
-.shell__logo {
-    flex-shrink: 0;
-    font-size: 13px;
-}
-
-/* The room code: the one string people read out loud, so it is stamped rather
-   than set. Two of the three radii in the whole product are here and on the
-   app frame; everything else is square. */
-.shell__code {
-    flex-shrink: 0;
-    padding: 3px 9px;
-    border: 1px solid var(--ink);
-    border-radius: var(--r-chip);
-    background: transparent;
-    color: var(--ink);
-    font-family: var(--font-num);
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: var(--track-code);
-    text-indent: var(--track-code);
-    cursor: pointer;
-    transition: background var(--dur-fast) var(--ease);
-}
-
-.shell__code:hover {
-    background: var(--bone);
-}
-
-/* Connection state is carried by the code block itself rather than by a dot
-   beside it: it is already the thing you look at, and one element saying one
-   thing beats two. A dashed rule is "not connected" without being red. */
-.shell__code--connecting,
-.shell__code--offline {
-    border-style: dashed;
-    color: var(--ink-2);
-}
-
-.shell__room,
-.shell__position {
-    flex-shrink: 0;
-    color: var(--ink-2);
-    font-size: var(--fs-micro);
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    white-space: nowrap;
+    gap: 12px;
+    height: var(--header-h);
+    padding: 0 20px;
+    border-bottom: 1px solid var(--border);
+    background: rgb(11 11 13 / 85%);
+    backdrop-filter: blur(12px);
 }
 
 .shell__spacer {
     flex: 1;
-    min-width: 0;
 }
 
-/* The clock. Plain while there is time, and a filled red block once it is not:
-   the one place the hot colour appears without being a button. */
-.timer {
-    flex-shrink: 0;
-    padding: 3px 10px;
-    border: 1px solid var(--ink);
-    border-radius: var(--r-chip);
-    font-size: 15px;
+.shell__progress {
+    display: inline-flex;
+    white-space: nowrap;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-2);
+    font-size: var(--fs-sm);
+    font-weight: 500;
+}
+
+.shell__menu {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.shell__position--short,
+.shell__icon {
+    display: none;
+}
+
+.shell__icon {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentcolor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.room-code {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 32px;
+    padding: 0 12px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--r-pill);
+    background: var(--surface-2);
+    font-size: var(--fs-sm);
     font-weight: 600;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.08em;
+}
+
+.room-code:hover {
+    background: var(--surface-3);
+}
+
+.room-code__value {
+    min-width: 5ch;
+    text-align: center;
+}
+
+.room-code__dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--good);
+}
+
+.room-code--connecting .room-code__dot {
+    background: var(--text-3);
+}
+
+.room-code--offline .room-code__dot {
+    background: var(--bad);
+}
+
+.timer {
+    min-width: 48px;
+    padding: 4px 10px;
+    border-radius: var(--r-pill);
+    background: var(--surface-2);
+    color: var(--text);
+    font-weight: 600;
+    text-align: center;
 }
 
 .timer--over {
-    border-color: var(--signal);
-    background: var(--signal);
-    color: var(--signal-ink);
+    background: var(--accent);
+    color: var(--accent-ink);
 }
 
 .shell__body {
-    flex: 1;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) var(--side-w);
-    gap: var(--sp-6);
-    width: 100%;
-    max-width: var(--page-w);
+    grid-template-columns: minmax(0, 1fr);
+    gap: 32px;
+    max-width: 1080px;
     margin: 0 auto;
-    padding: var(--sp-5);
-    align-items: start;
+    padding: 28px 20px 64px;
 }
 
 .shell__main,
 .shell__side {
     display: flex;
     flex-direction: column;
-    gap: var(--sp-5);
+    gap: 24px;
     min-width: 0;
 }
 
-.shell__side {
-    position: sticky;
-    top: calc(var(--header-h) + var(--sp-5));
+@media (min-width: 960px) {
+    .shell__body {
+        grid-template-columns: minmax(0, 1fr) var(--side-w);
+        gap: 40px;
+    }
+
+    .shell__side {
+        position: sticky;
+        top: calc(var(--header-h) + 28px);
+        align-self: start;
+    }
 }
 
-/* ------------------------------------------------------------------- block */
+@media (max-width: 640px) {
+    .shell__bar {
+        gap: 8px;
+        padding: 0 12px;
+    }
 
-.block {
+    .shell__bar .logo,
+    .shell__menu .locale {
+        display: none;
+    }
+
+    .shell__menu .button {
+        padding: 0 10px;
+    }
+}
+
+@media (max-width: 420px) {
+    .shell__position {
+        display: none;
+    }
+
+    .shell__position--short {
+        display: inline;
+    }
+
+    .shell__action {
+        width: 40px;
+        padding: 0;
+    }
+
+    .shell__action-label {
+        display: none;
+    }
+
+    .shell__icon {
+        display: block;
+    }
+
+    .shell__body {
+        padding: 20px 16px 48px;
+    }
+}
+
+/* ---- page stack --------------------------------------------------------- */
+
+.stage {
     display: flex;
     flex-direction: column;
-    gap: var(--sp-2);
-    min-width: 0;
+    gap: 20px;
 }
 
-/* A button living in a block's legend — "copy all 4 links". Reversed, so it
-   reads as a stamp pressed onto the rule rather than as another key. */
-.stamp--action {
-    padding: 3px 9px;
-    border: 0;
-    background: var(--ink);
-    color: var(--on-ink);
-    font-family: inherit;
-    font-size: inherit;
-    letter-spacing: inherit;
-    text-transform: inherit;
-    cursor: pointer;
+.cta {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    text-align: center;
 }
 
-/* ------------------------------------------------------------------ avatar */
-
-.avatar {
-    display: inline-grid;
-    place-items: center;
-    flex-shrink: 0;
-    width: 22px;
-    height: 22px;
-    background: hsl(40 6% var(--tone, 20%));
-    color: var(--on-ink);
-    font-family: var(--font-num);
-    font-size: var(--fs-micro);
-    font-weight: 600;
-    line-height: 1;
-    letter-spacing: 0;
+.cta:empty {
+    display: none;
 }
 
-.avatar--sm {
-    width: 20px;
-    height: 20px;
-    font-size: 10px;
+.cta .muted:empty {
+    display: none;
 }
 
-.avatar--lg {
-    width: 52px;
-    height: 52px;
-    font-size: var(--fs-fig);
-}
+/* ---- roster ------------------------------------------------------------- */
 
-/* The DJ, on the band, at the moment the round pays off. The only avatar in
-   the hot colour — if they were all red, red would stop meaning anything. */
-.avatar--signal {
-    background: var(--signal);
-    color: var(--signal-ink);
-}
-
-.avatar--dimmed {
-    opacity: 0.45;
-}
-
-/* ------------------------------------------------------------------ roster */
-
-/* Presence only: HERE / GONE / YOU. See PlayerRoster for why nothing about
-   answering may appear in this list. */
 .roster {
     display: flex;
     flex-direction: column;
-    gap: 1px;
-    border: 1px solid var(--rule);
-    background: var(--rule);
+    gap: 2px;
 }
 
 .roster__row {
     display: flex;
     align-items: center;
-    gap: 9px;
-    padding: 7px 10px;
-    background: var(--paper);
-}
-
-.roster__row--dim {
-    opacity: 0.55;
+    gap: 10px;
+    padding: 6px 8px;
+    border-radius: var(--r-sm);
 }
 
 .roster__row--you {
-    background: var(--bone);
+    background: var(--surface);
 }
 
 .roster__name {
     flex: 1;
-    font-size: 13px;
+    font-weight: 500;
 }
 
-/* Words first. The colour repeats the word; it never replaces it. */
+.roster__row--away .roster__name {
+    color: var(--text-3);
+}
+
 .roster__state {
-    flex-shrink: 0;
-    font-family: var(--font-num);
-    font-size: 10px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--ink-2);
+    color: var(--text-3);
+    font-size: var(--fs-xs);
+    font-weight: 500;
 }
 
-.roster__state--gone {
-    text-decoration: line-through;
+.roster__state--ready {
+    color: var(--good);
 }
 
-/* ----------------------------------------------------------------- setlist */
+.roster__score {
+    min-width: 28px;
+    color: var(--text-2);
+    font-weight: 600;
+    text-align: right;
+}
 
-/* The running order as a fixed-length column of slots. Tracks not yet played
-   are bars of the same width with no title on them — a column of secrets you
-   watch shorten. */
+/* ---- setlist ------------------------------------------------------------ */
+
+.setlist {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
 .setlist__row {
     display: flex;
     align-items: center;
-    gap: 9px;
-    padding: 7px 10px;
+    gap: 12px;
+    padding: 6px 8px;
+    border-radius: var(--r-sm);
 }
 
 .setlist__n {
-    flex-shrink: 0;
     width: 18px;
-    color: var(--ink-2);
-    font-size: 10px;
+    color: var(--text-3);
+    font-size: var(--fs-sm);
+    text-align: right;
+}
+
+.setlist__text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
 }
 
 .setlist__title {
-    flex: 1;
-    min-width: 0;
-    font-size: 13px;
+    font-size: var(--fs-sm);
+    font-weight: 500;
 }
 
 .setlist__by {
-    flex-shrink: 0;
-    max-width: 9ch;
-    color: var(--ink-2);
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-}
-
-.setlist__seal {
-    flex: 1;
-    min-width: 0;
+    color: var(--text-3);
+    font-size: var(--fs-xs);
 }
 
 .setlist__row--playing {
-    background: var(--bone);
+    background: var(--accent-soft);
 }
 
-.setlist__row--playing .setlist__title {
+.setlist__row--playing .setlist__n,
+.setlist__row--playing .setlist__by {
+    color: var(--accent);
+}
+
+/* ---- lobby -------------------------------------------------------------- */
+
+.tracks {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.track {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px;
+    border-radius: var(--r);
+    background: var(--surface-2);
+}
+
+.track__main {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.track__art {
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: var(--r-sm);
+    object-fit: cover;
+}
+
+.track__art--empty {
+    display: grid;
+    place-items: center;
+    background: var(--surface-3);
+    color: var(--text-3);
+}
+
+.track__art--empty img {
+    width: 20px;
+    height: 20px;
+}
+
+.track__title {
+    flex: 1;
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.track__title:hover {
+    text-decoration: underline;
+}
+
+.track__x {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-3);
+}
+
+.track__x:hover {
+    background: var(--surface-3);
+    color: var(--text);
+}
+
+.shimmer {
+    color: var(--text-3);
+}
+
+/* claim picker */
+
+.claim {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.claim__badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 40px;
+    padding: 0 12px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--r-sm);
+    background: var(--surface);
+    text-align: left;
+}
+
+.claim__badge:hover {
+    border-color: var(--text-3);
+}
+
+.claim__label {
+    color: var(--text-3);
+    font-size: var(--fs-sm);
+}
+
+.claim__value {
+    flex: 1;
+    font-size: var(--fs-sm);
     font-weight: 600;
 }
 
-/* ------------------------------------------------------------- placeholder */
+.claim__chevron {
+    width: 8px;
+    height: 8px;
+    margin: 0 4px 3px;
+    border-right: 1.5px solid var(--text-2);
+    border-bottom: 1.5px solid var(--text-2);
+    transform: rotate(45deg);
+}
 
-/* Geometry for a secret that has not arrived. Holds a line open at the right
-   size so a sealed row is exactly as tall as the row it becomes. */
-.placeholder {
-    display: inline-block;
+.claim.is-open .claim__chevron {
+    margin-bottom: -3px;
+    transform: rotate(225deg);
+}
+
+.claim__deck {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--r-sm);
+}
+
+.claim__option {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 10px 12px;
+    border: 0;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    text-align: left;
+}
+
+.claim__option:last-child {
+    border-bottom: 0;
+}
+
+.claim__option:hover:not(:disabled) {
+    background: var(--surface-3);
+}
+
+.claim__option.is-active {
+    background: var(--accent-soft);
+    box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.claim__option:disabled {
+    opacity: 0.4;
+}
+
+.claim__name {
+    font-size: var(--fs-sm);
+    font-weight: 600;
+}
+
+.claim__blurb {
+    color: var(--text-2);
+    font-size: var(--fs-xs);
+}
+
+/* link field */
+
+.url {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.url__row {
+    display: flex;
+    gap: 8px;
+}
+
+.url__row .button {
+    min-height: 48px;
+}
+
+.url__hint {
+    color: var(--text-3);
+    font-size: var(--fs-xs);
+}
+
+.url__hint:empty {
+    display: none;
+}
+
+.url__hint--bad {
+    color: var(--bad);
+}
+
+.url__preview {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    border-radius: var(--r);
+    background: var(--surface-2);
+}
+
+.url__art {
     flex-shrink: 0;
-    height: 1em;
+    width: 44px;
+    height: 44px;
+    border-radius: var(--r-sm);
+    background: var(--surface-3);
+    object-fit: cover;
 }
 
-.placeholder--micro {
-    font-size: var(--fs-micro);
+.url__art:not([src]) {
+    visibility: hidden;
 }
 
-.placeholder--fig {
-    font-size: var(--fs-fig);
+.url__meta {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
 }
 
-/* ------------------------------------------------------------- embed frame */
+.url__title {
+    overflow: hidden;
+    font-weight: 500;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
 
-/*
- * The foreign rectangle is quarantined, not integrated: an ink passe-partout
- * with a printed caption strip above it. Framing a foreign object admits that
- * it is foreign. Do not try to blend it — that is how you get a design that
- * only works for one provider.
- */
-.embed-frame {
-    margin: 0;
+.url__artist {
+    color: var(--text-2);
+    font-size: var(--fs-sm);
+}
+
+.url__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-3);
+    font-size: var(--fs-xs);
+}
+
+.url__badge img {
+    width: 16px;
+    height: 16px;
+}
+
+/* settings */
+
+.settings {
     display: flex;
     flex-direction: column;
 }
 
-.embed-frame__strip {
+.setting {
     display: flex;
     align-items: center;
-    gap: var(--sp-2);
-    padding: 7px var(--sp-3);
-    background: var(--ink);
-    color: var(--bone);
-    font-size: var(--fs-micro);
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
+    gap: 12px;
+    min-height: 52px;
+    border-bottom: 1px solid var(--border);
 }
 
-.embed-frame__service {
-    margin-left: auto;
-    color: var(--on-ink-2);
+.setting:last-child {
+    border-bottom: 0;
 }
 
-.embed-frame__mat {
-    padding: 10px;
-    background: var(--ink);
+.setting__name {
+    flex: 1;
 }
 
-.embed-frame__mat iframe {
+.stepper {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px;
+    border-radius: var(--r-pill);
+    background: var(--surface-2);
+}
+
+.stepper button {
+    width: 32px;
+    height: 32px;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    font-size: 18px;
+}
+
+.stepper button:hover:not(:disabled) {
+    background: var(--surface-3);
+}
+
+.stepper button:disabled {
+    opacity: 0.3;
+}
+
+.stepper__value {
+    min-width: 20px;
+    font-weight: 600;
+    text-align: center;
+}
+
+.switch {
+    position: relative;
+    width: 46px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--r-pill);
+    background: var(--surface-3);
+    transition: background 150ms var(--ease);
+}
+
+.switch__knob {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--text);
+    transition: transform 150ms var(--ease);
+}
+
+.switch.is-on {
+    background: var(--accent);
+}
+
+.switch.is-on .switch__knob {
+    transform: translateX(18px);
+}
+
+/* ---- now playing -------------------------------------------------------- */
+
+.now {
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    background: var(--surface);
+}
+
+.now__player {
+    background: #000;
+}
+
+.now__player iframe {
     display: block;
-    width: 100%;
     border: 0;
 }
 
-.embed-frame__title {
+/* Video players get their real shape instead of a fixed-height letterbox. */
+.now__player iframe[src*='youtube'] {
+    height: auto;
+    aspect-ratio: 16 / 9;
+}
+
+.now__caption {
     display: flex;
-    align-items: baseline;
-    gap: var(--sp-3);
-    padding: 10px var(--sp-3);
-    border: 1px solid var(--rule);
-    border-top: 0;
-    background: var(--paper);
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
 }
 
-.embed-frame__name {
-    flex: 1;
-    min-width: 0;
-    font-size: 16px;
-    font-weight: 600;
-    letter-spacing: -0.01em;
-}
-
-/* A failed lookup is a designed state: the raw URL *is* the content, set in
-   mono to say so, and one line of copy takes the blame. Never invent a title. */
-.embed-frame__name--raw {
-    font-family: var(--font-num);
-    font-size: var(--fs-base);
-    font-weight: 400;
-    word-break: break-all;
-}
-
-.embed-frame__title a {
+.now__service {
     flex-shrink: 0;
-    color: var(--ink-2);
-    font-size: var(--fs-micro);
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    border-bottom: 1px solid var(--rule);
+    width: 18px;
+    height: 18px;
 }
 
-.embed-frame__failed {
-    padding: var(--sp-2) var(--sp-3) 0;
-    color: var(--signal-text);
-    font-size: var(--fs-micro);
-    line-height: 1.6;
+.now__title {
+    flex: 1;
+    font-weight: 600;
 }
 
-/* The states the embed itself can be in, inside the mat. */
-.embed--loading,
-.embed--fallback {
+.now__title--raw {
+    color: var(--text-2);
+    font-weight: 400;
+}
+
+.now__open {
+    flex-shrink: 0;
+    color: var(--text-2);
+    font-size: var(--fs-sm);
+    text-decoration: none;
+}
+
+.now__open:hover {
+    color: var(--text);
+}
+
+.now__failed {
+    padding: 0 16px 14px;
+    color: var(--text-3);
+    font-size: var(--fs-sm);
+}
+
+.embed {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: var(--sp-3);
+    gap: 12px;
     min-height: 152px;
-    padding: var(--sp-4);
-    border: 1px dashed #6b665a;
-    color: var(--on-ink-2);
+    padding: 24px;
+    color: var(--text-2);
     text-align: center;
 }
 
+.embed--loading {
+    flex-direction: row;
+}
+
+.embed--fallback {
+    background: var(--surface-2);
+}
+
 .embed__reason {
-    max-width: 42ch;
-    font-size: 13px;
-    line-height: 1.5;
+    font-size: var(--fs-sm);
 }
 
 .embed__url {
-    font-family: var(--font-num);
-    font-size: var(--fs-micro);
-    color: #6b665a;
-    word-break: break-all;
+    color: var(--text-3);
+    font-size: var(--fs-xs);
 }
 
-/* -------------------------------------------------------------------- band */
+/* ---- your track --------------------------------------------------------- */
 
-/*
- * Who put this on. The identity is the largest thing on screen at the moment
- * it lands — reversed out of ink, a full-width band rather than a line in a
- * header — and it stays put afterwards so the arithmetic below always has a
- * name at the top of it.
- */
-.band__row {
-    display: flex;
-    align-items: center;
-    gap: var(--sp-4);
-    padding: 18px var(--sp-5);
-}
-
-.band__who {
-    flex: 1;
-    min-width: 0;
+.yours {
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 6px;
+    border-color: var(--accent);
+    background: linear-gradient(var(--accent-soft), var(--accent-soft)), var(--surface);
 }
 
-.band__name {
-    font-size: var(--fs-name);
-    font-weight: 600;
-    line-height: 1.05;
-    letter-spacing: -0.02em;
+.yours__title {
+    font-size: var(--fs-lg);
 }
 
-.band__sub {
-    font-size: 12px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--on-ink-2);
-}
-
-.band__named {
-    flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 2px;
-}
-
-.band__eyebrow {
-    font-size: var(--fs-micro);
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--on-ink-2);
-}
-
-.band__count {
-    font-size: 20px;
+.yours__claim {
     font-weight: 600;
 }
 
-/* -------------------------------------------------------------------- claim */
-
-.claim-card {
-    display: flex;
-    flex-direction: column;
-    gap: var(--sp-1);
-    padding: 14px var(--sp-4);
-    border: 1px solid var(--rule);
-    background: var(--paper);
-}
-
-/* The DJ's own view of their own bet. Said on the card's face rather than left
-   to look like everybody else's. */
-.claim-card--yours {
-    border-color: var(--ink);
-}
-
-.claim-card__title {
-    font-size: 20px;
-    font-weight: 600;
-    letter-spacing: -0.01em;
-}
-
-.claim-card__blurb {
-    color: var(--ink-2);
-    line-height: 1.45;
-}
-
-/* ----------------------------------------------------------------- answers */
-
-/*
- * Fixed columns: name, number, what they said, who they named, what it came
- * to. Five columns that always hold the same thing means you can read down one
- * of them — which is how a table gets read from four feet away with a drink in
- * your hand.
- */
-.answers__row {
-    display: flex;
-    align-items: center;
-    gap: var(--sp-3);
-    padding: 9px var(--sp-3);
-    background: var(--paper);
-}
-
-.answers__name {
-    width: 132px;
-    flex-shrink: 0;
-    font-weight: 500;
-}
-
-.answers__like {
-    width: 40px;
-    flex-shrink: 0;
-    font-size: var(--fs-lead);
-    font-weight: 600;
-}
-
-.answers__tags {
-    flex: 1;
-    min-width: 0;
-    color: var(--ink-2);
-    font-size: 12px;
-}
-
-.answers__silent {
-    color: var(--ink-2);
-    font-style: italic;
-}
-
-/* The guess. A wrong one is a hairline and a middot; a right one is a filled
-   block, a tick and more weight — fill *and* mark *and* weight, so it survives
-   greyscale. */
-.answers__guess {
-    flex-shrink: 0;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 2px var(--sp-2);
-    border: 1px solid var(--rule);
-    background: var(--bone);
-    color: var(--ink-2);
-    font-size: 12px;
-    letter-spacing: 0.04em;
-    white-space: nowrap;
-}
-
-.answers__guess.is-correct {
-    border-color: var(--ink);
-    background: var(--ink);
-    color: var(--on-ink);
-    font-weight: 600;
-}
-
-.answers__sum {
-    width: 44px;
-    flex-shrink: 0;
-    text-align: right;
-    color: var(--ink-2);
-    font-size: 12px;
-}
-
-/* The line under the table that accounts for everybody who is not in it. */
-.answers__foot {
-    display: flex;
-    align-items: center;
-    gap: var(--sp-3);
-    padding: 9px var(--sp-3);
-    background: var(--bone);
-    border-top: 1px dashed var(--rule-soft);
-    color: var(--ink-2);
-    font-size: var(--fs-micro);
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-}
-
-/* ------------------------------------------------------------- your answer */
+/* ---- answer ------------------------------------------------------------- */
 
 .answer-card {
     display: flex;
     flex-direction: column;
-    gap: 14px;
-    padding: var(--sp-4);
+    gap: 28px;
 }
 
 .answer {
@@ -758,1000 +854,487 @@
     gap: 14px;
 }
 
-.rate {
+.answer__head {
     display: flex;
-    flex-direction: column;
-    gap: var(--sp-2);
-}
-
-.rate__slot {
-    display: flex;
-    flex-direction: column;
-    gap: var(--sp-2);
-}
-
-.rate__stars {
-    display: flex;
-    gap: var(--sp-1);
     flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 12px;
 }
 
-/*
- * The six rating keys. 52px desktop, 56px at 375 — six across, nothing hidden
- * behind a sheet, and every one of them clears the 44px touch target on its
- * own.
- */
-.rate__key {
-    width: 60px;
-    height: 52px;
-    display: grid;
-    place-items: center;
-    padding: 0;
-    border: 1px solid var(--rule);
-    background: var(--bone);
-    color: var(--ink-2);
-    font-family: var(--font-num);
-    font-size: var(--fs-lead);
+.answer__title,
+.pick__label {
+    font-size: var(--fs-base);
     font-weight: 600;
-    cursor: pointer;
-    transition: background var(--dur-fast) var(--ease);
+}
+
+.answer__verdict {
+    margin-left: auto;
+    white-space: nowrap;
+    color: var(--accent);
+    font-size: var(--fs-sm);
+    font-weight: 600;
+}
+
+.rate {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 6px;
+}
+
+.rate__key {
+    height: 52px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--r);
+    background: var(--surface-2);
+    font-size: var(--fs-lg);
+    font-weight: 700;
+    transition:
+        background 120ms var(--ease),
+        border-color 120ms var(--ease);
 }
 
 .rate__key:hover:not(:disabled) {
-    background: var(--paper);
+    background: var(--surface-3);
 }
 
-/* Everything up to your answer is inked in, so the row reads as a level rather
-   than as six unrelated buttons. */
-.rate__key.is-lit {
-    border-color: var(--ink);
-    background: var(--ink);
-    color: var(--on-ink);
-}
-
-/* The one you actually chose, in the hot colour with a keyline holding it off
-   the ink beside it. */
 .rate__key.is-active {
-    border-color: var(--signal-text);
-    background: var(--signal);
-    color: var(--signal-ink);
-    box-shadow: inset 0 0 0 2px var(--paper);
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--accent-ink);
 }
 
-/* Reserves its line whether or not there is a verdict yet, so picking a number
-   never shifts the toggles below it. */
-.rate__caption {
-    min-height: 1.4em;
-    color: var(--ink-2);
-    font-size: 13px;
-}
-
-.bets {
+.toggles {
     display: flex;
-    gap: var(--sp-2);
     flex-wrap: wrap;
+    gap: 8px;
+}
+
+.chip__check {
+    width: 14px;
+    color: var(--text-3);
+    text-align: center;
+}
+
+.chip.is-active .chip__check {
+    color: var(--accent);
 }
 
 .answer__note {
-    color: var(--ink-2);
-    font-size: 13px;
-    line-height: 1.5;
+    color: var(--text-3);
+    font-size: var(--fs-sm);
+}
+
+.pick {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.pick__options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
 }
 
 .answer-card__foot {
     display: flex;
     flex-direction: column;
-    gap: var(--sp-2);
-}
-
-/* --------------------------------------------------------------- the chips */
-
-/* Plain statements of fact, latching on. A pressed chip is filled ink and
-   carries the word YES; an unpressed one carries NO. Never colour alone. */
-.chip {
-    display: inline-flex;
     align-items: center;
-    gap: var(--sp-2);
-    padding: 9px 14px 9px 7px;
-    border: 1px solid var(--rule);
-    background: var(--bone);
-    color: var(--ink);
-    font-family: inherit;
-    font-size: var(--fs-base);
-    font-weight: 500;
-    max-width: 200px;
-    cursor: pointer;
-    transition: background var(--dur-fast) var(--ease);
+    gap: 10px;
 }
 
-.chip:hover:not(:disabled) {
-    background: var(--paper);
+/* ---- reveal ------------------------------------------------------------- */
+
+.reveal {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    animation: rise 300ms var(--ease);
 }
 
-.chip.is-active {
-    border-color: var(--ink);
-    background: var(--ink);
-    color: var(--on-ink);
+.reveal__dj {
+    display: flex;
+    align-items: center;
+    gap: 16px;
 }
 
-.chip:disabled {
-    opacity: 0.38;
-    cursor: not-allowed;
+.reveal__who {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
 }
 
-/* The answer toggles have no avatar, so they need no room for one. */
-.chip--answer {
-    padding-left: 14px;
+.reveal__eyebrow {
+    color: var(--text-2);
+    font-size: var(--fs-sm);
 }
 
-.pick {
+.reveal__name {
+    font-size: var(--fs-2xl);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+}
+
+.reveal__named {
+    flex-shrink: 0;
+    color: var(--text-2);
+    font-size: var(--fs-sm);
+    text-align: right;
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.stat {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px 14px;
+    border-radius: var(--r);
+    background: var(--surface-2);
+}
+
+.stat dt {
+    color: var(--text-2);
+    font-size: var(--fs-xs);
+}
+
+.stat__value {
+    font-size: var(--fs-xl);
+    font-weight: 700;
+}
+
+.stat--total {
+    background: var(--accent-soft);
+}
+
+.stat--total .stat__value {
+    color: var(--accent);
+}
+
+.reveal__claim {
     display: flex;
     flex-wrap: wrap;
-    align-items: center;
-    gap: 6px;
+    gap: 4px 8px;
+    font-size: var(--fs-sm);
 }
 
-.pick__label {
-    width: 100%;
-    font-size: 15px;
-    font-weight: 500;
+.reveal__claim span {
+    color: var(--text-2);
 }
 
-/* ------------------------------------------------------------------ ledger */
+.ledger summary {
+    width: fit-content;
+    color: var(--text-2);
+    font-size: var(--fs-sm);
+    cursor: pointer;
+}
 
-/*
- * The working. Every step prints which number became which plus one plain
- * sentence naming the cause — the ledger never prints a bare multiplier,
- * because "×0.5" never said half of *what*.
- */
+.ledger summary:hover {
+    color: var(--text);
+}
+
+.ledger__rows {
+    display: flex;
+    flex-direction: column;
+    margin-top: 12px;
+}
+
 .ledger__row {
     display: flex;
-    align-items: baseline;
-    gap: 14px;
-    padding: 13px var(--sp-4);
-    background: var(--paper);
-}
-
-.ledger__n {
-    width: 22px;
-    flex-shrink: 0;
-    color: var(--ink-2);
-    font-size: var(--fs-micro);
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-top: 1px solid var(--border);
 }
 
 .ledger__body {
-    flex: 1;
-    min-width: 0;
     display: flex;
+    flex: 1;
     flex-direction: column;
-    gap: 2px;
+    min-width: 0;
 }
 
-/* Ledger labels wrap. Nothing here may depend on a string being short, and a
-   truncated cause is a cause nobody can check. */
 .ledger__label {
-    font-size: 15px;
+    font-size: var(--fs-sm);
     font-weight: 500;
 }
 
 .ledger__detail {
-    color: var(--ink-2);
-    font-size: var(--fs-micro);
-    line-height: 1.5;
+    color: var(--text-3);
+    font-size: var(--fs-xs);
 }
 
 .ledger__change {
     flex-shrink: 0;
-    font-size: var(--fs-fig);
+    font-size: var(--fs-sm);
     font-weight: 600;
-    letter-spacing: 0.02em;
-    white-space: nowrap;
 }
 
-.ledger__total {
+.answers {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+}
+
+.answers__row {
     display: flex;
     align-items: center;
-    gap: 14px;
-    padding: var(--sp-4);
+    gap: 12px;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
 }
 
-.ledger__total .ledger__label {
+.answers__row:last-child {
+    border-bottom: 0;
+}
+
+.answers__who {
+    display: flex;
     flex: 1;
-    font-size: var(--fs-lead);
-    font-weight: 600;
-}
-
-.ledger__banked {
-    font-size: 34px;
-    font-weight: 600;
-    letter-spacing: 0.02em;
-}
-
-/* ----------------------------------------------------------------- tallies */
-
-/* ♥ and ★ stay apart, always. ♥ decides the finale's order and is set solid;
-   ★ is one person's gamble, ranks nothing, and is set quieter to say so. */
-.tallies {
-    display: flex;
-    gap: var(--sp-4);
-    flex-wrap: wrap;
-}
-
-.tally {
-    flex: 1;
-    min-width: 200px;
-    display: flex;
     flex-direction: column;
-    gap: var(--sp-1);
-    padding: 14px var(--sp-4);
-    border: 1px solid var(--rule);
-    background: var(--paper);
-}
-
-.tally__label {
-    font-size: var(--fs-micro);
-    letter-spacing: var(--track-label);
-    text-transform: uppercase;
-    color: var(--ink-2);
-}
-
-.tally__value {
-    font-size: 30px;
-    font-weight: 600;
-}
-
-.tally--quiet .tally__value {
-    color: var(--ink-2);
-    font-weight: 500;
-}
-
-.tally__blurb {
-    color: var(--ink-2);
-    font-size: 13px;
-    line-height: 1.4;
-}
-
-/* ------------------------------------------------------------------- yours */
-
-/* The DJ's own round. You are the only person in the room who can do nothing. */
-.yours {
-    gap: 6px;
-    padding: 14px var(--sp-4);
-    background: var(--ink);
-    color: var(--on-ink);
-}
-
-.yours__eyebrow {
-    font-size: var(--fs-micro);
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: var(--redact-label);
-}
-
-.yours__lead {
-    font-family: var(--font-disp);
-    font-size: 30px;
-    font-weight: 400;
-    line-height: 1.1;
-}
-
-.yours .muted {
-    color: var(--on-ink-2);
-    line-height: 1.5;
-}
-
-/* ------------------------------------------------------------------- stage */
-
-.stage {
-    display: flex;
-    flex-direction: column;
-    gap: var(--sp-5);
-}
-
-.stage__sub {
-    color: var(--ink-2);
-    line-height: 1.5;
-}
-
-.cta {
-    display: flex;
-    flex-direction: column;
-    gap: var(--sp-2);
-}
-
-/* -------------------------------------------------------------------- hand */
-
-/*
- * The hand: a handful of cards, one use each. A spent card leaves the hand
- * visually — struck through, naming the track that took it — rather than
- * vanishing, and an unavailable one prints its reason on its face.
- */
-.hand {
-    display: flex;
-    gap: var(--sp-2);
-    flex-wrap: wrap;
-}
-
-.hand__card {
-    width: 158px;
-    display: flex;
-    flex-direction: column;
-    gap: var(--sp-1);
-    padding: 11px var(--sp-3);
-    border: 1px solid var(--ink);
-    background: var(--paper);
-}
-
-/* No-claim: the floor. Unlimited, always there, quieter than the bets, and it
-   must never nag. */
-.hand__card--floor {
-    border-color: var(--rule);
-}
-
-.hand__card--out {
-    border: 1px dashed var(--rule-soft);
-    background: var(--bone);
-    opacity: 0.55;
-}
-
-.hand__card--out .hand__name {
-    text-decoration: line-through;
-}
-
-.hand__name {
-    font-size: 15px;
-    font-weight: 600;
-    line-height: 1.2;
-}
-
-.hand__blurb {
-    color: var(--ink-2);
-    font-size: 10px;
-    line-height: 1.45;
-}
-
-/* The reason a card cannot be played is printed, not implied. */
-.hand__blurb--bad {
-    color: var(--signal-text);
-}
-
-/* ------------------------------------------------------------ claim picker */
-
-.claim {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    width: 100%;
-}
-
-/* The slot on a track. An empty one reads "drop a card here or leave it safe";
-   no-claim is a legitimate finished state, so the dashes never nag. */
-.claim__badge {
-    align-self: flex-start;
-    padding: 7px 11px;
-    border: 1px solid var(--ink);
-    background: var(--ink);
-    color: var(--on-ink);
-    font-family: inherit;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-}
-
-.claim__deck {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.claim__option {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: var(--sp-3);
-    border: 1px solid var(--rule);
-    background: var(--paper);
-    color: var(--ink);
-    font-family: inherit;
-    text-align: left;
-    cursor: pointer;
-    transition: background var(--dur-fast) var(--ease);
-}
-
-.claim__option:hover:not(:disabled) {
-    background: var(--bone);
-}
-
-.claim__option.is-active {
-    border-color: var(--ink);
-    background: var(--ink);
-    color: var(--on-ink);
-}
-
-.claim__option:disabled {
-    border-style: dashed;
-    border-color: var(--rule-soft);
-    background: var(--bone);
-    opacity: 0.55;
-    cursor: not-allowed;
-}
-
-.claim__option:disabled .claim__name {
-    text-decoration: line-through;
-}
-
-.claim__name {
-    flex: 1;
     min-width: 0;
-    font-size: 15px;
+}
+
+.answers__name {
     font-weight: 500;
 }
 
-/* The reason a claim is unavailable rides on the card, never in a tooltip. */
-.claim__blurb {
+.answers__who {
+    flex-shrink: 2;
+}
+
+.answers__tags {
+    color: var(--text-3);
+    font-size: var(--fs-xs);
+}
+
+.answers__guess {
+    flex-shrink: 1;
+    min-width: 0;
+    max-width: 38%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 4px 10px;
+    border-radius: var(--r-pill);
+    background: var(--surface-2);
+    color: var(--text-3);
+    font-size: var(--fs-xs);
+}
+
+.answers__guess.is-correct {
+    background: var(--good-soft);
+    color: var(--good);
+    font-weight: 600;
+}
+
+.answers__guess i {
+    font-style: normal;
+}
+
+.answers__like {
     flex-shrink: 0;
-    max-width: 22ch;
-    font-family: var(--font-num);
-    font-size: 10px;
-    line-height: 1.45;
+    min-width: 40px;
+    font-size: var(--fs-lg);
     text-align: right;
-    color: var(--ink-2);
 }
 
-.claim__option.is-active .claim__blurb {
-    color: var(--on-ink-2);
+.answers__like small {
+    color: var(--text-3);
+    font-size: var(--fs-xs);
+    font-weight: 400;
 }
 
-/* ------------------------------------------------------------- track lists */
+@media (max-width: 480px) {
+    .reveal__name {
+        font-size: var(--fs-xl);
+    }
 
-.tracks {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-    border: 1px solid var(--rule);
-    background: var(--rule);
+    .stat__value {
+        font-size: var(--fs-lg);
+    }
 }
 
-.track {
-    display: flex;
-    align-items: center;
-    gap: var(--sp-3);
-    flex-wrap: wrap;
-    padding: 11px var(--sp-3);
-    background: var(--paper);
-}
-
-.track__logo {
-    width: 15px;
-    height: 15px;
-    flex-shrink: 0;
-    object-fit: contain;
-}
-
-.track__logo--generic {
-    display: grid;
-    place-items: center;
-    color: var(--ink-2);
-    font-size: var(--fs-micro);
-}
-
-.track__title {
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-size: 15px;
-    font-weight: 500;
-}
-
-.track__meta {
-    flex-shrink: 0;
-    color: var(--ink-2);
-    font-family: var(--font-num);
-    font-size: 10px;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-}
-
-.track__x {
-    width: 24px;
-    flex-shrink: 0;
-    padding: 0;
-    border: 0;
-    background: transparent;
-    color: var(--ink-2);
-    font-size: var(--fs-base);
-    cursor: pointer;
-}
-
-.track__x:hover {
-    color: var(--signal-text);
-}
-
-.track--playing {
-    background: var(--bone);
-}
-
-.track--played {
-    opacity: 0.5;
-}
-
-/* --------------------------------------------------------------- url field */
-
-.url {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.url__row {
-    display: flex;
-    gap: var(--sp-2);
-}
-
-.url__row .input {
-    flex: 1;
-    min-width: 0;
-    font-size: var(--fs-base);
-    padding: var(--sp-3) 14px;
-}
-
-.url__hint {
-    min-height: 1.4em;
-    color: var(--ink-2);
-    font-family: var(--font-num);
-    font-size: var(--fs-micro);
-}
-
-/* Never a colour on its own: the bad hint is a sentence that says what is
-   wrong, and the colour only reinforces it. */
-.url__hint--bad {
-    color: var(--signal-text);
-}
-
-.url__preview {
-    display: flex;
-    align-items: center;
-    gap: var(--sp-3);
-    padding: 10px var(--sp-3);
-    border: 1px solid var(--rule);
-    background: var(--paper);
-}
-
-.url__art {
-    width: 40px;
-    height: 40px;
-    flex-shrink: 0;
-    object-fit: cover;
-}
-
-.url__meta {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-}
-
-.url__title {
-    font-weight: 500;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.url__artist {
-    color: var(--ink-2);
-    font-size: 13px;
-}
-
-.url__badge {
-    flex-shrink: 0;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--ink-2);
-    font-family: var(--font-num);
-    font-size: 10px;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-}
-
-.url__badge img {
-    width: 14px;
-    height: 14px;
-}
-
-/* ---------------------------------------------------------------- settings */
-
-.setting {
-    display: flex;
-    align-items: center;
-    gap: var(--sp-3);
-    padding: 11px var(--sp-3);
-}
-
-.setting__name {
-    flex: 1;
-    font-weight: 500;
-}
-
-.stepper {
-    display: flex;
-    align-items: center;
-    border: 1px solid var(--rule);
-}
-
-.stepper button {
-    width: 34px;
-    height: 34px;
-    padding: 0;
-    border: 0;
-    background: var(--bone);
-    color: var(--ink);
-    font-size: var(--fs-base);
-    cursor: pointer;
-    transition: background var(--dur-fast) var(--ease);
-}
-
-.stepper button:hover:not(:disabled) {
-    background: var(--paper);
-}
-
-.stepper button:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
-}
-
-.stepper__value {
-    min-width: 34px;
-    text-align: center;
-    font-size: 15px;
-    font-weight: 600;
-}
-
-/* A word, not a sliding pill. The state has to survive greyscale like every
-   other state in the product. */
-.toggle {
-    padding: var(--sp-1) 10px;
-    border: 1px solid var(--rule);
-    background: var(--bone);
-    color: var(--ink-2);
-    font-family: var(--font-num);
-    font-size: var(--fs-micro);
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: background var(--dur-fast) var(--ease);
-}
-
-.toggle--on {
-    border-color: var(--ink);
-    background: var(--ink);
-    color: var(--on-ink);
-}
-
-/* ------------------------------------------------------------------ finale */
+/* ---- finale ------------------------------------------------------------- */
 
 .finale__head {
     display: flex;
-    align-items: baseline;
-    gap: 14px;
-    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px 0 4px;
 }
 
 .finale__title {
-    font-family: var(--font-disp);
-    font-size: var(--fs-display);
-    font-weight: 400;
+    font-size: 40px;
+    font-weight: 800;
+    letter-spacing: -0.035em;
     line-height: 1.05;
-    letter-spacing: 0;
 }
 
-.finale__summary {
-    margin-left: auto;
-    color: var(--ink-2);
-    font-size: var(--fs-micro);
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
+.chart {
+    display: flex;
+    flex-direction: column;
 }
 
-.final-list__row {
+.chart__row {
     display: flex;
     align-items: center;
-    gap: var(--sp-3);
-    padding: 10px var(--sp-3);
+    gap: 14px;
+    padding: 10px 0;
+    border-top: 1px solid var(--border);
 }
 
-.final-list__n {
-    width: 22px;
-    flex-shrink: 0;
-    color: var(--ink-2);
-    font-size: var(--fs-micro);
+.chart__row:first-child {
+    border-top: 0;
 }
 
-.final-list__title {
+.chart__rank {
+    width: 20px;
+    color: var(--text-3);
+    font-weight: 600;
+    text-align: right;
+}
+
+.chart__text {
+    display: flex;
     flex: 1;
+    flex-direction: column;
     min-width: 0;
-    font-size: 15px;
+}
+
+.chart__title {
     font-weight: 500;
+    text-decoration: none;
 }
 
-.final-list__played,
-.final-list__gave {
-    flex-shrink: 0;
-    color: var(--ink-2);
-    font-size: var(--fs-micro);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+.chart__title:hover {
+    text-decoration: underline;
 }
 
-.final-list__dj {
-    width: 96px;
-    flex-shrink: 0;
-    text-align: right;
-    font-size: 13px;
+.chart__dj {
+    color: var(--text-3);
+    font-size: var(--fs-xs);
 }
 
-/* ♥ is solid because it decides the order. ★ is quiet because it decides
-   nothing. They are never in the same column and never the same weight. */
-.final-list__love {
-    width: 56px;
+.chart__love {
     flex-shrink: 0;
-    text-align: right;
-    font-size: 15px;
     font-weight: 600;
 }
 
-.final-list__banked {
-    width: 56px;
+.chart__banked {
     flex-shrink: 0;
+    min-width: 44px;
+    color: var(--text-3);
+    font-size: var(--fs-sm);
     text-align: right;
-    color: var(--ink-2);
-    font-size: 13px;
 }
-
-/* Written, not blank: the one screen where a zero state is a personality test
-   for the product. */
-.takeaway__empty {
-    padding: 13px;
-    border: 1px dashed var(--rule-soft);
-    background: var(--paper);
-    font-size: 15px;
-    line-height: 1.4;
-}
-
-/* ------------------------------------------------------------------ awards */
 
 .awards {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: var(--sp-2);
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 10px;
 }
 
 .award {
     display: flex;
     flex-direction: column;
-    gap: 3px;
-    padding: 13px;
-    border: 1px solid var(--rule);
-    background: var(--paper);
+    gap: 4px;
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    background: var(--surface);
 }
 
-/*
- * One award leads, in ink. The rest are a grid of equals — there is no
- * leaderboard here and the layout must not imply one.
- *
- * The fill is declared here rather than left to the `.ink` utility on the
- * element: `.award` sets its own background, and app.css loads after
- * theme.css, so the utility lost and the card stayed on paper — with the
- * reversed text colours still applied. That is how it ended up printing
- * `--on-ink-2` on `--paper`, at about 2:1.
- */
 .award--lead {
-    border-color: var(--ink);
-    background: var(--ink);
-    color: var(--on-ink);
+    grid-column: 1 / -1;
+    border-color: var(--accent);
+    background: linear-gradient(135deg, rgb(255 176 32 / 16%), transparent 60%), var(--surface);
 }
 
-/* Not given, with the reason. Never omitted: the explanation is more
-   interesting than the trophy would have been. */
-.award--none {
-    border: 1px dashed var(--rule-soft);
-    background: var(--bone);
+.award__glyph {
+    font-size: 20px;
+    line-height: 1;
+}
+
+.award--lead .award__glyph {
+    color: var(--accent);
 }
 
 .award__title {
-    font-size: 10px;
-    letter-spacing: var(--track-label);
-    text-transform: uppercase;
-    color: var(--ink-2);
+    margin-top: 6px;
+    font-weight: 700;
 }
 
-.award--lead .award__title {
-    color: var(--on-ink-2);
+.award__blurb {
+    color: var(--text-3);
+    font-size: var(--fs-xs);
 }
 
-/* Ties are shared, never broken: one winner per line, so a three-way tie reads
-   as three names rather than as a pile. */
 .award__winners {
     display: flex;
     flex-direction: column;
-    font-size: 16px;
-    font-weight: 600;
-    line-height: 1.25;
+    margin-top: 10px;
+    font-size: var(--fs-lg);
+    font-weight: 700;
+}
+
+.award--lead .award__winners {
+    font-size: var(--fs-xl);
+}
+
+.award__who {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .award__winners--none {
-    color: var(--ink-2);
+    color: var(--text-3);
+    font-size: var(--fs-sm);
+    font-weight: 500;
 }
 
-.award__detail,
-.award__value {
-    color: var(--ink-2);
-    font-size: var(--fs-micro);
-    line-height: 1.45;
+.award--none {
+    opacity: 0.6;
 }
 
-/* Pinned to the bottom, so the figures line up across a row of cards however
-   long the titles above them run. */
+.award__detail {
+    color: var(--text-2);
+    font-size: var(--fs-sm);
+}
+
 .award__value {
     margin-top: auto;
-    padding-top: 3px;
-}
-
-.award--lead .award__detail,
-.award--lead .award__value {
-    color: var(--on-ink-2);
-}
-
-/* ------------------------------------------------------------ drum machine */
-
-/*
- * A punched card. An armed step is the same solid ink as a redaction, so the
- * one thing on screen that is allowed to move is also the only thing on screen
- * with nothing to hide.
- */
-.dm__card {
-    display: flex;
-    flex-direction: column;
-    gap: 9px;
-    padding: 11px;
-    border: 1px solid var(--rule);
-    background: var(--paper);
-}
-
-.dm__head,
-.dm__row {
-    display: grid;
-    grid-template-columns: 30px repeat(8, minmax(0, 1fr));
-    gap: 3px;
-    align-items: center;
-}
-
-/* The playhead lives above the card, not inside the cells: a cell is either
-   punched or it is not, and nothing else may change how it looks. */
-.dm__tick {
-    height: 3px;
-    background: var(--rule);
-    transition: background 60ms linear;
-}
-
-.dm__tick.is-now {
-    background: var(--signal);
-}
-
-.dm__voice {
-    color: var(--ink-2);
-    font-size: 9px;
-    letter-spacing: 0.08em;
-}
-
-.dm__cell {
-    aspect-ratio: 1;
-    min-height: 0;
-    padding: 0;
-    border: 1px solid var(--rule);
-    background: var(--bone);
-    cursor: pointer;
-    transition: background 60ms linear;
-}
-
-.dm__cell.is-on {
-    border-color: var(--ink);
-    background: var(--ink);
-}
-
-.dm__bar {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    padding-top: 2px;
-}
-
-.dm__transport,
-.dm__clear {
-    padding: 5px 9px;
-    border: 1px solid var(--ink);
-    background: var(--bone);
-    color: var(--ink);
-    font-family: var(--font-num);
-    font-size: 10px;
+    padding-top: 8px;
+    color: var(--text-2);
+    font-size: var(--fs-sm);
     font-weight: 600;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    cursor: pointer;
 }
 
-.dm__transport.is-running {
-    background: var(--ink);
-    color: var(--on-ink);
-}
+/* ---- rules sheet -------------------------------------------------------- */
 
-.dm__clear {
-    border-color: var(--rule);
-    color: var(--ink-2);
-}
-
-.dm__count {
-    margin-left: auto;
-    color: var(--ink-2);
-    font-size: 10px;
-    letter-spacing: 0.06em;
-}
-
-/* ------------------------------------------------------------------ toasts */
-
-.toasts {
-    position: fixed;
-    left: 50%;
-    bottom: var(--sp-5);
-    z-index: 60;
-    transform: translateX(-50%);
-    display: flex;
-    flex-direction: column;
-    gap: var(--sp-2);
-    width: min(420px, calc(100vw - 2 * var(--sp-5)));
-}
-
-.toast {
-    padding: 11px var(--sp-3);
-    border: 1px solid var(--ink);
-    background: var(--ink);
-    color: var(--on-ink);
-    font-size: 13px;
-    line-height: 1.45;
-}
-
-.toast--success {
-    border-left: 3px solid var(--on-ink);
-}
-
-.toast--error {
-    border-left: 3px solid var(--signal);
-}
-
-/* ------------------------------------------------------------------- sheet */
-
-/*
- * A real `<dialog>`, so focus trapping, Escape and the backdrop come from the
- * platform. The dialog element itself is the backdrop: it fills the viewport
- * and centres the sheet inside it.
- *
- * The `[open]` gate is load-bearing. A closed dialog is hidden by the UA's own
- * `dialog:not([open]) { display: none }`, and *any* unconditional `display` in
- * author CSS overrides it — which leaves the rules sheet painted over the app
- * from first render with no way to dismiss it, because `close()` sets the
- * attribute this rule is keyed on and nothing else. Style the open state.
- */
+/* Display only when open: any unconditional `display` overrides the UA's
+   `dialog:not([open]) { display: none }` and the sheet would never close. */
 .sheet {
     position: fixed;
     inset: 0;
     z-index: 80;
-    padding: var(--sp-5);
-    background: rgb(23 22 20 / 55%);
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    max-height: none;
+    padding: 16px;
     border: 0;
+    background: transparent;
 }
 
 .sheet[open] {
@@ -1760,142 +1343,159 @@
 }
 
 .sheet::backdrop {
-    background: rgb(23 22 20 / 55%);
+    background: rgb(0 0 0 / 65%);
+    backdrop-filter: blur(4px);
 }
 
 .sheet__body {
-    width: min(640px, 100%);
-    max-height: 84dvh;
-    overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: var(--sp-3);
-    padding: var(--sp-5);
-    background: var(--bone);
-    border-radius: var(--r-frame);
+    gap: 16px;
+    width: min(600px, 100%);
+    max-height: 86dvh;
+    overflow-y: auto;
+    padding: 24px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--r-lg);
+    background: var(--surface);
+    color: var(--text);
+}
+
+/* A scrolling flex column shrinks its children by default, and the bordered
+   lists below have overflow: hidden, so they collapsed to nothing. */
+.sheet__body > * {
+    flex-shrink: 0;
 }
 
 .sheet__header {
     display: flex;
     align-items: center;
-    gap: var(--sp-3);
-    padding-bottom: var(--sp-2);
-    border-bottom: 1px solid var(--rule);
+    gap: 12px;
 }
 
 .sheet__header h2 {
     flex: 1;
-    font-family: var(--font-disp);
-    font-size: 30px;
-    font-weight: 400;
-    letter-spacing: 0;
+    font-size: var(--fs-xl);
 }
 
 .sheet__tools {
     display: flex;
     align-items: center;
-    gap: var(--sp-2);
+    gap: 6px;
 }
 
-/* The house rule, set as the one thing on the sheet you are asked to agree to. */
 .sheet__oath {
-    padding: var(--sp-3) 14px;
-    border-left: 3px solid var(--ink);
-    background: var(--paper);
-    font-size: 15px;
+    padding: 14px 16px;
+    border-radius: var(--r);
+    background: var(--accent-soft);
+    font-size: var(--fs-sm);
     line-height: 1.5;
 }
 
 .sheet__list {
     display: flex;
     flex-direction: column;
-    gap: var(--sp-3);
+    gap: 14px;
     counter-reset: rule;
 }
 
 .sheet__list li {
-    display: flex;
-    gap: var(--sp-3);
+    display: grid;
+    grid-template-columns: 24px 1fr;
+    column-gap: 10px;
     counter-increment: rule;
 }
 
 .sheet__list li::before {
-    content: counter(rule, decimal-leading-zero);
-    flex-shrink: 0;
-    color: var(--ink-2);
-    font-family: var(--font-num);
-    font-size: var(--fs-micro);
-    line-height: 1.6;
+    content: counter(rule);
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--surface-3);
+    color: var(--text-2);
+    font-size: var(--fs-xs);
+    font-weight: 600;
+}
+
+.sheet__list strong {
+    display: block;
+    font-weight: 600;
+}
+
+.sheet__list p {
+    color: var(--text-2);
+    font-size: var(--fs-sm);
 }
 
 .sheet__subhead {
-    padding-top: var(--sp-2);
-    font-family: var(--font-num);
-    font-size: var(--fs-micro);
-    font-weight: 600;
-    letter-spacing: var(--track-label);
-    text-transform: uppercase;
-    color: var(--ink-2);
-}
-
-.sheet__lead {
-    font-size: 15px;
-    font-weight: 600;
-}
-
-.sheet__note,
-.sheet__example {
-    color: var(--ink-2);
-    font-size: 13px;
-    line-height: 1.55;
-}
-
-.sheet__example {
-    padding: var(--sp-2) var(--sp-3);
-    border: 1px solid var(--rule);
-    background: var(--paper);
-    font-family: var(--font-num);
-}
-
-.rules-claims {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-    border: 1px solid var(--rule);
-    background: var(--rule);
-}
-
-.rules-claims li {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    padding: var(--sp-2) var(--sp-3);
-    background: var(--paper);
-}
-
-.rules-claims strong {
+    padding-top: 8px;
     font-size: var(--fs-base);
 }
 
-.rules-claims span {
-    color: var(--ink-2);
-    font-size: 13px;
+.sheet__lead {
+    font-size: var(--fs-sm);
+    font-weight: 600;
 }
 
+.sheet__note {
+    color: var(--text-2);
+    font-size: var(--fs-sm);
+}
+
+.sheet__example {
+    padding: 12px 14px;
+    border-radius: var(--r);
+    background: var(--surface-2);
+    color: var(--text-2);
+    font-size: var(--fs-sm);
+}
+
+.rules-claims,
 .scoring {
     display: flex;
     flex-direction: column;
-    gap: 1px;
-    border: 1px solid var(--rule);
-    background: var(--rule);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+}
+
+.rules-claims li,
+.scoring__row {
+    display: flex;
+    gap: 4px 12px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+}
+
+.rules-claims li:last-child,
+.scoring__row:last-child {
+    border-bottom: 0;
+}
+
+.rules-claims li {
+    flex-direction: column;
+}
+
+.rules-claims strong {
+    font-size: var(--fs-sm);
+}
+
+.rules-claims span,
+.rules-claims em {
+    color: var(--text-2);
+    font-size: var(--fs-xs);
+    font-style: normal;
+}
+
+.rules-claims em {
+    color: var(--text-3);
 }
 
 .scoring__row {
-    display: flex;
     align-items: baseline;
-    gap: var(--sp-3);
-    padding: var(--sp-2) var(--sp-3);
-    background: var(--paper);
+    font-size: var(--fs-sm);
 }
 
 .scoring__row dt {
@@ -1903,272 +1503,6 @@
 }
 
 .scoring__row dd {
-    margin: 0;
-    flex-shrink: 0;
-    font-family: var(--font-num);
     font-weight: 600;
-}
-
-/* ---------------------------------------------------------------- language */
-
-.locale {
-    display: inline-flex;
-    flex-shrink: 0;
-    border: 1px solid var(--rule);
-}
-
-.locale__option {
-    padding: 5px var(--sp-2);
-    border: 0;
-    background: transparent;
-    color: var(--ink-2);
-    font-family: var(--font-num);
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    cursor: pointer;
-    transition: background var(--dur-fast) var(--ease);
-}
-
-.locale__option.is-active {
-    background: var(--ink);
-    color: var(--on-ink);
-}
-
-/* ------------------------------------------------------------- responsive */
-
-@media (max-width: 900px) {
-    .shell__body {
-        grid-template-columns: minmax(0, 1fr);
-    }
-
-    .shell__side {
-        position: static;
-    }
-
-    .awards {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-
-/*
- * 375px. Nothing is dropped and nothing goes behind a sheet: the five columns
- * of the answers table become five stacked rows in the same order, so the two
- * views teach the same reading.
- */
-@media (max-width: 560px) {
-    .shell__bar {
-        flex-wrap: wrap;
-        padding: var(--sp-2) 14px;
-    }
-
-    .shell__room,
-    .shell__position {
-        font-size: 10px;
-    }
-
-    .shell__body {
-        padding: 14px;
-        gap: var(--sp-5);
-    }
-
-    .band__row {
-        gap: var(--sp-3);
-        padding: 14px;
-    }
-
-    .band__name {
-        font-size: 26px;
-    }
-
-    .band__named {
-        display: none;
-    }
-
-    .avatar--lg {
-        width: 40px;
-        height: 40px;
-        font-size: var(--fs-lead);
-    }
-
-    /* Six keys across at 56px: the target grows on touch rather than shrinking. */
-    .rate__key {
-        flex: 1;
-        width: auto;
-        min-width: 0;
-        height: 56px;
-    }
-
-    .answers__row {
-        flex-wrap: wrap;
-        gap: var(--sp-2);
-    }
-
-    .answers__name {
-        width: auto;
-        flex: 1;
-    }
-
-    .answers__tags {
-        flex-basis: 100%;
-    }
-
-    .answers__sum {
-        width: auto;
-    }
-
-    .ledger__row {
-        flex-wrap: wrap;
-        padding: 11px var(--sp-3);
-    }
-
-    .ledger__n {
-        display: none;
-    }
-
-    .ledger__change {
-        font-size: 18px;
-    }
-
-    .final-list__row {
-        flex-wrap: wrap;
-        gap: var(--sp-2);
-    }
-
-    .final-list__played,
-    .final-list__dj {
-        width: auto;
-        text-align: left;
-    }
-
-    .awards {
-        grid-template-columns: minmax(0, 1fr);
-    }
-
-    .hand__card {
-        width: 100%;
-    }
-
-    .claim__blurb {
-        max-width: 14ch;
-    }
-
-    .finale__title {
-        font-size: 28px;
-    }
-
-    .finale__summary {
-        margin-left: 0;
-    }
-}
-
-/* The word carried by a latching chip, so its state never rests on fill alone. */
-.chip__state {
-    font-size: 10px;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--ink-2);
-}
-
-.chip.is-active .chip__state {
-    color: var(--on-ink-2);
-}
-
-/* What a tick is worth, said once under the table rather than on every row. */
-.answers__key {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-    color: var(--ink-2);
-    font-size: var(--fs-micro);
-}
-
-/* ------------------------------------------------- containers and details */
-
-/* Lists that get their rules and seams from `.list`, and their own identity
-   from the row rules above. Named here so the layout each one actually needs
-   lives with the component rather than being inherited by accident. */
-.answers,
-.ledger,
-.final-list,
-.setlist,
-.settings {
-    min-width: 0;
-}
-
-/* The band is a full-bleed ink block, so it must clip its own cover. */
-.band {
-    min-width: 0;
-}
-
-/* The fidget is a block like any other; the card inside it carries the frame. */
-.dm {
-    gap: var(--sp-2);
-}
-
-/* The embed's own states sit inside the passe-partout, on ink. */
-.embed {
-    width: 100%;
-}
-
-/* The guess row gets more space between chips than the answer toggles do,
-   because a name is longer than a two-word statement and the chips wrap. */
-.pick--guess {
-    gap: var(--sp-2);
-}
-
-/* An open claim picker pushes its deck out under the track it belongs to. */
-.claim.is-open {
-    padding-bottom: var(--sp-1);
-}
-
-.award__who {
-    display: block;
-}
-
-.shell__code-value {
-    display: inline-block;
-}
-
-/* Last on the bar, and the only thing there you can do by accident. */
-.shell__leave {
-    margin-right: calc(var(--sp-2) * -1);
-}
-
-.spinner__label {
-    letter-spacing: var(--track-label);
-}
-
-/* Room for two locales side by side in a narrow header. */
-.locale--compact .locale__option {
-    padding: 3px 6px;
-}
-
-/* What the trophy is for, sitting with its name. Quiet, one line, and present
-   whether or not anybody won it — a card reading only "Not given" explains
-   nothing, and five glyphs with five nicknames are not self-evident. */
-.award__blurb {
-    color: var(--ink-2);
-    font-size: var(--fs-micro);
-    line-height: 1.45;
-}
-
-.award--lead .award__blurb {
-    color: var(--on-ink-2);
-}
-
-/* The running score. Not a leaderboard — the night does not crown anybody —
-   but the number your own choices moved, in the order it puts the room in. */
-.roster__score {
-    flex-shrink: 0;
-    min-width: 34px;
-    text-align: right;
-    color: var(--ink-2);
-    font-size: var(--fs-micro);
-}
-
-.roster__score.is-top {
-    color: var(--ink);
-    font-weight: 600;
+    font-variant-numeric: tabular-nums;
 }

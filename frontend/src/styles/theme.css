@@ -1,112 +1,46 @@
-/* ---------------------------------------------------------------------------
-   Secret DJ — foundation. "Redaction".
+/* Secret DJ — tokens, base elements and shared primitives. */
 
-   The governing idea: this game is made of things that exist and are being
-   withheld — the DJ's identity, their claim, everyone's answers — and then
-   handed over all at once with names attached. So the design's first job is a
-   rendering mode for *withheld* that is visibly distinct from *absent*.
-
-   That mode is redaction: a solid ink bar with a 45° hatch, occupying exactly
-   the space the secret will occupy when it is told, wiped away left-to-right
-   at the reveal. Nothing reflows, nothing appears from nowhere; the page just
-   stops covering things up.
-
-   1. PAPER, NOT PANELS. Printed matter: two warm off-whites, one ink, one
-      hairline. No shadows, no gradients, no glass. Depth is done with a single
-      hairline and with fill inversion.
-
-   2. RADIUS ZERO. The only rounded things are the outer app frame and the room
-      code chip. Dropping radius entirely is what stops the redaction bars
-      reading as "chips".
-
-   3. ONE HOT COLOUR, AND IT IS A FILL. `--signal` paints the primary key, the
-      avatar and the overrun timer. Red as *words* uses `--signal-text`, which
-      is the darkened one — the fill tone does not clear 4.5:1 at body sizes.
-
-   4. NEVER COLOUR ALONE. Every state carries a word or a mark as well as a
-      colour: HERE / GONE / YOU, SEALED, ✓ on a correct guess, LANDED. A
-      correct guess is fill + tick + weight, so it survives greyscale.
-
-   5. ONLY COVERS ANIMATE. If something is moving, a secret is being opened.
-      That is the whole rule, and it is what buys the motion its meaning.
-   ------------------------------------------------------------------------- */
-
-@import url('https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,400..700;1,400&family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 :root {
-    color-scheme: light;
+    color-scheme: dark;
 
-    /* ---- surfaces: paper, not panels ----------------------------------- */
-    --bone: #eae6dd; /* the page */
-    --paper: #f5f2ec; /* raised rows, cards, inputs */
-    --ink: #171614; /* text, filled keys, the reversed band */
-    --ink-2: #4a473e; /* secondary text, all mono annotation */
-    --rule: #cfc9bb; /* hairlines */
-    --rule-soft: #b9b3a4; /* dashed "not here yet" outlines */
+    --bg: #0b0b0d;
+    --surface: #141417;
+    --surface-2: #1c1c20;
+    --surface-3: #26262b;
+    --border: rgb(255 255 255 / 7%);
+    --border-strong: rgb(255 255 255 / 14%);
 
-    /* ---- the one hot colour -------------------------------------------- */
-    /* Fills only: the primary key, the timer once it is over, the avatar. */
-    --signal: #b8391f;
-    --signal-ink: #ffffff;
-    /* The same red as *words* at small sizes. */
-    --signal-text: #8f2a12;
+    --text: #f4f4f5;
+    --text-2: #a1a1aa;
+    --text-3: #8a8a94;
 
-    /* ---- redaction ------------------------------------------------------ */
-    --redact: #16150f;
-    --redact-hatch: repeating-linear-gradient(45deg, #16150f 0 4px, #2b2921 4px 8px);
-    --redact-label: #8a8474; /* the SEALED legend on top of a bar */
-    --on-ink: #f5f2ec; /* text on --ink */
-    --on-ink-2: #a09a8b; /* secondary text on --ink */
+    --accent: #ffb020;
+    --accent-hover: #ffc04d;
+    --accent-ink: #1a1000;
+    --accent-soft: rgb(255 176 32 / 13%);
+    --good: #4ade80;
+    --good-soft: rgb(74 222 128 / 12%);
+    --bad: #f87171;
 
-    /* ---- type ----------------------------------------------------------- */
-    /* Archivo — everything you read. Grotesque, wide apertures, holds at 13px
-       and ships a full Cyrillic set.
-       IBM Plex Mono — every number, label and annotation. Mono is earned: the
-       product's payoff is an arithmetic receipt, and tabular figures are why
-       `27 → 4.5` reads at four feet.
-       Instrument Serif — display only, one or two per screen, never in a
-       table. Cyrillic is *not* covered; RU falls back to Archivo at the same
-       size, which is why the display step is never load-bearing. */
-    --font-ui: 'Archivo', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-    --font-num: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
-    --font-disp: 'Instrument Serif', Georgia, 'Times New Roman', serif;
+    --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 
-    --fs-micro: 11px; /* mono labels and annotations */
-    --fs-base: 14px; /* rows, copy */
-    --fs-lead: 17px; /* the one sentence that matters on a screen */
-    --fs-fig: 22px; /* ledger changes, rating keys */
-    --fs-name: 40px; /* the revealed DJ */
-    --fs-display: 38px; /* join, finale */
+    --fs-xs: 12px;
+    --fs-sm: 13px;
+    --fs-base: 15px;
+    --fs-lg: 18px;
+    --fs-xl: 24px;
+    --fs-2xl: 34px;
 
-    /* Tracking goes on uppercase mono labels only, never on a sentence —
-       tracked-out Cyrillic prose is what killed the last skin. */
-    --track-label: 0.14em;
-    --track-code: 0.22em;
+    --r-sm: 8px;
+    --r: 12px;
+    --r-lg: 18px;
+    --r-pill: 999px;
 
-    /* ---- spacing: a 4px grid -------------------------------------------- */
-    --sp-1: 4px;
-    --sp-2: 8px;
-    --sp-3: 12px;
-    --sp-4: 16px;
-    --sp-5: 20px;
-    --sp-6: 24px;
-    --sp-7: 40px;
-
-    /* ---- radii: zero everywhere ----------------------------------------- */
-    /* Printed matter has no corner radius. The two exceptions are the outer
-       app frame and the room-code chip, and they are 4px and 2px so that they
-       read as "a sheet" and "a stamp" rather than as rounded UI. */
-    --r-frame: 4px;
-    --r-chip: 2px;
-
-    /* ---- motion: one easing, three durations ---------------------------- */
     --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
-    --dur-wipe: 420ms; /* any redaction uncovering, and the stamps riding it */
-    --dur-fast: 90ms; /* hover / press, background only */
-
-    --header-h: 52px;
+    --header-h: 60px;
     --side-w: 300px;
-    --page-w: 1080px;
 }
 
 *,
@@ -118,337 +52,175 @@
 html,
 body,
 #root {
-    height: 100%;
+    min-height: 100%;
 }
 
-/* Stops the page being dragged past its own top. Without it the whole document
-   rubber-bands and the sticky bar travels down with it, which looks exactly
-   like a layout bug and is indistinguishable from one. */
 html {
     overscroll-behavior-y: none;
 }
 
 body {
     margin: 0;
-    font-family: var(--font-ui);
+    font-family: var(--font);
     font-size: var(--fs-base);
     line-height: 1.45;
-    color: var(--ink);
-    background: var(--bone);
+    color: var(--text);
+    background: var(--bg);
     -webkit-font-smoothing: antialiased;
-    text-rendering: optimizeLegibility;
     overflow-x: hidden;
 }
 
 h1,
 h2,
 h3,
-h4 {
-    margin: 0;
-    font-weight: 600;
-    letter-spacing: -0.015em;
-    line-height: 1.25;
-}
-
-p {
-    margin: 0;
-}
-
-a {
-    color: inherit;
-    text-decoration: none;
-}
-
+p,
+ol,
 ul,
-ol {
+dl,
+dd,
+figure {
     margin: 0;
+}
+
+ol,
+ul {
     padding: 0;
     list-style: none;
 }
 
-img {
-    max-width: 100%;
+h1,
+h2,
+h3 {
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+a {
+    color: inherit;
+}
+
+button,
+input {
+    font: inherit;
+    color: inherit;
 }
 
 button {
-    font-family: inherit;
+    cursor: pointer;
 }
 
-/* Text glyphs, never colour emoji. The product's marks are ✓ × ♥ ★ ☄ ⚡ ◎ ☾ ◇
-   ▶ ■, and a platform that renders any of them in colour has invented an icon
-   set the design does not have. */
-.glyph,
-[data-glyph] {
-    font-variant-emoji: text;
+button:disabled {
+    cursor: not-allowed;
 }
 
 :focus-visible {
-    outline: 2px solid var(--signal);
+    outline: 2px solid var(--accent);
     outline-offset: 2px;
 }
 
 ::selection {
-    background: rgb(184 57 31 / 22%);
+    background: var(--accent);
+    color: var(--accent-ink);
 }
 
-* {
-    scrollbar-width: thin;
-    scrollbar-color: var(--rule) transparent;
+/* ---- utilities ---------------------------------------------------------- */
+
+.num {
+    font-variant-numeric: tabular-nums;
 }
 
-*::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-}
-
-*::-webkit-scrollbar-thumb {
-    background: var(--rule);
-}
-
-/* ---------------------------------------------------------------- surfaces */
-
-/* A bordered box. One hairline is the entire elevation system. */
-.card {
-    border: 1px solid var(--rule);
-    background: var(--paper);
-}
-
-/* The mono label that titles every block: uppercase, tracked, with a rule
-   running out to the right and an optional count on the end of it. This is the
-   one place letterspacing is used, and it is never used on a sentence. */
-.label {
-    display: flex;
-    align-items: center;
-    gap: var(--sp-2);
-    font-family: var(--font-num);
-    font-size: var(--fs-micro);
-    letter-spacing: var(--track-label);
-    text-transform: uppercase;
-    color: var(--ink-2);
-}
-
-/* The rule *is* the rest of the label: it runs from the words to the edge of
-   the block, which is what makes a bare line of small caps read as a heading
-   rather than as a stray annotation. */
-.label::after {
-    content: '';
-    flex: 1;
-    min-width: 16px;
-    height: 1px;
-    background: var(--rule);
-}
-
-/* When the label carries a trailing count, the rule goes *between* them
-   instead of after the lot. */
-.label:has(.label__count)::after {
-    order: 1;
-}
-
-.label__count {
-    order: 2;
-    letter-spacing: var(--track-label);
-    white-space: nowrap;
-}
-
-/* Reversed: the same label sitting on an ink block. */
-.label--ink {
-    color: var(--on-ink-2);
-}
-
-.label--ink::after {
-    background: rgb(160 154 139 / 35%);
-}
-
-.divider {
-    height: 1px;
-    background: var(--rule);
-}
-
-/* A list is a bordered box whose rows are separated by the gap itself, so rows
-   never double up borders and a one-row list has no seam in it. */
-.list {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-    border: 1px solid var(--rule);
-    background: var(--rule);
-}
-
-/* The heavy rule. Used once per screen, on the block that matters most. */
-.list--strong {
-    border-color: var(--ink);
-    background: var(--ink);
-}
-
-.list > * {
-    background: var(--paper);
-}
-
-/* ---------------------------------------------------------------- redaction */
-
-/*
- * The primitive.
- *
- * A redacted element renders its content at full size and covers it with an
- * absolutely-positioned sibling. That is the whole "no reflow" promise: the
- * bar is the size of the sentence beneath it, so you can measure the secret,
- * count it, see there are nine answers in there, and read nothing.
- *
- * Never render a placeholder and swap it — and never ship the secret to the
- * client and hide it in CSS. The covers are a rendering of information the
- * browser genuinely does not have.
- */
-.redact {
-    position: relative;
-    overflow: hidden;
-}
-
-.redact__cover {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    gap: var(--sp-3);
-    padding: 0 var(--sp-3);
-    background-color: var(--redact);
-    background-image: var(--redact-hatch);
-    /* Sealed: covering everything. Wiped: gone off the right-hand edge. The
-       only property that animates anywhere in the product. */
-    clip-path: inset(0 0 0 0);
-    transition: clip-path var(--dur-wipe) var(--ease);
-    pointer-events: none;
-}
-
-.redact[data-open='true'] .redact__cover {
-    clip-path: inset(0 0 0 100%);
-}
-
-.redact__legend {
-    font-family: var(--font-num);
-    font-size: var(--fs-micro);
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--redact-label);
-    white-space: nowrap;
+.clip {
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
-}
-
-.redact__legend--end {
-    margin-left: auto;
-    color: var(--redact-label);
-    letter-spacing: var(--track-label);
-}
-
-/* A stamp that changes with the wipe rather than after it — the colour rides
-   along with the cover so the two read as one movement. */
-.stamp {
-    font-family: var(--font-num);
-    font-size: var(--fs-micro);
-    letter-spacing: var(--track-label);
-    text-transform: uppercase;
-    color: var(--ink-2);
-    transition: color var(--dur-wipe) var(--ease);
     white-space: nowrap;
 }
 
-.stamp--open {
-    color: var(--signal-text);
+.muted {
+    color: var(--text-2);
+    font-size: var(--fs-sm);
 }
 
-/* ------------------------------------------------------------------ blocks */
-
-/* An ink block: the reversed band. The second of the two elevation devices,
-   and the only one that is not a hairline. */
-.ink {
-    background: var(--ink);
-    color: var(--on-ink);
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
 }
 
-.ink .muted,
-.ink .label {
-    color: var(--on-ink-2);
-}
+/* ---- buttons ------------------------------------------------------------ */
 
-/* ---------------------------------------------------------------- controls */
-
-/* A key. Square, hairlined, filled or not — there is no third state and no
-   bevel. Hover moves the background and nothing else. */
 .button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: var(--sp-2);
-    padding: 10px var(--sp-4);
+    gap: 8px;
     min-height: 40px;
-    border: 1px solid var(--ink);
-    border-radius: 0;
-    background: var(--bone);
-    color: var(--ink);
-    font-family: var(--font-num);
-    font-size: 12px;
+    padding: 0 16px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--r-pill);
+    background: var(--surface-2);
     font-weight: 600;
-    letter-spacing: var(--track-label);
-    /* Tracking adds space after the *last* letter too, which shoves a centred
-       label off to the left. Indenting the line by the same amount puts it
-       back. Every centred, tracked thing in the product needs this pair. */
-    text-indent: var(--track-label);
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: background var(--dur-fast) var(--ease);
+    font-size: var(--fs-sm);
+    text-decoration: none;
+    white-space: nowrap;
+    transition:
+        background 120ms var(--ease),
+        border-color 120ms var(--ease),
+        transform 120ms var(--ease);
 }
 
 .button:hover:not(:disabled) {
-    background: var(--paper);
+    background: var(--surface-3);
+}
+
+.button:active:not(:disabled) {
+    transform: scale(0.98);
 }
 
 .button:disabled {
-    opacity: 0.38;
-    cursor: not-allowed;
+    border-color: transparent;
+    background: var(--surface-2);
+    color: var(--text-3);
 }
 
-/* The one key you are meant to press. */
 .button--primary {
-    border-color: var(--signal);
-    background: var(--signal);
-    color: var(--signal-ink);
+    border-color: transparent;
+    background: var(--accent);
+    color: var(--accent-ink);
 }
 
 .button--primary:hover:not(:disabled) {
-    background: var(--signal-text);
+    background: var(--accent-hover);
 }
 
 .button--ghost {
-    min-height: 32px;
-    padding: 5px var(--sp-2);
     border-color: transparent;
     background: transparent;
-    color: var(--ink-2);
+    color: var(--text-2);
 }
 
 .button--ghost:hover:not(:disabled) {
-    background: var(--paper);
-    color: var(--ink);
+    background: var(--surface-2);
+    color: var(--text);
 }
 
-/* The sentence-shaped buttons — "Start the night", "Next track". These are
-   prose, not legends, so they drop the mono and the tracking. */
 .button--lg {
-    min-height: 48px;
-    padding: 15px var(--sp-5);
-    font-family: var(--font-ui);
-    font-size: 16px;
-    font-weight: 600;
-    letter-spacing: 0;
-    text-indent: 0;
-    text-transform: none;
+    min-height: 52px;
+    padding: 0 24px;
+    font-size: var(--fs-base);
 }
 
 .button--block {
     width: 100%;
 }
 
-/* ------------------------------------------------------------------ fields */
+/* ---- inputs ------------------------------------------------------------- */
 
 .field {
     display: flex;
@@ -457,131 +229,234 @@ button {
 }
 
 .field__label {
-    font-family: var(--font-num);
-    font-size: var(--fs-micro);
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--ink-2);
-}
-
-.field__optional {
-    text-transform: none;
-    letter-spacing: 0;
+    color: var(--text-2);
+    font-size: var(--fs-sm);
+    font-weight: 500;
 }
 
 .input {
     width: 100%;
-    padding: 13px 14px;
-    border: 1px solid var(--ink);
-    border-radius: 0;
-    background: var(--paper);
-    color: var(--ink);
-    font-family: inherit;
-    font-size: 16px;
-    transition: border-color var(--dur-fast) var(--ease);
+    min-height: 48px;
+    padding: 0 14px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--r);
+    background: var(--surface-2);
+    font-size: var(--fs-base);
+    transition: border-color 120ms var(--ease);
 }
 
 .input::placeholder {
-    color: var(--ink-2);
+    color: var(--text-3);
 }
 
 .input:focus {
+    border-color: var(--accent);
     outline: none;
-    border-color: var(--signal);
 }
 
-/* The room code is the one string people read out loud, so it is set the way a
-   code is stamped on a case: reversed out of ink, tracked wide, tabular. */
+.input[aria-invalid='true'] {
+    border-color: var(--bad);
+}
+
 .input--code {
-    background: var(--ink);
-    border-color: var(--ink);
-    color: var(--on-ink);
-    font-family: var(--font-num);
-    font-size: var(--fs-display);
     font-weight: 600;
-    font-variant-numeric: tabular-nums;
-    /* Trailing tracking would push the last glyph off the optical centre. */
-    letter-spacing: var(--track-code);
-    text-indent: var(--track-code);
-    text-align: center;
+    letter-spacing: 0.18em;
     text-transform: uppercase;
 }
 
-.input--code::placeholder {
-    color: var(--on-ink-2);
+/* ---- cards and sections ------------------------------------------------- */
+
+.card {
+    padding: 20px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    background: var(--surface);
 }
 
-/* --------------------------------------------------------------- utilities */
+.block {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
 
-.muted {
-    color: var(--ink-2);
+.block__head {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.block__title {
     font-size: var(--fs-base);
+    font-weight: 600;
 }
 
-/* Every number, label and annotation in the product. */
-.num {
-    font-family: var(--font-num);
+.block__aside {
+    margin-left: auto;
+    color: var(--text-3);
+    font-size: var(--fs-sm);
     font-variant-numeric: tabular-nums;
 }
 
-.visually-hidden {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
+/* ---- chips -------------------------------------------------------------- */
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 40px;
+    padding: 0 14px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--r-pill);
+    background: transparent;
+    font-size: var(--fs-sm);
+    font-weight: 500;
+    transition:
+        background 120ms var(--ease),
+        border-color 120ms var(--ease);
 }
 
-/* Truncation is only ever applied where the full value is available elsewhere —
-   a track title with a `title` attribute, a player name that appears in full in
-   the roster. Claims, errors and ledger labels wrap instead, because nothing in
-   this product may depend on a string being short. */
-.clip {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+.chip:hover:not(:disabled) {
+    background: var(--surface-2);
 }
 
-.shimmer {
-    color: var(--ink-2);
+.chip.is-active {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    color: var(--text);
 }
+
+.chip:has(.avatar) {
+    padding-left: 5px;
+}
+
+/* ---- avatar ------------------------------------------------------------- */
+
+.avatar {
+    display: inline-grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: hsl(var(--hue, 0) 55% 42%);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.avatar--sm {
+    width: 28px;
+    height: 28px;
+    font-size: 11px;
+}
+
+.avatar--lg {
+    width: 64px;
+    height: 64px;
+    font-size: 22px;
+}
+
+.avatar--dimmed {
+    opacity: 0.4;
+}
+
+/* ---- spinner ------------------------------------------------------------ */
 
 .spinner {
     display: inline-flex;
     align-items: center;
-    gap: var(--sp-2);
-    color: var(--ink-2);
-    font-family: var(--font-num);
-    font-size: var(--fs-micro);
-    letter-spacing: var(--track-label);
-    text-transform: uppercase;
+    gap: 10px;
+    color: var(--text-2);
 }
 
-/* A waiting mark, not a spinning one: nothing on an idle screen moves. */
-.spinner__disc {
-    width: 9px;
-    height: 9px;
-    flex-shrink: 0;
-    background: var(--ink-2);
+.spinner__ring {
+    width: 18px;
+    height: 18px;
+    border: 2px solid currentcolor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spin 700ms linear infinite;
 }
 
-/*
- * Reduced motion.
- *
- * The reveal is *identical* under reduced motion — a cut instead of a wipe.
- * Nothing is communicated by the animation that is not also communicated by
- * the end state plus its label, which is why this can be a blanket rule.
- */
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ---- locale toggle ------------------------------------------------------ */
+
+.locale {
+    display: inline-flex;
+    padding: 3px;
+    border-radius: var(--r-pill);
+    background: var(--surface-2);
+}
+
+.locale--compact .locale__option {
+    min-width: 30px;
+    height: 24px;
+}
+
+.locale__option {
+    min-width: 34px;
+    height: 28px;
+    padding: 0 8px;
+    border: 0;
+    border-radius: var(--r-pill);
+    background: transparent;
+    color: var(--text-3);
+    font-size: var(--fs-xs);
+    font-weight: 600;
+}
+
+.locale__option.is-active {
+    background: var(--surface-3);
+    color: var(--text);
+}
+
+/* ---- toasts ------------------------------------------------------------- */
+
+.toasts {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    z-index: 90;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    transform: translateX(-50%);
+    pointer-events: none;
+}
+
+.toast {
+    padding: 10px 16px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--r-pill);
+    background: var(--surface-3);
+    box-shadow: 0 8px 24px rgb(0 0 0 / 40%);
+    font-size: var(--fs-sm);
+    pointer-events: auto;
+    animation: rise 200ms var(--ease);
+}
+
+.toast--error {
+    border-color: var(--bad);
+}
+
+@keyframes rise {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
     *::after {
-        transition-duration: 1ms !important;
-        animation-duration: 1ms !important;
-        animation-iteration-count: 1 !important;
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
     }
 }

@@ -99,10 +99,10 @@ export function UrlField({ value, onChange, onSubmit, disabled, busy }: UrlField
                 </button>
             </div>
 
+            {/* Only speaks up when something is wrong; the preview says the rest. */}
             <p id={`${inputId}-hint`} className={`url__hint${bad ? ' url__hint--bad' : ''}`}>
                 {state === 'invalid' && t.url.hintInvalid}
                 {state === 'unsupported' && t.url.hintUnsupported}
-                {state === 'known' && (loading ? t.url.hintLooking : preview ? t.url.hintGood : t.url.hintReady)}
             </p>
 
             {state === 'known' && (preview || loading) && (

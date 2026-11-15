@@ -46,6 +46,12 @@ function Game() {
         }
     }, [lastFeed, notify, t]);
 
+    // A new screen starts at the top, not wherever the last one was scrolled to.
+    const phase = view?.phase;
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, [phase, view?.round?.number]);
+
     const overlay = (
         <>
             <Toasts notices={game.notices} onDismiss={game.dismissNotice} />

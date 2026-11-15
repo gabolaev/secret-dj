@@ -28,54 +28,35 @@ const view: GameView = {
 };
 
 describe('round markup', () => {
-  it('quarantines the embed rather than trying to blend it', () => {
+  it('captions the player with the title and a way out to the service', () => {
     const { container } = render(<I18nProvider><RoundScreen view={view} game={game} /></I18nProvider>);
 
-    // A printed caption strip over an ink passe-partout. Framing a foreign
-    // object admits that it is foreign; blending it is how you get a design
-    // that only works for one provider.
-    const frame = container.querySelector('.embed-frame')!;
-    expect(frame.querySelector('.embed-frame__strip')!.textContent).toContain('Now playing');
-    expect(frame.querySelector('.embed-frame__strip')!.textContent).toContain('Spotify');
-    expect(frame.querySelector('.embed-frame__mat')).toBeTruthy();
-    // The title is ours, printed under the frame, not inside it.
-    expect(frame.querySelector('.embed-frame__name')!.textContent).toBe('X');
-
-    // No leftovers from the hardware pass.
-    expect(container.querySelector('.win, .bench, .knob, .eq, .matrix, .display')).toBeNull();
+    const now = container.querySelector('.now')!;
+    expect(now.querySelector('.now__player')).toBeTruthy();
+    expect(now.querySelector('.now__title')!.textContent).toBe('X');
+    expect(now.querySelector('.now__service')!.getAttribute('alt')).toBe('Spotify');
+    expect(now.querySelector('.now__open')!.getAttribute('href')).toBe('https://open.spotify.com/track/abc');
   });
 
-  it('seals what is withheld and leaves the rest plainly readable', () => {
+  it('shows nothing of the DJ, their claim or anyone else\'s answers before the reveal', () => {
     const { container } = render(<I18nProvider><RoundScreen view={view} game={game} /></I18nProvider>);
 
-    // The three withheld things are all present at full size and all covered.
-    // Nothing here is a placeholder waiting to be swapped: the reveal lifts
-    // these covers off, so the round and the reveal are the same page.
-    const covered = [...container.querySelectorAll('.redact')];
-    expect(covered.length).toBeGreaterThanOrEqual(3);
-    for (const node of covered) {
-      expect(node.getAttribute('data-open')).toBe('false');
-      expect(node.querySelector('.redact__cover')).toBeTruthy();
-    }
-
-    // The DJ band is the size it will be when it opens, and the bar says both
-    // what it is hiding and when it will stop.
-    const band = container.querySelector('.band')!;
-    expect(band.querySelector('.redact__legend')!.textContent).toContain('One of the 2 of you');
-    // Counts, never names.
-    expect(container.querySelector('.label')!.textContent).not.toContain('Bo');
+    expect(container.querySelector('.reveal')).toBeNull();
+    expect(container.querySelector('.answers')).toBeNull();
+    // Only you and the one other player are named, and only as guess options.
+    const named = [...container.querySelectorAll('.pick .chip')].map(chip => chip.textContent);
+    expect(named).toEqual(['BBo']);
+    // Progress is a count, never a list of who is done.
+    expect(container.querySelector('.answer-card__foot')!.textContent).toContain('0 of 2 done');
   });
 
-  it('lights the rating scale up to the number you chose', () => {
+  it('marks only the number you chose on the rating scale', () => {
     const { container } = render(<I18nProvider><RoundScreen view={view} game={game} /></I18nProvider>);
 
-    // Zero through five. Everything up to your answer is inked in, so the row
-    // reads as a level rather than as six unrelated buttons.
     const likes = [...container.querySelectorAll('.rate__key')];
     expect(likes).toHaveLength(6);
-    expect(likes.map(button => button.className.includes('is-lit'))).toEqual([
-      false, true, true, true, true, false,
+    expect(likes.map(button => button.className.includes('is-active'))).toEqual([
+      false, false, false, false, true, false,
     ]);
-    expect(likes[4].className).toContain('is-active');
   });
 });

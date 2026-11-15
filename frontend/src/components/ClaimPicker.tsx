@@ -19,14 +19,7 @@ interface ClaimPickerProps {
     onPick: (claim: ClaimId) => void;
 }
 
-/**
- * The bet attached to one queued track, collapsed to a badge until you open it.
- *
- * Five claims across three tracks is fifteen buttons if every track shows the
- * whole deck at once, which is a wall rather than a decision. One open picker
- * at a time keeps the lobby readable and matches how the choice is actually
- * made: track by track.
- */
+/** The bet attached to one queued track: a button showing it, which opens the list. */
 export function ClaimPicker({ track, view, spent, open, onToggle, onPick }: ClaimPickerProps) {
     const t = useT();
     // Only ever absent on a track being played, which the lobby never shows.
@@ -39,14 +32,14 @@ export function ClaimPicker({ track, view, spent, open, onToggle, onPick }: Clai
     return (
         <div className={`claim${open ? ' is-open' : ''}`}>
             <button type="button" className="claim__badge" onClick={onToggle} aria-expanded={open}>
-                {t.claims[current.id].title}
+                <span className="claim__label">{t.claims.label}</span>
+                <span className="claim__value">{t.claims[current.id].title}</span>
+                <span className="claim__chevron" aria-hidden="true" />
             </button>
 
             {open && (
                 <div className="claim__deck" role="group" aria-label={t.claims.label}>
-                    {/* Unavailable claims are shown greyed out with the reason
-                        rather than hidden: silently dropping half the deck reads
-                        as a broken feature, not as a rule. */}
+                    {/* Unavailable claims stay visible with the reason, so they read as a rule. */}
                     {CLAIMS.map(definition => {
                         const isCurrent = current.id === definition.id;
                         const available = claimAvailable(definition, table);

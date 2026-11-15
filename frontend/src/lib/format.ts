@@ -34,23 +34,15 @@ export function initials(name: string): string {
     return (letters || name.slice(0, 1)).toUpperCase();
 }
 
-/**
- * A stable achromatic step per player, so the same person is the same tone on
- * every screen in the room.
- *
- * This used to return a hue, which put an arbitrary purple or magenta on screen
- * in an interface that has exactly one colour in it. Identity comes from the
- * letter; the tone only has to separate one badge from the next, and a value
- * ramp does that without inventing a palette.
- */
-export function playerTone(playerId: PlayerId): number {
+/** A stable hue per player, so the same person is the same colour on every screen. */
+export function playerHue(playerId: PlayerId): number {
     let hash = 2166136261;
     for (let i = 0; i < playerId.length; i++) {
         hash ^= playerId.charCodeAt(i);
         hash = Math.imul(hash, 16777619);
     }
-    // Five rungs between near-black and mid grey. All of them carry white.
-    return 14 + (Math.abs(hash) % 5) * 9;
+    // Twelve evenly spaced hues reads as distinct colours rather than shades.
+    return (Math.abs(hash) % 12) * 30;
 }
 
 export function nameOf(players: readonly PublicPlayer[], playerId: PlayerId): string {

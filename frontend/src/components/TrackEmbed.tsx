@@ -11,12 +11,8 @@ interface TrackEmbedProps {
 }
 
 /**
- * The player.
- *
- * Two v1 bugs are fixed here. Short links are only resolved when they actually
- * need it (v1 round-tripped every URL through the server), and the async result
- * is discarded if the track changed while it was in flight — previously a slow
- * response for the previous round could overwrite the current player.
+ * The player. Short links are resolved only when they need it, and a slow
+ * response for a previous track is discarded rather than replacing this one.
  */
 export function TrackEmbed({ url }: TrackEmbedProps) {
     const t = useT();
